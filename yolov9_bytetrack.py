@@ -8,7 +8,7 @@ from team_assigner import TeamAssigner
 
 import cv2
 import numpy as np
-
+from analyser.analysis import AnalysisManager
 import onnxruntime
 
 from visualize import plot_tracking
@@ -191,6 +191,7 @@ def imageflow_demo(predictor, args):
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = cap.get(cv2.CAP_PROP_FPS)
+    analysis = AnalysisManager()
 
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
@@ -302,6 +303,9 @@ def imageflow_demo(predictor, args):
                                           color=team_box_colors[t_idx])
 
             top_view_img = top_view.process(court_detector.game_warp_matrix, team_bw_dict)
+            team1_court, team2_court = top_view.position_team1, top_view.position_team2
+            analysis.process(team1_court, team2_court)
+            analysis.visualize(img)
 
             # top_view.process()
             cv2.imshow('Image', img)
