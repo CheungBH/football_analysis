@@ -15,7 +15,7 @@ from visualize import plot_tracking
 from tracker import BYTETracker
 
 team_colors = []
-team_box_colors = [(0, 0, 255), (255, 0, 0)]
+team_box_colors = [(0, 0, 255), (0, 255, 0)]
 
 def make_parser():
     parser = argparse.ArgumentParser("onnxruntime inference")
@@ -204,7 +204,7 @@ def imageflow_demo(predictor, args):
     team_assigner = TeamAssigner()
 
     results = []
-    mask_points = []
+    mask_points = [(485, 217), (820, 216), (894, 403), (416, 404)]
     top_view = TopViewProcessor(2)
 
     def click_court():
@@ -264,8 +264,10 @@ def imageflow_demo(predictor, args):
                 click_court()
                 court_detector = CourtDetector(mask_points)
                 court_detector.begin(type="inner", frame=frame, mask_points=mask_points)
+                cv2.destroyAllWindows()
 
             outputs, img_info = predictor.inference(frame)
+            print(outputs.shape)
             team1_boxes, team2_boxes = [], []
 
             for output in outputs:
@@ -280,10 +282,11 @@ def imageflow_demo(predictor, args):
             # online_targets = tracker.update(outputs, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
             team1_target = team1_tracker.update(team1_boxes, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
             team2_target = team2_tracker.update(team2_boxes, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-            online_tlwhs = []
-            online_ids = []
-            online_scores = []
+            img = img_info['raw_img']
             for t_idx, team_target in enumerate([team1_target, team2_target]):
+                online_tlwhs = []
+                online_ids = []
+                online_scores = []
                 for t in team_target:
                     tlwh = t.tlwh
                     tid = t.track_id
@@ -291,14 +294,14 @@ def imageflow_demo(predictor, args):
                     online_ids.append(tid)
                     online_scores.append(t.score)
 
-                results.append((frame_id + 1, online_tlwhs, online_ids, online_scores))
-                online_im = plot_tracking(img_info['raw_img'], online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
+                # results.append((frame_id + 1, online_tlwhs, online_ids, online_scores))
+                img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
                                           color=team_box_colors[t_idx])
 
             # top_view.process()
-            cv2.imshow('Image', online_im)
+            cv2.imshow('Image', img)
 
-            vid_writer.write(online_im)
+            vid_writer.write(img)
             ch = cv2.waitKey(1)
             if ch == 27 or ch == ord("q") or ch == ord("Q"):
                 break

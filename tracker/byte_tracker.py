@@ -14,6 +14,7 @@ class STrack(BaseTrack):
     shared_kalman = KalmanFilter()
 
     def __init__(self, tlwh, score):
+        self.count = 0
         # wait activate
         self._tlwh = np.asarray(tlwh, dtype=np.float64)
         self.kalman_filter = None
@@ -41,6 +42,10 @@ class STrack(BaseTrack):
             for i, (mean, cov) in enumerate(zip(multi_mean, multi_covariance)):
                 stracks[i].mean = mean
                 stracks[i].covariance = cov
+
+    def next_id(self):
+        self.count += 1
+        return self.count
 
     def activate(self, kalman_filter, frame_id):
         """Start a new tracklet"""

@@ -32,9 +32,9 @@ class BaseTrack(object):
         return self.frame_id
 
     @staticmethod
-    def next_id():
-        BaseTrack._count += 1
-        return BaseTrack._count
+    # def next_id():
+    #     BaseTrack._count += 1
+    #     return BaseTrack._count
 
     def activate(self, *args):
         raise NotImplementedError
