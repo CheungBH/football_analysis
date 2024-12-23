@@ -1,6 +1,6 @@
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-
+from collections import defaultdict
 import argparse
 from tennis_court.court_detector import CourtDetector
 from tennis_court.top_view import TopViewProcessor
@@ -203,9 +203,9 @@ def imageflow_demo(predictor, args):
     frame_id = 0
     team_assigner = TeamAssigner()
 
-    results = []
+    # results = []
     mask_points = [(485, 217), (820, 216), (894, 403), (416, 404)]
-    top_view = TopViewProcessor(2)
+    top_view = TopViewProcessor(colors=team_box_colors)
 
     def click_court():
         def click_event(event, x, y, flags, param):
@@ -283,23 +283,29 @@ def imageflow_demo(predictor, args):
             team1_target = team1_tracker.update(team1_boxes, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
             team2_target = team2_tracker.update(team2_boxes, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
             img = img_info['raw_img']
+            team_bw_dict = defaultdict(dict)
             for t_idx, team_target in enumerate([team1_target, team2_target]):
                 online_tlwhs = []
                 online_ids = []
                 online_scores = []
                 for t in team_target:
                     tlwh = t.tlwh
+                    xyxy = t.tlbr
                     tid = t.track_id
+
                     online_tlwhs.append(tlwh)
                     online_ids.append(tid)
                     online_scores.append(t.score)
+                    team_bw_dict[t_idx][tid] = xyxy
 
-                # results.append((frame_id + 1, online_tlwhs, online_ids, online_scores))
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
                                           color=team_box_colors[t_idx])
 
+            top_view_img = top_view.process(court_detector.game_warp_matrix, team_bw_dict)
+
             # top_view.process()
             cv2.imshow('Image', img)
+            cv2.imshow('Top View', cv2.resize(top_view_img, (400, 800)))
 
             vid_writer.write(img)
             ch = cv2.waitKey(1)

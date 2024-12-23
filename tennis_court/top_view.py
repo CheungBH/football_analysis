@@ -9,10 +9,11 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 class TopViewProcessor:
-    def __init__(self, window_size=7):
+    def __init__(self, window_size=7, colors=[(0, 0, 255), (255, 0, 0)]):
         self.court = cv2.cvtColor(cv2.imread('tennis_court/court_reference.png'), cv2.COLOR_BGR2GRAY)
         self.court = cv2.cvtColor(self.court, cv2.COLOR_GRAY2BGR)
         self.inv_mats = []
+        self.colors = colors
         self.window_size = window_size
         # for i in range(players):
 
@@ -21,57 +22,43 @@ class TopViewProcessor:
 
         self.time_elapse = []
 
-    def get_stats(self):
-        return self.time_elapse, self.position,self.ball_position
+    def process(self, inv_mats, team_idbox_dict, use_time=1, profile=False, vis_graph=True):
 
-    def process(self, inv_mats, team1_idbox, team2_idbox, use_time, profile=False, vis_graph=True):
-        self.time_elapse.append(use_time)
+        team1_idbox = team_idbox_dict[0]
+        team2_idbox = team_idbox_dict[1]
 
-        if profile:
-            init_time = time.time()
         frame = self.court.copy()
 
-        for idx, box in enumerate(team1_idbox):
+        for idx, box in team1_idbox.items():
             feet_pos = np.array([(box[0] + (box[2] - box[0]) / 2), box[3]]).reshape((1, 1, 2))
-            feet_court_pos = cv2.perspectiveTransform(feet_pos, inv_mats[-1]).reshape(-1)
+            feet_court_pos = cv2.perspectiveTransform(feet_pos, inv_mats[-1]).reshape(-1).tolist()
             self.position_team1[idx].append(feet_court_pos)
-
-        for idx, box in enumerate(team2_idbox):
-            feet_pos = np.array([(box[0] + (box[2] - box[0]) / 2), box[3]]).reshape((1, 1, 2))
-            feet_court_pos = cv2.perspectiveTransform(feet_pos, inv_mats[-1]).reshape(-1)
-            self.position_team2[idx].append(feet_court_pos)
-
-            window = 7 if len(self.position[0]) > 7 else len(self.position[0])
+            window = 7 if len(self.position_team1[idx]) > 7 else len(self.position_team1[idx])
             if window >= 7:
-                positions = np.array(self.position)
-                for position in positions:
-                    smoothed = np.zeros_like(position)
-                    smoothed[:,0] = signal.savgol_filter(position[:,0], window, 2)
-                    smoothed[:,1] = signal.savgol_filter(position[:,1], window, 2)
-                    frame = cv2.circle(frame, (int(smoothed[-1][0]), int(smoothed[-1][1])), 45, (0, 0, 255), -1)
+                positions = np.array(self.position_team1[idx])
+                # for position in positions:
+                smoothed = np.zeros_like(positions)
+                smoothed[:,0] = signal.savgol_filter(positions[:,0], window, 2)
+                smoothed[:,1] = signal.savgol_filter(positions[:,1], window, 2)
+                frame = cv2.circle(frame, (int(smoothed[-1][0]), int(smoothed[-1][1])), 45,
+                                   self.colors[0], -1)
 
-        if not vis_graph:
-            white_img = np.zeros((500, 400, 3), np.uint8)
-            return frame, white_img, white_img, white_img
-        if profile:
-            print("Time taken for processing: ", time.time() - init_time)
-            init_time = time.time()
-        movement = self.vis_movement()
-        if profile:
-            print("Time taken for movement: ", time.time() - init_time)
-            init_time = time.time()
 
-        speed = self.vis_speed(use_time)
-        if profile:
-            print("Time taken for speed: ", time.time() - init_time)
-            init_time = time.time()
-        try:
-            hm = self.vis_heatmap()
-        except:
-            hm = frame
-        if profile:
-            print("Time taken for heatmap: ", time.time() - init_time)
-        return frame, movement, speed, hm
+        for idx, box in team2_idbox.items():
+            feet_pos = np.array([(box[0] + (box[2] - box[0]) / 2), box[3]]).reshape((1, 1, 2))
+            feet_court_pos = cv2.perspectiveTransform(feet_pos, inv_mats[-1]).reshape(-1).tolist()
+            self.position_team2[idx].append(feet_court_pos)
+            window = 7 if len(self.position_team2[idx]) > 7 else len(self.position_team2[idx])
+            if window >= 7:
+                positions = np.array(self.position_team2[idx])
+                # for position in positions:
+                smoothed = np.zeros_like(positions)
+                smoothed[:,0] = signal.savgol_filter(positions[:,0], window, 2)
+                smoothed[:,1] = signal.savgol_filter(positions[:,1], window, 2)
+                frame = cv2.circle(frame, (int(smoothed[-1][0]), int(smoothed[-1][1])), 45,
+                                   self.colors[1], -1)
+
+        return frame
 
     def process_single(self, court_detector, players_boxes, use_time):
         # img_h, img_w = inp_frame.shape[:2]
