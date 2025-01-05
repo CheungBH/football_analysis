@@ -5,8 +5,6 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from collections import defaultdict
 import argparse
 import copy
-from tennis_court.court_detector import CourtDetector
-from tennis_court.top_view import TopViewProcessor
 from team_assigner import TeamAssigner
 import json
 import cv2
@@ -280,8 +278,10 @@ def imageflow_demo(predictor, args):
                 cv2.destroyAllWindows()
                 break
 
-    top_view_img = cv2.imread(args.court_image)
+    # real_player_location = {defaultdict}
+    top_view_img_tpl = cv2.imread(args.court_image)
     while True:
+        top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
         if ret_val:
             if frame_id == 0:
@@ -289,6 +289,7 @@ def imageflow_demo(predictor, args):
                 click_color()
                 team_assigner.assign_color(team_colors)
                 team_box_colors = team_assigner.team_colors
+                trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
                 print(team_colors)
                 court_img = copy.deepcopy(frame)
                 click_court()
@@ -307,50 +308,54 @@ def imageflow_demo(predictor, args):
                         "court_matrix": matrix.tolist(),
                         "game_point": game_points.tolist(),
                         "court_point": court_points.tolist(),
-                        "team_colors": team_colors,
+                        "team_colors": [color.tolist() for color in team_colors],
                     }
 
             outputs, img_info = predictor.inference(frame)
             if args.save_asset:
                 assets[frame_id] = outputs.tolist()
             print(outputs.shape)
-            team1_boxes, team2_boxes = [], []
+            team_boxes = [[] for _ in range(len(team_box_colors))]
 
             for output in outputs:
                 team_id = team_assigner.get_player_team_test(frame, output[:4])
-                if team_id == 1:
-                    team1_boxes.append(output)
-                else:
-                    team2_boxes.append(output)
+                team_boxes[team_id].append(output)
 
-            team1_boxes = np.array(team1_boxes)
-            team2_boxes = np.array(team2_boxes)
-            # online_targets = tracker.update(outputs, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-            team1_target = team1_tracker.update(team1_boxes, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-            team2_target = team2_tracker.update(team2_boxes, [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
+            team_targets = []
+            for boxes, tracker in zip(team_boxes, trackers):
+                team_target = tracker.update(np.array(boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
+                team_targets.append(team_target)
+
             img = img_info['raw_img']
-            team_bw_dict = defaultdict(dict)
-            for t_idx, team_target in enumerate([team1_target, team2_target]):
+            # team_bw_dict = defaultdict(dict)
+            for t_idx, team_target in enumerate(team_targets):
+                foot_locations = []
                 online_tlwhs = []
                 online_ids = []
                 online_scores = []
                 for t in team_target:
                     tlwh = t.tlwh
-                    xyxy = t.tlbr
                     tid = t.track_id
 
                     online_tlwhs.append(tlwh)
                     online_ids.append(tid)
                     online_scores.append(t.score)
-                    team_bw_dict[t_idx][tid] = xyxy
+                    # team_bw_dict[t_idx][tid] = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
+                    foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
+                    # real_player_location[t_idx][tid] = foot_location
+                    foot_locations.append(foot_location)
+                if len(foot_locations) == 0:
+                    continue
+                foot_locations = np.array([foot_locations])
+                real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
+                real_foot_locations = real_foot_locations[0]
+                for real_foot_location in real_foot_locations:
+                    cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20,
+                               team_box_colors[t_idx], -1)
 
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
                                           color=team_box_colors[t_idx])
 
-            # top_view_img = top_view.process(court_detector.game_warp_matrix, team_bw_dict)
-            # team1_court, team2_court = top_view.position_team1, top_view.position_team2
-            # analysis.process(team1_court, team2_court)
-            # analysis.visualize(img)
 
             # top_view.process()
             cv2.imshow('Image', img)
@@ -366,7 +371,7 @@ def imageflow_demo(predictor, args):
 
     if args.save_asset:
         with open(asset_path, 'w') as f:
-            json.dump(assets, f)
+            json.dump(assets, f, indent=4)
 
 
 if __name__ == '__main__':
