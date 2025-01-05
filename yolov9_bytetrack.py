@@ -1,11 +1,14 @@
 import os
+import time
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from collections import defaultdict
 import argparse
+import copy
 from tennis_court.court_detector import CourtDetector
 from tennis_court.top_view import TopViewProcessor
 from team_assigner import TeamAssigner
-
+import json
 import cv2
 import numpy as np
 from analyser.analysis import AnalysisManager
@@ -15,7 +18,7 @@ from visualize import plot_tracking
 from tracker import BYTETracker
 
 team_colors = []
-team_box_colors = [(0, 0, 255), (0, 255, 0)]
+# team_box_colors = [(0, 0, 255), (0, 255, 0)]
 
 def make_parser():
     parser = argparse.ArgumentParser("onnxruntime inference")
@@ -37,6 +40,12 @@ def make_parser():
         "--click_image",
         type=str,
         default='',
+        help="Path to your input image.",
+    )
+    parser.add_argument(
+        "--court_image",
+        type=str,
+        default='court_reference.png',
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -68,6 +77,11 @@ def make_parser():
     )
     parser.add_argument(
         "--with_p6",
+        action="store_true",
+        help="Whether your model uses p6 in FPN/PAN.",
+    )
+    parser.add_argument(
+        "--save_asset",
         action="store_true",
         help="Whether your model uses p6 in FPN/PAN.",
     )
@@ -211,18 +225,22 @@ def imageflow_demo(predictor, args):
     team_assigner = TeamAssigner()
 
     # results = []
-    mask_points = [(485, 217), (820, 216), (894, 403), (416, 404)]
-    top_view = TopViewProcessor(colors=team_box_colors)
+    # pixel_points = [(485, 217), (820, 216), (894, 403), (416, 404)]
+    # real_points = [(0, 0), (10, 0), (10, 23.77), (0, 23.77)]
+    points = []
+    # top_view = TopViewProcessor(colors=team_box_colors)
 
     def click_court():
+        # global points
+
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
-                mask_points.append((x, y))
-                cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
-                cv2.imshow('click_court', frame)
-                if len(mask_points) > 4:
-                    mask_points.pop(0)
-                    print(mask_points)
+                points.append((x, y))
+                cv2.circle(court_img, (x, y), 5, (0, 255, 0), -1)
+                cv2.imshow('click_court', court_img)
+                if len(points) > 4:
+                    points.pop(0)
+                    print(points)
 
         height, width, channel = frame.shape
         cv2.namedWindow("click_court", cv2.WINDOW_NORMAL)
@@ -231,11 +249,11 @@ def imageflow_demo(predictor, args):
         cv2.setMouseCallback("click_court", click_event)
 
         while True:
-            cv2.imshow("click_court", frame)
+            cv2.imshow("click_court", court_img)
             key = cv2.waitKey(1) & 0xFF
             if key == 27:
                 break
-        print(mask_points)
+        print(points)
 
 
     def click_color():
@@ -243,6 +261,7 @@ def imageflow_demo(predictor, args):
             if event == cv2.EVENT_LBUTTONDOWN:
                 color = color_img[y, x]
                 team_colors.append(color)
+                print(color)
                 # copied_frame = copy.deepcopy(frame)
                 # cv2.circle(copied_frame, (x, y), 5, (0, 255, 0), -1)
                 cv2.imshow('click_color', color_img)
@@ -261,7 +280,7 @@ def imageflow_demo(predictor, args):
                 cv2.destroyAllWindows()
                 break
 
-
+    top_view_img = cv2.imread(args.court_image)
     while True:
         ret_val, frame = cap.read()
         if ret_val:
@@ -269,13 +288,31 @@ def imageflow_demo(predictor, args):
                 color_img = cv2.imread(args.click_image) if args.click_image else frame
                 click_color()
                 team_assigner.assign_color(team_colors)
+                team_box_colors = team_assigner.team_colors
                 print(team_colors)
+                court_img = copy.deepcopy(frame)
                 click_court()
-                court_detector = CourtDetector(mask_points)
-                court_detector.begin(type="inner", frame=frame, mask_points=mask_points)
+                game_points = np.array(points)
+                time.sleep(1)
+                court_img = cv2.imread(args.court_image)
+                points = []
+                click_court()
+                court_points = np.array(points)
+                matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
+
                 cv2.destroyAllWindows()
+                if args.save_asset:
+                    asset_path = ".".join(args.video_path.split(".")[:-1]) + '.json                    '
+                    assets = {
+                        "court_matrix": matrix.tolist(),
+                        "game_point": game_points.tolist(),
+                        "court_point": court_points.tolist(),
+                        "team_colors": team_colors,
+                    }
 
             outputs, img_info = predictor.inference(frame)
+            if args.save_asset:
+                assets[frame_id] = outputs.tolist()
             print(outputs.shape)
             team1_boxes, team2_boxes = [], []
 
@@ -310,10 +347,10 @@ def imageflow_demo(predictor, args):
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
                                           color=team_box_colors[t_idx])
 
-            top_view_img = top_view.process(court_detector.game_warp_matrix, team_bw_dict)
-            team1_court, team2_court = top_view.position_team1, top_view.position_team2
-            analysis.process(team1_court, team2_court)
-            analysis.visualize(img)
+            # top_view_img = top_view.process(court_detector.game_warp_matrix, team_bw_dict)
+            # team1_court, team2_court = top_view.position_team1, top_view.position_team2
+            # analysis.process(team1_court, team2_court)
+            # analysis.visualize(img)
 
             # top_view.process()
             cv2.imshow('Image', img)
@@ -326,6 +363,10 @@ def imageflow_demo(predictor, args):
         else:
             break
         frame_id += 1
+
+    if args.save_asset:
+        with open(asset_path, 'w') as f:
+            json.dump(assets, f)
 
 
 if __name__ == '__main__':

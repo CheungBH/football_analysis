@@ -59,15 +59,13 @@ class TeamAssigner:
         return (self.team_colors[1],self.team_colors[2])
 
     def assign_color(self, colors):
+        classes_num = len(colors)
         # player_colors = [color1, color2]
-        self.kmeans = KMeans(n_clusters=2, init="k-means++", n_init=10)
+        self.kmeans = KMeans(n_clusters=classes_num, init="k-means++", n_init=10)
         self.kmeans.fit(colors)
 
-        self.team_colors[1] = self.kmeans.cluster_centers_[0]
-        self.team_colors[2] = self.kmeans.cluster_centers_[1]
-
-        return (self.team_colors[1],self.team_colors[2])
-        # self.team_colors = [color1, color2]
+        for i in range(classes_num):
+            self.team_colors[i] = self.kmeans.cluster_centers_[i]
 
     def assign_team_color(self, frame, player_detections):
         player_colors = []
