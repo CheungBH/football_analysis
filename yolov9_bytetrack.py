@@ -303,7 +303,7 @@ def imageflow_demo(predictor, args):
 
                 cv2.destroyAllWindows()
                 if args.save_asset:
-                    asset_path = ".".join(args.video_path.split(".")[:-1]) + '.json                    '
+                    asset_path = ".".join(args.video_path.split(".")[:-1]) + '.json'
                     assets = {
                         "court_matrix": matrix.tolist(),
                         "game_point": game_points.tolist(),

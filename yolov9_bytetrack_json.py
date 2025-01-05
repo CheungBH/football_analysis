@@ -28,16 +28,16 @@ def make_parser():
         help="Input your onnx model.",
     )
     parser.add_argument(
+        "--court_image",
+        type=str,
+        default='court_reference.png',
+        help="Path to your input image.",
+    )
+    parser.add_argument(
         "-i",
         "--video_path",
         type=str,
         default='../assets/output_10.mp4',
-        help="Path to your input image.",
-    )
-    parser.add_argument(
-        "--click_image",
-        type=str,
-        default='',
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -72,11 +72,7 @@ def make_parser():
         action="store_true",
         help="Whether your model uses p6 in FPN/PAN.",
     )
-    parser.add_argument(
-        "--save_asset",
-        action="store_true",
-        help="Whether your model uses p6 in FPN/PAN.",
-    )
+
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
@@ -231,7 +227,7 @@ def imageflow_demo(predictor, args):
                 matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
 
             # outputs, img_info = predictor.inference(frame)
-            outputs = np.array(assets["frames"][frame_id])
+            outputs = np.array(assets[str(frame_id)])
             img_info = {"height": height, "width": width, "raw_img": frame}
             team_boxes = [[] for _ in range(len(team_box_colors))]
 
@@ -275,9 +271,6 @@ def imageflow_demo(predictor, args):
             break
         frame_id += 1
 
-    if args.save_asset:
-        with open(asset_path, 'w') as f:
-            json.dump(assets, f, indent=4)
 
 
 if __name__ == '__main__':
