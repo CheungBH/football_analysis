@@ -34,6 +34,12 @@ def make_parser():
         help="Path to your input image.",
     )
     parser.add_argument(
+        "--click_image",
+        type=str,
+        default='',
+        help="Path to your input image.",
+    )
+    parser.add_argument(
         "-o",
         "--output_video_path",
         type=str,
@@ -235,11 +241,11 @@ def imageflow_demo(predictor, args):
     def click_color():
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
-                color = frame[y, x]
+                color = color_img[y, x]
                 team_colors.append(color)
                 # copied_frame = copy.deepcopy(frame)
                 # cv2.circle(copied_frame, (x, y), 5, (0, 255, 0), -1)
-                cv2.imshow('click_color', frame)
+                cv2.imshow('click_color', color_img)
 
 
         height, width, channel = frame.shape
@@ -260,8 +266,10 @@ def imageflow_demo(predictor, args):
         ret_val, frame = cap.read()
         if ret_val:
             if frame_id == 0:
+                color_img = cv2.imread(args.click_image) if args.click_image else frame
                 click_color()
                 team_assigner.assign_color(team_colors)
+                print(team_colors)
                 click_court()
                 court_detector = CourtDetector(mask_points)
                 court_detector.begin(type="inner", frame=frame, mask_points=mask_points)

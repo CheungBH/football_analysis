@@ -43,9 +43,9 @@ class STrack(BaseTrack):
                 stracks[i].mean = mean
                 stracks[i].covariance = cov
 
-    def next_id(self):
-        self.count += 1
-        return self.count
+    # def next_id(self):
+    #     self.count += 1
+    #     return self.count
 
     def activate(self, kalman_filter, frame_id):
         """Start a new tracklet"""
