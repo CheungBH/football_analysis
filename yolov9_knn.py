@@ -86,14 +86,20 @@ def preprocess(image, input_size, swap=(2, 0, 1)):
         (int(img.shape[1] * r), int(img.shape[0] * r)),
         interpolation=cv2.INTER_LINEAR,
     ).astype(np.float32)
-    padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+    #padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
 
+    start_y = (input_size[0] - int(img.shape[0] * r)) // 2
+    start_x = (input_size[1] - int(img.shape[1] * r)) // 2
+
+    padded_img[start_y:start_y + int(img.shape[0] * r), start_x:start_x + int(img.shape[1] * r)] = resized_img
     padded_img = padded_img[:, :, ::-1]
     padded_img /= 255.0
 
+
+
     padded_img = padded_img.transpose(swap)
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
-    return padded_img, r
+    return padded_img, r, start_y
 
 def nms(boxes, scores, nms_thr):
     """Single class NMS implemented in Numpy."""
@@ -164,7 +170,7 @@ class Predictor(object):
         img_info["width"] = width
         img_info["raw_img"] = ori_img
 
-        img, ratio = preprocess(ori_img, self.input_shape)
+        img, ratio,start_y = preprocess(ori_img, self.input_shape)
         img_info["ratio"] = ratio
         ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
 
@@ -179,9 +185,9 @@ class Predictor(object):
 
         boxes_xyxy = np.ones_like(boxes)
         boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2]/2.
-        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2.
+        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2 - int(start_y)
         boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
-        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
+        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2 - int(start_y)
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=self.args.nms_thr, score_thr=self.args.score_thr)
         return dets[:, :-1], img_info
@@ -286,7 +292,7 @@ def imageflow_demo(predictor, args):
 
             colors = team_assigner.team_colors
             for idx, team in enumerate([team0_boxes, team1_boxes, team2_boxes, team3_boxes]):
-                color = colors[idx + 1]
+                color = colors[idx]
                 for box in team:
                     cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3]),), color, 2)
 

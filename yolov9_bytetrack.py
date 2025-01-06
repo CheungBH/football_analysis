@@ -1,3 +1,4 @@
+import copy
 import os
 import time
 
@@ -103,14 +104,17 @@ def preprocess(image, input_size, swap=(2, 0, 1)):
         (int(img.shape[1] * r), int(img.shape[0] * r)),
         interpolation=cv2.INTER_LINEAR,
     ).astype(np.float32)
-    padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+    #padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+    start_y = (input_size[0] - int(img.shape[0] * r)) // 2
+    start_x = (input_size[1] - int(img.shape[1] * r)) // 2
+    padded_img[start_y:start_y + int(img.shape[0] * r), start_x:start_x + int(img.shape[1] * r)] = resized_img
 
     padded_img = padded_img[:, :, ::-1]
     padded_img /= 255.0
 
     padded_img = padded_img.transpose(swap)
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
-    return padded_img, r
+    return padded_img, r, start_y
 
 def nms(boxes, scores, nms_thr):
     """Single class NMS implemented in Numpy."""
@@ -181,7 +185,7 @@ class Predictor(object):
         img_info["width"] = width
         img_info["raw_img"] = ori_img
 
-        img, ratio = preprocess(ori_img, self.input_shape)
+        img, ratio,start_y = preprocess(ori_img, self.input_shape)
         img_info["ratio"] = ratio
         ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
 
@@ -196,12 +200,12 @@ class Predictor(object):
 
         boxes_xyxy = np.ones_like(boxes)
         boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2]/2.
-        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2.
+        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2 - int(start_y)
         boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
-        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
+        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2 - int(start_y)
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=self.args.nms_thr, score_thr=self.args.score_thr)
-        return dets[:, :-1], img_info
+        return dets, img_info
 
 
 def imageflow_demo(predictor, args):
@@ -215,11 +219,9 @@ def imageflow_demo(predictor, args):
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
     )
     # tracker = BYTETracker(args, frame_rate=30)
-
+    frame_id = 0
     team1_tracker = BYTETracker(args, frame_rate=30)
     team2_tracker = BYTETracker(args, frame_rate=30)
-
-    frame_id = 0
     team_assigner = TeamAssigner()
 
     # results = []
@@ -293,6 +295,7 @@ def imageflow_demo(predictor, args):
                 print(team_colors)
                 court_img = copy.deepcopy(frame)
                 click_court()
+
                 game_points = np.array(points)
                 time.sleep(1)
                 court_img = cv2.imread(args.court_image)
@@ -300,6 +303,7 @@ def imageflow_demo(predictor, args):
                 click_court()
                 court_points = np.array(points)
                 matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
+
 
                 cv2.destroyAllWindows()
                 if args.save_asset:
