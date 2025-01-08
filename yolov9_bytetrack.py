@@ -29,6 +29,12 @@ def make_parser():
         help="Input your onnx model.",
     )
     parser.add_argument(
+        "--device",
+        type=str,
+        default='cuda:0',
+        help="Path to your input image.",
+    )
+    parser.add_argument(
         "-i",
         "--video_path",
         type=str,
@@ -58,7 +64,7 @@ def make_parser():
         "-s",
         "--score_thr",
         type=float,
-        default=0.1,
+        default=0.3,
         help="Score threshould to filter the result.",
     )
     parser.add_argument(
@@ -175,6 +181,7 @@ class Predictor(object):
         self.args = args
         self.session = onnxruntime.InferenceSession(args.model)
         self.input_shape = tuple(map(int, args.input_shape.split(',')))
+        self.device = args.device
 
     def inference(self, ori_img):
 
@@ -186,6 +193,7 @@ class Predictor(object):
         img_info["raw_img"] = ori_img
 
         img, ratio,start_y = preprocess(ori_img, self.input_shape)
+        # img = img.to(self.device)
         img_info["ratio"] = ratio
         ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
 
@@ -214,9 +222,13 @@ def imageflow_demo(predictor, args):
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = cap.get(cv2.CAP_PROP_FPS)
     analysis = AnalysisManager()
+    tv_h, tv_w = 400, 800
 
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
+    )
+    topview_writer = cv2.VideoWriter(
+        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_w, tv_h)
     )
     # tracker = BYTETracker(args, frame_rate=30)
     frame_id = 0
@@ -292,6 +304,7 @@ def imageflow_demo(predictor, args):
                 team_assigner.assign_color(team_colors)
                 team_box_colors = team_assigner.team_colors
                 trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
+                ball_tracker = BYTETracker(args, frame_rate=30)
                 print(team_colors)
                 court_img = copy.deepcopy(frame)
                 click_court()
@@ -320,15 +333,26 @@ def imageflow_demo(predictor, args):
                 assets[frame_id] = outputs.tolist()
             print(outputs.shape)
             team_boxes = [[] for _ in range(len(team_box_colors))]
+            ball_boxes=[]
 
+            max_ball_output = None
             for output in outputs:
-                team_id = team_assigner.get_player_team_test(frame, output[:4])
-                team_boxes[team_id].append(output)
+                if output[5] == 1:
+                    team_id = team_assigner.get_player_team_test(frame, output[:4])
+                    team_boxes[team_id].append(output)
+                elif output[5] == 0:
+                    if max_ball_output is None or output[4] > max_ball_output[4]:
+                        max_ball_output = output
+            if max_ball_output is not None:
+                ball_boxes.append(max_ball_output)
 
             team_targets = []
             for boxes, tracker in zip(team_boxes, trackers):
                 team_target = tracker.update(np.array(boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
                 team_targets.append(team_target)
+
+            # ball_targets = []
+            ball_targets = ball_tracker.update(np.array(ball_boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
 
             img = img_info['raw_img']
             # team_bw_dict = defaultdict(dict)
@@ -356,16 +380,25 @@ def imageflow_demo(predictor, args):
                 for real_foot_location in real_foot_locations:
                     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20,
                                team_box_colors[t_idx], -1)
-
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
                                           color=team_box_colors[t_idx])
 
+            if ball_targets:
+                ball_box = ball_targets[0].tlwh
+                ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]/2]
+                ball_locations = np.array([[ball_location]])
+                real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
+                real_ball_locations = real_ball_locations[0][0]
+                cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
+                img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
 
             # top_view.process()
+            top_view_img = cv2.resize(top_view_img, (tv_h, tv_w))
             cv2.imshow('Image', img)
-            cv2.imshow('Top View', cv2.resize(top_view_img, (400, 800)))
+            cv2.imshow('Top View', top_view_img)
 
             vid_writer.write(img)
+            topview_writer.write(top_view_img)
             ch = cv2.waitKey(1)
             if ch == 27 or ch == ord("q") or ch == ord("Q"):
                 break
