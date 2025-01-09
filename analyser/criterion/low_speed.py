@@ -3,18 +3,9 @@ from .utils import check_speed_ls
 
 class LowSpeedChecker:
     def __init__(self):
-        self.speed_threshold = 1
+        self.speed_threshold = 1000
         self.frame_duration = 10
-
-    def check_alarm(self):
-        if not self.status:
-            return False
-        return True
-
-    def preprocess(self, candidates):
-        team1, team2 = candidates
-        # Now only consider the second team
-        return team2
+        self.flag = False
 
     def process(self, candidates):
         candidates = self.preprocess(candidates)
@@ -31,9 +22,12 @@ class LowSpeedChecker:
         return self.status
 
     def visualize(self, frame):
-        if not self.status:
+        if not self.status[-1]:
             cv2.putText(frame, "Normal speed", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
                         2, cv2.LINE_AA)
         else:
             cv2.putText(frame, "Low Speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
                         2, cv2.LINE_AA)
+
+    def visualize_details(self, frame):
+        self.visualize(frame)
