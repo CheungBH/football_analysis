@@ -338,7 +338,7 @@ def imageflow_demo(predictor, args):
             max_ball_output = None
             for output in outputs:
                 if output[5] == 1:
-                    team_id = team_assigner.get_player_team_test(frame, output[:4])
+                    team_id = team_assigner.get_player_team_test(frame, output[:4], "")
                     team_boxes[team_id].append(output)
                 elif output[5] == 0:
                     if max_ball_output is None or output[4] > max_ball_output[4]:

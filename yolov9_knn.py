@@ -45,7 +45,7 @@ def make_parser():
         "-s",
         "--score_thr",
         type=float,
-        default=0.1,
+        default=0.3,
         help="Score threshould to filter the result.",
     )
     parser.add_argument(
@@ -190,7 +190,7 @@ class Predictor(object):
         boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2 - int(start_y)
         boxes_xyxy /= ratio
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=self.args.nms_thr, score_thr=self.args.score_thr)
-        return dets[:, :-1], img_info
+        return dets, img_info
 
 
 def imageflow_demo(predictor, args):
@@ -280,7 +280,8 @@ def imageflow_demo(predictor, args):
             team0_boxes, team3_boxes = [], []
 
             for output in outputs:
-                team_id = team_assigner.get_player_team_test(frame, output[:4])
+                team_id = team_assigner.get_player_team_test(frame, output[:4],frame_id)
+
                 if team_id == 1:
                     team1_boxes.append(output)
                 elif team_id == 2:
@@ -336,6 +337,7 @@ def imageflow_demo(predictor, args):
         else:
             break
         frame_id += 1
+        print('frame is',frame_id)
 
 
 if __name__ == '__main__':
