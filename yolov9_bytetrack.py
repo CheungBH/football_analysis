@@ -221,7 +221,7 @@ def imageflow_demo(predictor, args):
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = cap.get(cv2.CAP_PROP_FPS)
-    analysis = AnalysisManager()
+    # analysis = AnalysisManager()
     tv_h, tv_w = 400, 800
 
     vid_writer = cv2.VideoWriter(
