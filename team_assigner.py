@@ -1,5 +1,5 @@
 from networkx.algorithms.bipartite.basic import color
-from pyreadline3.console import BLACK
+
 from sklearn.cluster import KMeans
 import numpy as np
 import cv2
@@ -159,6 +159,7 @@ class TeamAssigner:
 
 if __name__ == '__main__':
     import os
+    from pyreadline3.console import BLACK
 
     assigner = TeamAssigner()
     image_folder = (r"C:\hku\program\football_analysis\output1\output_gray")

@@ -2,16 +2,18 @@ import copy
 import os
 import time
 
+from utils.augmentations import letterbox
+from utils.torch_utils import select_device
+import torch
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-from collections import defaultdict
+from models.common import DetectMultiBackend
 import argparse
 import copy
 from team_assigner import TeamAssigner
 import json
 import cv2
 import numpy as np
-from analyser.analysis import AnalysisManager
-import onnxruntime
+from utils.general import non_max_suppression, scale_boxes
 
 from visualize import plot_tracking
 from tracker import BYTETracker
@@ -25,7 +27,7 @@ def make_parser():
         "-m",
         "--model",
         type=str,
-        default="../assets/best.onnx",
+        default="/vol/datastore/zhangbh/Downloads/yolov9-t-converted.pt",
         help="Input your onnx model.",
     )
     parser.add_argument(
@@ -98,7 +100,7 @@ def make_parser():
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
     return parser
 
-def preprocess(image, input_size, swap=(2, 0, 1)):
+def preprocess(image, input_size, swap=(2, 0, 1), return_origin_size=False):
     if len(image.shape) == 3:
         padded_img = np.ones((input_size[0], input_size[1], 3)) * 114.0
     else:
@@ -110,10 +112,14 @@ def preprocess(image, input_size, swap=(2, 0, 1)):
         (int(img.shape[1] * r), int(img.shape[0] * r)),
         interpolation=cv2.INTER_LINEAR,
     ).astype(np.float32)
+    if return_origin_size:
+        start_y = 0
+        padded_img = resized_img
+    else:
     #padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
-    start_y = (input_size[0] - int(img.shape[0] * r)) // 2
-    start_x = (input_size[1] - int(img.shape[1] * r)) // 2
-    padded_img[start_y:start_y + int(img.shape[0] * r), start_x:start_x + int(img.shape[1] * r)] = resized_img
+        start_y = (input_size[0] - int(img.shape[0] * r)) // 2
+        start_x = (input_size[1] - int(img.shape[1] * r)) // 2
+        padded_img[start_y:start_y + int(img.shape[0] * r), start_x:start_x + int(img.shape[1] * r)] = resized_img
 
     padded_img = padded_img[:, :, ::-1]
     padded_img /= 255.0
@@ -179,9 +185,11 @@ def multiclass_nms(boxes, scores, nms_thr, score_thr):
 class Predictor(object):
     def __init__(self, args):
         self.args = args
-        self.session = onnxruntime.InferenceSession(args.model)
+        # self.session = onnxruntime.InferenceSession(args.model)
         self.input_shape = tuple(map(int, args.input_shape.split(',')))
-        self.device = args.device
+        self.device =  select_device(args.device)
+        self.model = DetectMultiBackend(args.model, device=self.device, fp16=True)
+        self.stride = self.model.stride
 
     def inference(self, ori_img):
 
@@ -192,16 +200,34 @@ class Predictor(object):
         img_info["width"] = width
         img_info["raw_img"] = ori_img
 
-        img, ratio,start_y = preprocess(ori_img, self.input_shape)
+        # img, ratio,start_y = preprocess(ori_img, self.input_shape, return_origin_size=True)
         # img = img.to(self.device)
-        img_info["ratio"] = ratio
-        ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
+        im = letterbox(ori_img, list(self.input_shape), stride=self.stride, auto=True)[0]  # padded resize
+        im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+        im = np.ascontiguousarray(im)  # contiguous
+        im = torch.from_numpy(im).to(self.model.device)
+        im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
+        im /= 255  # 0 - 255 to 0.0 - 1.0
+        if len(im.shape) == 3:
+            im = im[None]  # expand for batch dim
+        pred = self.model(im)
+        pred = non_max_suppression(pred, self.args.score_thr, self.args.nms_thr, None, False, max_det=1000)
+        # pred = pred[0]
+        if pred is None:
+            return None, img_info
+        output = pred[0]
+        output[:, :4] = scale_boxes(im.shape[2:], output[:, :4], ori_img.shape).round()
+        return output.detach().cpu(), img_info
+        # img_info["ratio"] = ratio
+        # ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
+        #
+        # output = self.session.run(None, ort_inputs)
+        # if len(output) > 1:
+        #     output = [output[0]]
+        # img = torch.from_numpy(img).to(self.device)
+        # output = self.model(img[None, :, :, :])
 
-        output = self.session.run(None, ort_inputs)
-        if len(output) > 1:
-            output = [output[0]]
-
-        predictions = np.squeeze(output).T
+        predictions = np.squeeze(output[0]).T
 
         boxes = predictions[:, :4]
         scores = predictions[:, 4:]
@@ -221,7 +247,7 @@ def imageflow_demo(predictor, args):
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = cap.get(cv2.CAP_PROP_FPS)
-    analysis = AnalysisManager()
+    # analysis = AnalysisManager()
     tv_h, tv_w = 400, 800
 
     vid_writer = cv2.VideoWriter(
