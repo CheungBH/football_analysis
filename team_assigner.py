@@ -1,5 +1,4 @@
 from networkx.algorithms.bipartite.basic import color
-
 from sklearn.cluster import KMeans
 import numpy as np
 import cv2
@@ -8,6 +7,7 @@ import cv2
 class TeamAssigner:
     def __init__(self):
         self.team_colors = {}
+        self.team_reverse_color = {}
         self.player_team_dict = {}
         self.kmeans = None
 
@@ -119,21 +119,29 @@ class TeamAssigner:
 
         return player_color
 
-    def assign_color(self, colors):
+    def assign_color(self):
+
+        #self.team_colors = {0:np.array([0,0,255]), 1:np.array([125,125,125]), 2:np.array([255,0,0]), 3: np.array([0,0,0])}
+        self.team_colors = {0:np.array([0,0,255]), 1:np.array([125,125,125]), 2:np.array([255,0,0]), 3: np.array([0,0,0])}
+        self.team_reverse_color = {tuple(value): key for key, value in self.team_colors.items()}
+        '''
         classes_num = len(colors)
         # player_colors = [color1, color2]
         self.kmeans = KMeans(n_clusters=classes_num, init="k-means++", n_init=10)
         self.kmeans.fit(colors)
-
         for i in range(classes_num):
             self.team_colors[i] = self.kmeans.cluster_centers_[i]
+        '''
+
 
     def get_player_team_test(self, frame, playerbbox, frame_id):
         # if self.kmeans is None:
         #     raise ValueError("Team colors have not been assigned yet. Call assign_team_color_test first.")
 
         player_color = self.get_player_color(frame, playerbbox, frame_id)
-        team_id = self.kmeans.predict(player_color.reshape(1, -1))[0]
+        team_id = self.team_reverse_color.get(tuple(player_color), None)
+
+        #team_id = self.kmeans.predict(player_color.reshape(1, -1))[0]
 
         return team_id
 
@@ -175,23 +183,6 @@ if __name__ == '__main__':
         for i, color in enumerate(hsv_colors):
             print(f'Color {i} - H: {color[0]}, V: {color[2]}')
 
-        # Convert RGB colors to HSV
-        # non_player_color1_hsv = cv2.cvtColor(np.uint8([[non_player_color1]]), cv2.COLOR_RGB2HSV)[0][0]
-        # non_player_color2_hsv = cv2.cvtColor(np.uint8([[non_player_color2]]), cv2.COLOR_RGB2HSV)[0][0]
-        # player_color_hsv = cv2.cvtColor(np.uint8([[player_color]]), cv2.COLOR_RGB2HSV)[0][0]
-        # 输出颜色的 H 和 V 值
-        # print(f"Player color - H: {player_color_hsv[0]}, V: {player_color_hsv[2]}")
-        # print(f"Non-player color - H: {non_player_color1_hsv[0]}, V: {non_player_color1_hsv[2]}")
-        # print(f"Non-player1 color - H: {non_player_color2_hsv[0]}, V: {non_player_color1_hsv[2]}")
-
-        # 显示颜色的 RGB 值
-        # print(f"Processing image: {os.path.basename(img_path)}")
-        # print(f"Player color (RGB): {player_color}")
-        # print(f"Non-player color (RGB): {non_player_color1}")
-        # print(f"Non-player color2 (RGB): {non_player_color2}")
-        # print(f"Non-player color3 (RGB): {non_player_color3}")
-        # print(f"Non-player color4 (RGB): {non_player_color4}")
-        # print(f"Non-player color5 (RGB): {non_player_color5}")
 
         # 创建纯色图像
         color_imgs = []
@@ -199,60 +190,13 @@ if __name__ == '__main__':
             img = np.zeros((300, 300, 3), np.uint8)
             img[:] = color
             color_imgs.append(img)
-        # player_img = np.zeros((300, 300, 3), np.uint8)
-        # player_img[:] = player_color
-        #
-        # non_player_img1 = np.zeros((300, 300, 3), np.uint8)
-        # non_player_img1[:] = non_player_color1
-        #
-        # non_player_img2 = np.zeros((300, 300, 3), np.uint8)
-        # non_player_img2[:] = non_player_color2
-
-        # non_player_img3 = np.zeros((300, 300, 3), np.uint8)
-        # non_player_img3[:] = non_player_color3
-
-        # non_player_img4 = np.zeros((300, 300, 3), np.uint8)
-        # non_player_img4[:] = non_player_color4
-        #
-        # non_player_img5 = np.zeros((300, 300, 3), np.uint8)
-        # non_player_img5[:] = non_player_color5
 
         full_img = np.zeros((600, 900, 3), np.uint8)
         for i, color in enumerate(colors):
             full_img[0:300, i * 300:(i + 1) * 300] = color
             cv2.putText(full_img, f'H:{hsv_colors[i][0]} V:{hsv_colors[i][2]}', (i * 300 + 50, 150),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-        # full_img[0:300, 0:300] = player_color
-        # full_img[0:300, 300:600] = non_player_color1
-        # full_img[0:300, 600:900] = non_player_color2
-        # full_img[300:600, 0:300] = non_player_color3
-        # full_img[300:600, 300:600] = non_player_color4
-        # full_img[300:600, 600:900] = non_player_color5
-
-        # 在纯色图像上显示类别以及 H 和 V 值
-        # cv2.putText(full_img, f'player H:{player_color_hsv[0]} V:{player_color_hsv[2]}', (50, 150),
-        #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-        # cv2.putText(full_img, f'Non-player1 H:{non_player_color1_hsv[0]} V:{non_player_color1_hsv[2]}', (350, 150),
-        #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-        # cv2.putText(full_img, f'Non-player2 H:{non_player_color2_hsv[0]} V:{non_player_color2_hsv[2]}', (650, 150),
-        #             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-
-        # 在纯色图像上显示类别
-        # cv2.putText(full_img, 'player', (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        # cv2.putText(full_img, 'Non-player1', (350, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        # cv2.putText(full_img, 'Non-player2', (650, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2,cv2.LINE_AA)
-        # cv2.putText(full_img, 'Non-player3', (50, 350), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2,cv2.LINE_AA)
-        # cv2.putText(full_img, 'Non-player4', (350, 350), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2,cv2.LINE_AA)
-        # cv2.putText(full_img, 'Non-player5', (650, 350), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2,cv2.LINE_AA)
-        # print("==================================")
-        # print(color)
         cv2.imshow(os.path.basename(img_path), resized_img)
-        # cv2.imshow('Non-player Color1', non_player_img1)
-        # cv2.imshow('Non-player Color2', non_player_img2)
-        # cv2.imshow('Non-player Color3', non_player_img3)
-        # cv2.imshow('Non-player Color4', non_player_img4)
-        # cv2.imshow('Non-player Color5', non_player_img5)
-        # cv2.imshow('Player Color', player_img)
         cv2.imshow('full-image', full_img)
         key = cv2.waitKey(0)
         if key == 27:
