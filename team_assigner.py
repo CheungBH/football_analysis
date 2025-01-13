@@ -68,40 +68,57 @@ class TeamAssigner:
         # cv2.imshow("image", image)
         # cv2.waitKey(0)
         # cv2.imwrite(f"output1/frame_{frame_id}_bbox_{bbox[0]}.jpg",image)
-        top_half_image = image[:]
+        top_half_image = image[int(image.shape[0] / 8): int(image.shape[0] / 2),
+                         int(image.shape[1] / 4):int(3 * image.shape[1] / 4)]
+        # cv2.imshow('image', cv2.resize(top_half_image, (300, 300)))
+
 
         # cv2.imwrite(f"output1_half/frame_{frame_id}_bbox_{bbox[0]}_half.jpg", top_half_image)
         # Get Clustering model
         kmeans = self.get_clustering_model(top_half_image)
         colors = [kmeans.cluster_centers_[i] for i in range(3)]
         hsv_colors = [cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_BGR2HSV)[0][0].tolist() for color in colors]
+        full_img = np.zeros((600, 900, 3), np.uint8)
+        for i, color in enumerate(colors):
+            full_img[0:300, i * 300:(i + 1) * 300] = color
+            cv2.putText(full_img, f'H:{hsv_colors[i][0]} S:{hsv_colors[i][1]} V:{hsv_colors[i][2]}', (i * 300 + 50, 150),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.imshow('full-image', full_img)
 
-        RED_LOWER_1 = [0, 43, 46]
+
+        RED_LOWER_1 = [0, 120, 120]
         RED_UPPER_1 = [10, 255, 255]
-        RED_LOWER_2 = [156, 43, 46]
+        RED_LOWER_2 = [156, 120, 120]
         RED_UPPER_2 = [180, 255, 255]
-        BLUE_LOWER = [100, 100, 46]
+        BLUE_LOWER = [100, 100, 120]
         BLUE_UPPER = [124, 255, 255]
         BLACK_LOWER = [0, 0, 0]
         BLACK_UPPER = [180, 255, 46]
+
 
         has_red = any(self.is_within_range(hsv, RED_LOWER_1, RED_UPPER_1) or self.is_within_range(hsv, RED_LOWER_2, RED_UPPER_2) for hsv in hsv_colors)
         has_blue = any(self.is_within_range(hsv, BLUE_LOWER, BLUE_UPPER) for hsv in hsv_colors)
         has_black = any(self.is_within_range(hsv, BLACK_LOWER, BLACK_UPPER) for hsv in hsv_colors)
         for hsv in hsv_colors:
             if has_red:
-                player_color = np.array([0, 0, 255])
-                #cv2.imwrite(f"output1/output_red/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
+                player_color = np.array([0, 0, 255],dtype=np.uint8)
+                print('red')
+                # cv2.imwrite(f"output1/output_red/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
             elif has_blue:
-                player_color = np.array([255, 0, 0])
-                #cv2.imwrite(f"output1/output_blue/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
+                player_color = np.array([255, 0, 0],dtype=np.uint8)
+                print('blue')
+                # cv2.imwrite(f"output1/output_blue/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
             #elif (hsv[0]>=0 and hsv[0]<=180) and (hsv[1] >= 0 and hsv[1] <= 43) and (hsv[2] >= 46 and hsv[2] <= 220):
             elif has_black:
-                player_color = np.array([0, 0, 0])
-                #cv2.imwrite(f"output1/output_black/frame_{frame_id}_bbox_{bbox[0]}.jpg}", top_half_image)
+                player_color = np.array([0, 0, 0],dtype=np.uint8)
+                print('black')
+                # cv2.imwrite(f"output1/output_black/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
             else:
-                player_color = np.array([125, 125, 125])
-                #cv2.imwrite(f"output1/output_gray/frame_{frame_id}_bbox_{bbox[0]}_half.jpg", top_half_image)
+                player_color = np.array([125, 125, 125],dtype=np.uint8)
+                print('gray')
+                # cv2.imwrite(f"output1/output_gray/frame_{frame_id}_bbox_{bbox[0]}_half.jpg", top_half_image)
+        # cv2.waitKey(0)
+
             # elif (hsv[0]>=0 and hsv[0]<=180) and (hsv[1] >= 0 and hsv[1] <= 255) and (hsv[2] >= 0 and hsv[2] <= 46):
             #     cv2.imwrite(f"output1/output_black/frame_{frame_id}_bbox_{bbox[0]}_half.jpg", top_half_image)
         # Get the cluster labels for each pixel
@@ -122,7 +139,8 @@ class TeamAssigner:
     def assign_color(self):
 
         #self.team_colors = {0:np.array([0,0,255]), 1:np.array([125,125,125]), 2:np.array([255,0,0]), 3: np.array([0,0,0])}
-        self.team_colors = {0:np.array([0,0,255]), 1:np.array([125,125,125]), 2:np.array([255,0,0]), 3: np.array([0,0,0])}
+        self.team_colors = {0:np.array([0,0,255],dtype=np.uint8), 1:np.array([125,125,125],dtype=np.uint8),
+                            2:np.array([255,0,0],dtype=np.uint8), 3: np.array([0,0,0],dtype=np.uint8)}
         self.team_reverse_color = {tuple(value): key for key, value in self.team_colors.items()}
         '''
         classes_num = len(colors)
@@ -170,7 +188,7 @@ if __name__ == '__main__':
     from pyreadline3.console import BLACK
 
     assigner = TeamAssigner()
-    image_folder = (r"C:\hku\program\football_analysis\output1\output_gray")
+    image_folder = (r"C:\hku\program\football_analysis\output1\output_black")
     # H:red:118-122 blue:7-10
     img_paths = [os.path.join(image_folder, image_name) for image_name in os.listdir(image_folder)]
     for img_path in img_paths:

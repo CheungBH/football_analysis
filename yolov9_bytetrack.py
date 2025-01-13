@@ -58,21 +58,21 @@ def make_parser():
         "-o",
         "--output_video_path",
         type=str,
-        default='demo_output.mp4',
+        default='demo_output3.mp4',
         help="Path to your output directory.",
     )
     parser.add_argument(
         "-s",
         "--score_thr",
         type=float,
-        default=0.3,
+        default=0.25,
         help="Score threshould to filter the result.",
     )
     parser.add_argument(
         "-n",
         "--nms_thr",
         type=float,
-        default=0.3,
+        default=0.45,
         help="NMS threshould.",
     )
     parser.add_argument(
@@ -223,13 +223,15 @@ def imageflow_demo(predictor, args):
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = cap.get(cv2.CAP_PROP_FPS)
 
-    tv_h, tv_w = 400, 800
+    analysis = AnalysisManager()
+    tv_h, tv_w = 800, 400
+
 
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
     )
     topview_writer = cv2.VideoWriter(
-        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_w, tv_h)
+        "/".join(args.output_video_path.split("/")[:-1]) + "top_view3.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_h, tv_w)
     )
     # tracker = BYTETracker(args, frame_rate=30)
     frame_id = 0

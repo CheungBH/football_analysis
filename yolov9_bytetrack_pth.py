@@ -66,14 +66,14 @@ def make_parser():
         "-s",
         "--score_thr",
         type=float,
-        default=0.3,
+        default=0.25,
         help="Score threshould to filter the result.",
     )
     parser.add_argument(
         "-n",
         "--nms_thr",
         type=float,
-        default=0.3,
+        default=0.45,
         help="NMS threshould.",
     )
     parser.add_argument(
@@ -327,7 +327,7 @@ def imageflow_demo(predictor, args):
             if frame_id == 0:
                 color_img = cv2.imread(args.click_image) if args.click_image else frame
                 click_color()
-                team_assigner.assign_color(team_colors)
+                team_assigner.assign_color()
                 team_box_colors = team_assigner.team_colors
                 trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
                 ball_tracker = BYTETracker(args, frame_rate=30)
@@ -365,12 +365,12 @@ def imageflow_demo(predictor, args):
             for output in outputs:
                 if output[5] == 1:
                     team_id = team_assigner.get_player_team_test(frame, output[:4], "")
-                    team_boxes[team_id].append(output)
+                    team_boxes[team_id].append(output.tolist())
                 elif output[5] == 0:
                     if max_ball_output is None or output[4] > max_ball_output[4]:
                         max_ball_output = output
             if max_ball_output is not None:
-                ball_boxes.append(max_ball_output)
+                ball_boxes.append(max_ball_output.tolist())
 
             team_targets = []
             for boxes, tracker in zip(team_boxes, trackers):
@@ -403,11 +403,13 @@ def imageflow_demo(predictor, args):
                 foot_locations = np.array([foot_locations])
                 real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
                 real_foot_locations = real_foot_locations[0]
+                color = tuple(list(int(i) for i in team_box_colors[t_idx]))
                 for real_foot_location in real_foot_locations:
+                    real_foot_location = real_foot_location.tolist()
                     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20,
-                               team_box_colors[t_idx], -1)
+                               color, -1)
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
-                                          color=team_box_colors[t_idx])
+                                          color=color)
 
             if ball_targets:
                 ball_box = ball_targets[0].tlwh
