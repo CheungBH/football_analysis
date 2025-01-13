@@ -304,6 +304,7 @@ def imageflow_demo(predictor, args):
     goalkeeper_dict = defaultdict(list)
     referee_dict = defaultdict(list)
     analysis = AnalysisManager(['ball_out_range'],((0,0)))
+    #"low_speed","reverse_moving", "side_referee","ballkeeper_change","goalkeeper_single","ball_out_range"
     while True:
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
@@ -313,7 +314,8 @@ def imageflow_demo(predictor, args):
                 #click_color()
                 team_assigner.assign_color()
                 #team_box_colors = team_assigner.team_colors
-                team_colors = {0:np.array([0,0,255]), 1:np.array([125,125,125]), 2:np.array([255,0,0]), 3: np.array([0,0,0])}
+                team_colors = {0:np.array([0,0,255], dtype=np.uint8), 1:np.array([125,125,125], dtype=np.uint8),
+                               2:np.array([255,0,0], dtype=np.uint8), 3: np.array([0,0,0], dtype=np.uint8)}
                 team_box_colors = team_colors
 
                 trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
@@ -365,7 +367,7 @@ def imageflow_demo(predictor, args):
 
             # ball_targets = []
             ball_targets = ball_tracker.update(np.array(ball_boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-
+            print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
             img = img_info['raw_img']
             # team_bw_dict = defaultdict(dict)
             for t_idx, team_target in enumerate(team_targets):

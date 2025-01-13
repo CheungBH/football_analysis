@@ -83,7 +83,7 @@ class TeamAssigner:
             full_img[0:300, i * 300:(i + 1) * 300] = color
             cv2.putText(full_img, f'H:{hsv_colors[i][0]} S:{hsv_colors[i][1]} V:{hsv_colors[i][2]}', (i * 300 + 50, 150),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 1, cv2.LINE_AA)
-            cv2.imshow('full-image', full_img)
+            #cv2.imshow('full-image', full_img)
 
 
         RED_LOWER_1 = [0, 120, 120]
@@ -139,8 +139,10 @@ class TeamAssigner:
     def assign_color(self):
 
         #self.team_colors = {0:np.array([0,0,255]), 1:np.array([125,125,125]), 2:np.array([255,0,0]), 3: np.array([0,0,0])}
+
         self.team_colors = {0:np.array([0,0,255],dtype=np.uint8), 1:np.array([125,125,125],dtype=np.uint8),
                             2:np.array([255,0,0],dtype=np.uint8), 3: np.array([0,0,0],dtype=np.uint8)}
+
         self.team_reverse_color = {tuple(value): key for key, value in self.team_colors.items()}
         '''
         classes_num = len(colors)

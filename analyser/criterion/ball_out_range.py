@@ -9,8 +9,14 @@ class BallOutRangeChecker:
 
     def process(self, balls, **kwargs):
         # self.ball_coords.append(balls)
-        if balls[-1][0] < 83 or balls[-1][1]<34 or balls[-1][1]>1171:
-            self.flag = True
+        court_line_left=83
+        court_line_top=34
+        court_line_bottom=1171
+        if len(balls):
+            if balls[-1][0] < court_line_left or balls[-1][1] < court_line_top or balls[-1][1]>court_line_bottom:
+                self.flag = True
+            else:
+                self.flag = False
 
 
     def visualize(self, frame):

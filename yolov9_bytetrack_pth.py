@@ -1,7 +1,7 @@
 import copy
 import os
 import time
-
+from collections import defaultdict
 from utils.augmentations import letterbox
 from utils.torch_utils import select_device
 import torch
@@ -10,6 +10,7 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from team_assigner import TeamAssigner
+from analyser.analysis import AnalysisManager
 import json
 import cv2
 import numpy as np
@@ -320,21 +321,30 @@ def imageflow_demo(predictor, args):
 
     # real_player_location = {defaultdict}
     top_view_img_tpl = cv2.imread(args.court_image)
+    real_ball_history=[]
+    team1_dict = defaultdict(list)
+    team2_dict = defaultdict(list)
+    goalkeeper_dict = defaultdict(list)
+    referee_dict = defaultdict(list)
+    analysis = AnalysisManager(['ball_out_range'],((0,0)))
     while True:
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
         if ret_val:
             if frame_id == 0:
                 color_img = cv2.imread(args.click_image) if args.click_image else frame
-                click_color()
+                #click_color()
                 team_assigner.assign_color()
-                team_box_colors = team_assigner.team_colors
+                #team_box_colors = team_assigner.team_colors
+                team_colors = {0:np.array([0,0,255], dtype=np.uint8), 1:np.array([125,125,125], dtype=np.uint8),
+                               2:np.array([255,0,0], dtype=np.uint8), 3: np.array([0,0,0], dtype=np.uint8)}
+                team_box_colors = team_colors
+
                 trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
                 ball_tracker = BYTETracker(args, frame_rate=30)
                 print(team_colors)
                 court_img = copy.deepcopy(frame)
                 click_court()
-
                 game_points = np.array(points)
                 time.sleep(1)
                 court_img = cv2.imread(args.court_image)
@@ -379,7 +389,7 @@ def imageflow_demo(predictor, args):
 
             # ball_targets = []
             ball_targets = ball_tracker.update(np.array(ball_boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-
+            print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
             img = img_info['raw_img']
             # team_bw_dict = defaultdict(dict)
             for t_idx, team_target in enumerate(team_targets):
@@ -390,7 +400,6 @@ def imageflow_demo(predictor, args):
                 for t in team_target:
                     tlwh = t.tlwh
                     tid = t.track_id
-
                     online_tlwhs.append(tlwh)
                     online_ids.append(tid)
                     online_scores.append(t.score)
@@ -398,18 +407,25 @@ def imageflow_demo(predictor, args):
                     foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
                     # real_player_location[t_idx][tid] = foot_location
                     foot_locations.append(foot_location)
+                    real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
+                    if t_idx == 0:
+                        team1_dict[tid].append(real_foot_location)
+                    elif t_idx == 1:
+                        team2_dict[tid].append(real_foot_location)
+                    elif t_idx == 2:
+                        goalkeeper_dict[tid].append(real_foot_location)
+                    elif t_idx == 3:
+                        referee_dict[tid].append(real_foot_location)
                 if len(foot_locations) == 0:
                     continue
                 foot_locations = np.array([foot_locations])
                 real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
                 real_foot_locations = real_foot_locations[0]
-                color = tuple(list(int(i) for i in team_box_colors[t_idx]))
                 for real_foot_location in real_foot_locations:
-                    real_foot_location = real_foot_location.tolist()
                     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20,
-                               color, -1)
+                               tuple(team_box_colors[t_idx].tolist()), -1)
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
-                                          color=color)
+                                          color=tuple(team_box_colors[t_idx].tolist()))
 
             if ball_targets:
                 ball_box = ball_targets[0].tlwh
@@ -417,9 +433,12 @@ def imageflow_demo(predictor, args):
                 ball_locations = np.array([[ball_location]])
                 real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
                 real_ball_locations = real_ball_locations[0][0]
+                real_ball_history.append(real_ball_locations.tolist())
                 cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                 img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
 
+            analysis.process(team1_players=team1_dict,team2_players=team2_dict,side_referees=referee_dict,goalkeepers=goalkeeper_dict,balls=real_ball_history)
+            analysis.visualize(img)
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_h, tv_w))
             cv2.imshow('Image', img)
@@ -441,6 +460,5 @@ def imageflow_demo(predictor, args):
 
 if __name__ == '__main__':
     args = make_parser().parse_args()
-
     predictor = Predictor(args)
     imageflow_demo(predictor, args)
