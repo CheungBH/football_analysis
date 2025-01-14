@@ -12,7 +12,7 @@ checkers = {"low_speed": LowSpeedChecker,
 class AnalysisManager:
 
     def __init__(self, check_list, court):
-        self.criterion = [checkers[check_item](court) for check_item in check_list]
+        self.criterion = [checkers[check_item](court=court) for check_item in check_list]
 
     def process(self, team1_players, team2_players, balls, side_referees, goalkeepers):
         for criterion in self.criterion:
@@ -21,4 +21,4 @@ class AnalysisManager:
 
     def visualize(self, frame):
         for criterion in self.criterion:
-            criterion.visualize(frame)
+            criterion.visualize_details(frame)

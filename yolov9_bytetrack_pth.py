@@ -332,7 +332,7 @@ def imageflow_demo(predictor, args):
     team2_dict = defaultdict(list)
     goalkeeper_dict = defaultdict(list)
     referee_dict = defaultdict(list)
-    analysis = AnalysisManager(['ball_out_range'],((0,0)))
+    analysis = AnalysisManager(['low_speed'], ((0, 0)))
     while True:
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
