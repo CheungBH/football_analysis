@@ -78,6 +78,12 @@ def make_parser():
         help="NMS threshould.",
     )
     parser.add_argument(
+        "--no_ball_tracker",
+        action="store_true",
+        # default=0.45,
+        # help="NMS threshould.",
+    )
+    parser.add_argument(
         "--input_shape",
         type=str,
         default="640,640",
@@ -388,8 +394,7 @@ def imageflow_demo(predictor, args):
                 team_targets.append(team_target)
 
             # ball_targets = []
-            ball_targets = ball_tracker.update(np.array(ball_boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-            print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
+
             img = img_info['raw_img']
             # team_bw_dict = defaultdict(dict)
             for t_idx, team_target in enumerate(team_targets):
@@ -427,8 +432,18 @@ def imageflow_demo(predictor, args):
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
                                           color=tuple(team_box_colors[t_idx].tolist()))
 
-            if ball_targets:
-                ball_box = ball_targets[0].tlwh
+            if args.no_ball_tracker:
+                if max_ball_output is not None:
+                    ball_box = ball_boxes[0][:4]
+                    ball_box = [ball_box[0], ball_box[1], ball_box[2] - ball_box[0], ball_box[3] - ball_box[1]]
+                else:
+                    ball_box = []
+            else:
+                ball_targets = ball_tracker.update(np.array(ball_boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
+                print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
+                ball_box = ball_targets[0].tlwh if ball_targets else []
+
+            if len(ball_box) > 0:
                 ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]/2]
                 ball_locations = np.array([[ball_location]])
                 real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
