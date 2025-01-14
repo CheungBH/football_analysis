@@ -20,7 +20,6 @@ from visualize import plot_tracking
 from tracker import BYTETracker
 
 team_colors = []
-# team_box_colors = [(0, 0, 255), (0, 255, 0)]
 
 def make_parser():
     parser = argparse.ArgumentParser("onnxruntime inference")
@@ -80,8 +79,6 @@ def make_parser():
     parser.add_argument(
         "--no_ball_tracker",
         action="store_true",
-        # default=0.45,
-        # help="NMS threshould.",
     )
     parser.add_argument(
         "--input_shape",
@@ -97,7 +94,12 @@ def make_parser():
     parser.add_argument(
         "--save_asset",
         action="store_true",
-        help="Whether your model uses p6 in FPN/PAN.",
+        help="Whether save model assets",
+    )
+    parser.add_argument(
+        "--use_json",
+        action="store_true",
+        help="Load json for inference",
     )
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
@@ -254,6 +256,8 @@ def imageflow_demo(predictor, args):
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = cap.get(cv2.CAP_PROP_FPS)
+    if args.use_json:
+        args.save_asset = False
     # analysis = AnalysisManager()
     tv_h, tv_w = 400, 800
 
@@ -265,15 +269,14 @@ def imageflow_demo(predictor, args):
     )
     # tracker = BYTETracker(args, frame_rate=30)
     frame_id = 0
-    team1_tracker = BYTETracker(args, frame_rate=30)
-    team2_tracker = BYTETracker(args, frame_rate=30)
+    # team1_tracker = BYTETracker(args, frame_rate=30)
+    # team2_tracker = BYTETracker(args, frame_rate=30)
     team_assigner = TeamAssigner()
 
     # results = []
     # pixel_points = [(485, 217), (820, 216), (894, 403), (416, 404)]
     # real_points = [(0, 0), (10, 0), (10, 23.77), (0, 23.77)]
     points = []
-    # top_view = TopViewProcessor(colors=team_box_colors)
 
     def click_court():
         # global points
@@ -283,9 +286,9 @@ def imageflow_demo(predictor, args):
                 points.append((x, y))
                 cv2.circle(court_img, (x, y), 5, (0, 255, 0), -1)
                 cv2.imshow('click_court', court_img)
-                if len(points) > 4:
-                    points.pop(0)
-                    print(points)
+                # if len(points) > 4:
+                #     points.pop(0)
+                print(points)
 
         height, width, channel = frame.shape
         cv2.namedWindow("click_court", cv2.WINDOW_NORMAL)
@@ -338,43 +341,53 @@ def imageflow_demo(predictor, args):
         ret_val, frame = cap.read()
         if ret_val:
             if frame_id == 0:
-                color_img = cv2.imread(args.click_image) if args.click_image else frame
-                #click_color()
-                team_assigner.assign_color()
-                #team_box_colors = team_assigner.team_colors
-                team_colors = {0:np.array([0,0,255], dtype=np.uint8), 1:np.array([125,125,125], dtype=np.uint8),
-                               2:np.array([255,0,0], dtype=np.uint8), 3: np.array([0,0,0], dtype=np.uint8)}
-                team_box_colors = team_colors
+                if args.use_json:
+                    json_path = ".".join(args.video_path.split(".")[:-1]) + '.json'
+                    with open(json_path, 'r') as f:
+                        assets = json.load(f)
+                    court_points = np.array(assets["court_point"])
+                    game_points = np.array(assets["game_point"])
+                    matrix = np.array(assets["court_matrix"])
+                    team_colors = {idx: np.array(color) for idx, color in assets["team_colors"]}
+                    # team_box_colors = team_colors
+                    outputs = np.array(assets[str(frame_id)])
+                    img_info = {"height": height, "width": width, "raw_img": frame}
+                else:
+                    color_img = cv2.imread(args.click_image) if args.click_image else frame
+                    #click_color()
+                    team_assigner.assign_color()
+                    team_colors = team_assigner.team_colors
+                    # team_colors = {0:np.array([0,0,255], dtype=np.uint8), 1:np.array([125,125,125], dtype=np.uint8),
+                    #                2:np.array([255,0,0], dtype=np.uint8), 3: np.array([0,0,0], dtype=np.uint8)}
+                    # team_box_colors = team_colors
 
-                trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
-                ball_tracker = BYTETracker(args, frame_rate=30)
-                print(team_colors)
-                court_img = copy.deepcopy(frame)
-                click_court()
-                game_points = np.array(points)
-                time.sleep(1)
-                court_img = cv2.imread(args.court_image)
-                points = []
-                click_court()
-                court_points = np.array(points)
-                matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
+                    trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
+                    ball_tracker = BYTETracker(args, frame_rate=30)
+                    print(team_colors)
+                    court_img = copy.deepcopy(frame)
+                    click_court()
+                    game_points = np.array(points)
+                    time.sleep(1)
+                    court_img = cv2.imread(args.court_image)
+                    points = []
+                    click_court()
+                    court_points = np.array(points)
+                    matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
 
+                    cv2.destroyAllWindows()
+                    outputs, img_info = predictor.inference(frame)
+                    if args.save_asset:
+                        asset_path = ".".join(args.video_path.split(".")[:-1]) + '.json'
+                        assets = {
+                            "court_matrix": matrix.tolist(),
+                            "game_point": game_points.tolist(),
+                            "court_point": court_points.tolist(),
+                            "team_colors": [color.tolist() for index, color in team_colors.items()],
+                        }
+                        assets[frame_id] = outputs.tolist()
 
-                cv2.destroyAllWindows()
-                if args.save_asset:
-                    asset_path = ".".join(args.video_path.split(".")[:-1]) + '.json'
-                    assets = {
-                        "court_matrix": matrix.tolist(),
-                        "game_point": game_points.tolist(),
-                        "court_point": court_points.tolist(),
-                        "team_colors": [color.tolist() for color in team_colors],
-                    }
-
-            outputs, img_info = predictor.inference(frame)
-            if args.save_asset:
-                assets[frame_id] = outputs.tolist()
             print(outputs.shape)
-            team_boxes = [[] for _ in range(len(team_box_colors))]
+            team_boxes = [[] for _ in range(len(team_colors))]
             ball_boxes=[]
 
             max_ball_output = None
@@ -428,9 +441,9 @@ def imageflow_demo(predictor, args):
                 real_foot_locations = real_foot_locations[0]
                 for real_foot_location in real_foot_locations:
                     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20,
-                               tuple(team_box_colors[t_idx].tolist()), -1)
+                               tuple(team_colors[t_idx].tolist()), -1)
                 img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
-                                          color=tuple(team_box_colors[t_idx].tolist()))
+                                          color=tuple(team_colors[t_idx].tolist()))
 
             if args.no_ball_tracker:
                 if max_ball_output is not None:
