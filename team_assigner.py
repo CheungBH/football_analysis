@@ -25,7 +25,7 @@ class TeamAssigner:
         image = frame
         # cv2.imwrite(f"output/frame_{frame_id}_bbox_{bbox[0]}.jpg",image)
         # top_half_image = image[0:int(image.shape[0] / 2), :]
-        top_half_image = image[int(image.shape[0] / 4):int(image.shape[0] / 2) , int(image.shape[1] / 4):int(3 * image.shape[1] / 4)]
+        top_half_image = image[int(image.shape[0] / 6):int(image.shape[0] / 2) , int(image.shape[1] / 4):int(3 * image.shape[1] / 4)]
         cv2.imshow('image', cv2.resize(top_half_image, (300, 300)))
         # cv2.imwrite(f"output_half/frame_{frame_id}_bbox_{bbox[0]}_half.jpg", top_half_image)
         # Get Clustering model
@@ -68,7 +68,7 @@ class TeamAssigner:
         # cv2.imshow("image", image)
         # cv2.waitKey(0)
         # cv2.imwrite(f"output1/frame_{frame_id}_bbox_{bbox[0]}.jpg",image)
-        top_half_image = image[int(image.shape[0] / 8): int(image.shape[0] / 2),
+        top_half_image = image[int(image.shape[0] / 6): int(image.shape[0] / 2),
                          int(image.shape[1] / 4):int(3 * image.shape[1] / 4)]
         # cv2.imshow('image', cv2.resize(top_half_image, (300, 300)))
 
@@ -102,20 +102,20 @@ class TeamAssigner:
         for hsv in hsv_colors:
             if has_red:
                 player_color = np.array([0, 0, 255],dtype=np.uint8)
-                print('red')
+                # print('red')
                 # cv2.imwrite(f"output1/output_red/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
             elif has_blue:
                 player_color = np.array([255, 0, 0],dtype=np.uint8)
-                print('blue')
+                # print('blue')
                 # cv2.imwrite(f"output1/output_blue/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
             #elif (hsv[0]>=0 and hsv[0]<=180) and (hsv[1] >= 0 and hsv[1] <= 43) and (hsv[2] >= 46 and hsv[2] <= 220):
             elif has_black:
                 player_color = np.array([0, 0, 0],dtype=np.uint8)
-                print('black')
+                # print('black')
                 # cv2.imwrite(f"output1/output_black/frame_{frame_id}_bbox_{bbox[0]}.jpg", top_half_image)
             else:
                 player_color = np.array([125, 125, 125],dtype=np.uint8)
-                print('gray')
+                # print('gray')
                 # cv2.imwrite(f"output1/output_gray/frame_{frame_id}_bbox_{bbox[0]}_half.jpg", top_half_image)
         # cv2.waitKey(0)
 
