@@ -309,7 +309,6 @@ def imageflow_demo(predictor, args):
                 break
         print(points)
 
-
     def click_color():
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
@@ -319,7 +318,6 @@ def imageflow_demo(predictor, args):
                 # copied_frame = copy.deepcopy(frame)
                 # cv2.circle(copied_frame, (x, y), 5, (0, 255, 0), -1)
                 cv2.imshow('click_color', color_img)
-
 
         height, width, channel = frame.shape
         cv2.namedWindow("click_color", cv2.WINDOW_NORMAL)
@@ -341,13 +339,15 @@ def imageflow_demo(predictor, args):
     team2_dict = defaultdict(list)
     goalkeeper_dict = defaultdict(list)
     referee_dict = defaultdict(list)
+
     analysis = AnalysisManager([config.check_action], ((0, 0)))
+
     while True:
+        referee_dict = defaultdict(list)
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
         if ret_val:
             if frame_id == 0:
-
                 if args.use_json:
                     json_path = ".".join(args.video_path.split(".")[:-1]) + '.json'
                     with open(json_path, 'r') as f:
@@ -364,8 +364,15 @@ def imageflow_demo(predictor, args):
                     color_img = cv2.imread(args.click_image) if args.click_image else frame
                     #click_color()
                     team_assigner.assign_color()
-                    team_colors = team_assigner.team_colors
 
+                    # team_colors = team_assigner.team_colors
+                    # team_box_colors = team_assigner.team_colors
+                    team_colors = {0: np.array([0, 0, 255], dtype=np.uint8),
+                                   1: np.array([125, 125, 125], dtype=np.uint8),
+                                   2: np.array([255, 0, 0], dtype=np.uint8), 3: np.array([0, 0, 0], dtype=np.uint8)}
+                    team_box_colors = team_colors
+                    trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
+                    ball_tracker = BYTETracker(args, frame_rate=30)
                     print(team_colors)
                     court_img = copy.deepcopy(frame)
                     click_court()
@@ -385,13 +392,13 @@ def imageflow_demo(predictor, args):
                             "court_point": court_points.tolist(),
                             "team_colors": [color.tolist() for index, color in team_colors.items()],
                         }
-
                     cv2.destroyAllWindows()
 
                 if args.track_before_knn:
                     trackers = BYTETracker(args, frame_rate=30)
                 else:
                     trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
+
                 ball_tracker = BYTETracker(args, frame_rate=30)
 
             if args.use_json:
@@ -407,6 +414,7 @@ def imageflow_demo(predictor, args):
 
             max_ball_output = None
             team_targets = []
+
             if args.track_before_knn:
                 player_boxes = []
                 for output in outputs:
@@ -440,6 +448,7 @@ def imageflow_demo(predictor, args):
                 ball_boxes.append(max_ball_output.tolist())
 
             img = frame
+
             for t_idx, team_target in enumerate(team_targets):
                 foot_locations = []
                 online_tlwhs = []
@@ -493,13 +502,16 @@ def imageflow_demo(predictor, args):
                 cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                 img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
 
-            analysis.process(team1_players=team1_dict,team2_players=team2_dict,side_referees=referee_dict,goalkeepers=goalkeeper_dict,balls=real_ball_history)
+            analysis.process(team1_players=team1_dict,
+                             team2_players=team2_dict,
+                             side_referees=referee_dict,
+                             goalkeepers=goalkeeper_dict,
+                             balls=real_ball_history)
             analysis.visualize(img)
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_h, tv_w))
             cv2.imshow('Image', img)
             cv2.imshow('Top View', top_view_img)
-
             vid_writer.write(img)
             topview_writer.write(top_view_img)
             ch = cv2.waitKey(1)
@@ -509,11 +521,9 @@ def imageflow_demo(predictor, args):
         else:
             break
 
-
     if args.save_asset:
         with open(asset_path, 'w') as f:
             json.dump(assets, f, indent=4)
-
 
 if __name__ == '__main__':
     args = make_parser().parse_args()
