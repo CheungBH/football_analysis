@@ -18,6 +18,7 @@ from utils.general import non_max_suppression, scale_boxes
 
 from visualize import plot_tracking
 from tracker import BYTETracker
+import config.config as config
 
 team_colors = []
 
@@ -27,7 +28,7 @@ def make_parser():
         "-m",
         "--model",
         type=str,
-        default="/vol/datastore/zhangbh/Downloads/yolov9-t-converted.pt",
+        default="/vol/datastore/zhangbh/Downloads/best.pt",
         help="Input your onnx model.",
     )
     parser.add_argument(
@@ -40,7 +41,7 @@ def make_parser():
         "-i",
         "--video_path",
         type=str,
-        default='../assets/output_10.mp4',
+        default='/vol/datastore/zhangbh/Downloads/20241224_HKUCourt_SideFar1_5_2.mp4',
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -95,6 +96,11 @@ def make_parser():
         "--save_asset",
         action="store_true",
         help="Whether save model assets",
+    )
+    parser.add_argument(
+        "--track_before_knn",
+        action="store_true",
+        help="Conduct tracking before KNN",
     )
     parser.add_argument(
         "--use_json",
@@ -259,7 +265,7 @@ def imageflow_demo(predictor, args):
     if args.use_json:
         args.save_asset = False
 
-    tv_h, tv_w = 400, 800
+    tv_h, tv_w = config.topview_height, config.topview_width
 
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
@@ -335,7 +341,7 @@ def imageflow_demo(predictor, args):
     team2_dict = defaultdict(list)
     goalkeeper_dict = defaultdict(list)
     referee_dict = defaultdict(list)
-    analysis = AnalysisManager(['ball_out_range'], ((0, 0)))
+    analysis = AnalysisManager([config.check_action], ((0, 0)))
     while True:
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
@@ -351,9 +357,9 @@ def imageflow_demo(predictor, args):
                     matrix = np.array(assets["court_matrix"])
                     team_colors = {idx: np.array(color) for idx, color in enumerate(assets["team_colors"])}
                     # team_box_colors = team_colors
-                    outputs = np.array(assets[str(frame_id)])
+                    # outputs = np.array(assets[str(frame_id)])
                     team_assigner.assign_color()
-                    img_info = {"height": height, "width": width, "raw_img": frame}
+                    # img_info = {"height": height, "width": width, "raw_img": frame}
                 else:
                     color_img = cv2.imread(args.click_image) if args.click_image else frame
                     #click_color()
@@ -382,7 +388,10 @@ def imageflow_demo(predictor, args):
 
                     cv2.destroyAllWindows()
 
-                trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
+                if args.track_before_knn:
+                    trackers = BYTETracker(args, frame_rate=30)
+                else:
+                    trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
                 ball_tracker = BYTETracker(args, frame_rate=30)
 
             if args.use_json:
@@ -394,28 +403,43 @@ def imageflow_demo(predictor, args):
                     assets[frame_id] = outputs.tolist()
             print(outputs.shape)
             team_boxes = [[] for _ in range(len(team_colors))]
-            ball_boxes=[]
+            ball_boxes = []
 
             max_ball_output = None
-            for output in outputs:
-                if output[5] == 1:
-                    team_id = team_assigner.get_player_team_test(frame, output[:4], "")
-                    team_boxes[team_id].append(output.tolist())
-                elif output[5] == 0:
-                    if max_ball_output is None or output[4] > max_ball_output[4]:
-                        max_ball_output = output
+            team_targets = []
+            if args.track_before_knn:
+                player_boxes = []
+                for output in outputs:
+                    if output[5] == 1:
+                        player_boxes.append(output.tolist())
+                    elif output[5] == 0:
+                        if max_ball_output is None or output[4] > max_ball_output[4]:
+                            max_ball_output = output
+                player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
+                               [img_info['height'], img_info['width']])
+                for player_target in player_targets:
+                    player_box = player_target.tlbr
+                    team_id = team_assigner.get_player_team_test(frame, player_box, "")
+                    team_boxes[team_id].append(player_target)
+                team_targets = team_boxes
+
+            else:
+                for output in outputs:
+                    if output[5] == 1:
+                        team_id = team_assigner.get_player_team_test(frame, output[:4], "")
+                        team_boxes[team_id].append(output.tolist())
+                    elif output[5] == 0:
+                        if max_ball_output is None or output[4] > max_ball_output[4]:
+                            max_ball_output = output
+
+                for boxes, tracker in zip(team_boxes, trackers):
+                    team_target = tracker.update(np.array(boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
+                    team_targets.append(team_target)
+
             if max_ball_output is not None:
                 ball_boxes.append(max_ball_output.tolist())
 
-            team_targets = []
-            for boxes, tracker in zip(team_boxes, trackers):
-                team_target = tracker.update(np.array(boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-                team_targets.append(team_target)
-
-            # ball_targets = []
-
-            img = frame#img_info['raw_img']
-            # team_bw_dict = defaultdict(dict)
+            img = frame
             for t_idx, team_target in enumerate(team_targets):
                 foot_locations = []
                 online_tlwhs = []
@@ -427,9 +451,7 @@ def imageflow_demo(predictor, args):
                     online_tlwhs.append(tlwh)
                     online_ids.append(tid)
                     online_scores.append(t.score)
-                    # team_bw_dict[t_idx][tid] = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
                     foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
-                    # real_player_location[t_idx][tid] = foot_location
                     foot_locations.append(foot_location)
                     real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
                     if t_idx == 0:
