@@ -335,12 +335,13 @@ def imageflow_demo(predictor, args):
     team2_dict = defaultdict(list)
     goalkeeper_dict = defaultdict(list)
     referee_dict = defaultdict(list)
-    analysis = AnalysisManager(['reverse_moving'], ((0, 0)))
+    analysis = AnalysisManager(['ball_out_range'], ((0, 0)))
     while True:
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
         if ret_val:
             if frame_id == 0:
+
                 if args.use_json:
                     json_path = ".".join(args.video_path.split(".")[:-1]) + '.json'
                     with open(json_path, 'r') as f:
@@ -348,21 +349,17 @@ def imageflow_demo(predictor, args):
                     court_points = np.array(assets["court_point"])
                     game_points = np.array(assets["game_point"])
                     matrix = np.array(assets["court_matrix"])
-                    team_colors = {idx: np.array(color) for idx, color in assets["team_colors"]}
+                    team_colors = {idx: np.array(color) for idx, color in enumerate(assets["team_colors"])}
                     # team_box_colors = team_colors
                     outputs = np.array(assets[str(frame_id)])
+                    team_assigner.assign_color()
                     img_info = {"height": height, "width": width, "raw_img": frame}
                 else:
                     color_img = cv2.imread(args.click_image) if args.click_image else frame
                     #click_color()
                     team_assigner.assign_color()
                     team_colors = team_assigner.team_colors
-                    # team_colors = {0:np.array([0,0,255], dtype=np.uint8), 1:np.array([125,125,125], dtype=np.uint8),
-                    #                2:np.array([255,0,0], dtype=np.uint8), 3: np.array([0,0,0], dtype=np.uint8)}
-                    # team_box_colors = team_colors
 
-                    trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
-                    ball_tracker = BYTETracker(args, frame_rate=30)
                     print(team_colors)
                     court_img = copy.deepcopy(frame)
                     click_court()
@@ -374,8 +371,6 @@ def imageflow_demo(predictor, args):
                     court_points = np.array(points)
                     matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
 
-                    cv2.destroyAllWindows()
-                    outputs, img_info = predictor.inference(frame)
                     if args.save_asset:
                         asset_path = ".".join(args.video_path.split(".")[:-1]) + '.json'
                         assets = {
@@ -384,8 +379,19 @@ def imageflow_demo(predictor, args):
                             "court_point": court_points.tolist(),
                             "team_colors": [color.tolist() for index, color in team_colors.items()],
                         }
-                        assets[frame_id] = outputs.tolist()
 
+                    cv2.destroyAllWindows()
+
+                trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
+                ball_tracker = BYTETracker(args, frame_rate=30)
+
+            if args.use_json:
+                outputs = np.array(assets[str(frame_id)])
+                img_info = {"height": height, "width": width, "raw_img": frame}
+            else:
+                outputs, img_info = predictor.inference(frame)
+                if args.save_asset:
+                    assets[frame_id] = outputs.tolist()
             print(outputs.shape)
             team_boxes = [[] for _ in range(len(team_colors))]
             ball_boxes=[]
@@ -408,7 +414,7 @@ def imageflow_demo(predictor, args):
 
             # ball_targets = []
 
-            img = img_info['raw_img']
+            img = frame#img_info['raw_img']
             # team_bw_dict = defaultdict(dict)
             for t_idx, team_target in enumerate(team_targets):
                 foot_locations = []
@@ -475,11 +481,12 @@ def imageflow_demo(predictor, args):
             vid_writer.write(img)
             topview_writer.write(top_view_img)
             ch = cv2.waitKey(1)
+            frame_id += 1
             if ch == 27 or ch == ord("q") or ch == ord("Q"):
                 break
         else:
             break
-        frame_id += 1
+
 
     if args.save_asset:
         with open(asset_path, 'w') as f:
