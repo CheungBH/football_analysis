@@ -258,7 +258,7 @@ def imageflow_demo(predictor, args):
     fps = cap.get(cv2.CAP_PROP_FPS)
     if args.use_json:
         args.save_asset = False
-    # analysis = AnalysisManager()
+
     tv_h, tv_w = 400, 800
 
     vid_writer = cv2.VideoWriter(
