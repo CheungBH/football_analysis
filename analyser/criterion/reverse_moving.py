@@ -16,12 +16,14 @@ class MovingReverseChecker:
         self.team1_dict = players1
         self.team2_dict = players2
         self.balls = balls
+        self.flag = False
         self.angles = [defaultdict(float), defaultdict(float)]
         for team_id, team in enumerate([players1, players2]):
             for p_id, position in team.items():
                 if len(position) >= self.frame_duration:
                     vector = calculate_vector(position[0], position[-1])
                     angle = calculate_angle_between_vectors(self.base_vector, vector)
+                    #
                     self.angles[team_id][p_id] = angle
                     if angle > self.angle_threshold:
                         self.flag = True
