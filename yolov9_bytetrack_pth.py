@@ -343,7 +343,7 @@ def imageflow_demo(predictor, args):
     analysis = AnalysisManager([config.check_action], ((0, 0)))
 
     while True:
-        referee_dict = defaultdict(list)
+        #referee_dict = defaultdict(list)
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_val, frame = cap.read()
         if ret_val:
@@ -471,11 +471,8 @@ def imageflow_demo(predictor, args):
                         goalkeeper_dict[tid].append(real_foot_location)
                     elif t_idx == 3:
                         #referee_dict[tid].append(real_foot_location)
-                        referee_dict[tid].append([real_foot_location])
-                        if t.start_frame ==t.end_frame:
-                            referee_dict[tid].append([t.start_frame,t.end_frame])
-                        else:
-                            referee_dict[tid][1][1] = t.end_frame
+                        referee_dict[tid].append([real_foot_location,frame_id])
+
                 if len(foot_locations) == 0:
                     continue
                 foot_locations = np.array([foot_locations])
@@ -511,7 +508,8 @@ def imageflow_demo(predictor, args):
                              team2_players=team2_dict,
                              side_referees=referee_dict,
                              goalkeepers=goalkeeper_dict,
-                             balls=real_ball_history)
+                             balls=real_ball_history,
+                             frame_id=frame_id)
             analysis.visualize(img)
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_h, tv_w))
