@@ -1,9 +1,5 @@
 import cv2
 
-
-
-import numpy
-
 class BallOutRangeChecker:
     def __init__(self, court, **kwargs):
         self.field = court
@@ -15,8 +11,10 @@ class BallOutRangeChecker:
         court_line_left=83
         court_line_top=34
         court_line_bottom=1171
+        court_line_right=1837
         if len(balls):
-            if balls[-1][0] < court_line_left or balls[-1][1] < court_line_top or balls[-1][1]>court_line_bottom:
+            if (balls[-1][0] < court_line_left or balls[-1][0] > court_line_right
+                  or balls[-1][1] < court_line_top or balls[-1][1]>court_line_bottom):
                 self.flag = True
             else:
                 self.flag = False
@@ -35,6 +33,3 @@ class BallOutRangeChecker:
         self.visualize(frame)
         pass
 
-
-if __name__ == '__main__':
-    import time

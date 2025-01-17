@@ -28,10 +28,10 @@ class LowSpeedChecker:
 
     def visualize(self, frame):
         if not self.flag:
-            cv2.putText(frame, "Normal speed", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0),
+            cv2.putText(frame, "Normal speed", (50, 500), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0),
                         2, cv2.LINE_AA)
         else:
-            cv2.putText(frame, "Low Speed", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
+            cv2.putText(frame, "Low Speed", (50, 500 ), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
                         2, cv2.LINE_AA)
 
     def visualize_details(self, frame):
