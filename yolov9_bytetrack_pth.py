@@ -470,7 +470,12 @@ def imageflow_demo(predictor, args):
                     elif t_idx == 2:
                         goalkeeper_dict[tid].append(real_foot_location)
                     elif t_idx == 3:
-                        referee_dict[tid].append(real_foot_location)
+                        #referee_dict[tid].append(real_foot_location)
+                        referee_dict[tid].append([real_foot_location])
+                        if t.start_frame ==t.end_frame:
+                            referee_dict[tid].append([t.start_frame,t.end_frame])
+                        else:
+                            referee_dict[tid][1][1] = t.end_frame
                 if len(foot_locations) == 0:
                     continue
                 foot_locations = np.array([foot_locations])

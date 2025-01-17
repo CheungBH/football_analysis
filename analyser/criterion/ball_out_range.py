@@ -3,7 +3,7 @@ import cv2
 
 
 class BallOutRangeChecker:
-    def __init__(self, court):
+    def __init__(self, court, **kwargs):
         self.field = court
         self.ball_coords = []
         self.flag = False #True visualize

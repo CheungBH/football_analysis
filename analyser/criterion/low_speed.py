@@ -5,7 +5,7 @@ from collections import defaultdict
 
 class LowSpeedChecker:
     def __init__(self, **kwargs):
-        self.speed_threshold = 1000
+        self.speed_threshold = 0.5
         self.frame_duration = 10
         self.flag = False
         self.colors = [(0, 0, 255), (125, 125, 125)]
@@ -16,6 +16,7 @@ class LowSpeedChecker:
         self.team1_dict = players1
         self.team2_dict = players2
         self.balls = balls
+        self.flag = False
         self.speeds = [defaultdict(float), defaultdict(float)]
         for team_id, team in enumerate([players1, players2]):
             for p_id, position in team.items():
