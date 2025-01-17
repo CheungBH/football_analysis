@@ -2,6 +2,8 @@ import cv2
 
 
 
+import numpy
+
 class BallOutRangeChecker:
     def __init__(self, court, **kwargs):
         self.field = court
