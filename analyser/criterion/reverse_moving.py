@@ -7,6 +7,7 @@ class MovingReverseChecker:
     def __init__(self, **kwargs):
         self.angle_threshold = 135
         self.frame_duration = 10
+        self.thre=0.6
         self.flag = True
         self.colors = [(0, 0, 255), (125, 125, 125)]
         self.curve_duration = 10
@@ -21,13 +22,15 @@ class MovingReverseChecker:
             ball_position = balls[-1]
             min_key_1, min_distance_1 = find_closest_player(players1, ball_position, -1)
             min_key_2, min_distance_2 = find_closest_player(players2, ball_position, -1)
-            if len(self.team1_dict[min_key_1])>10 and len(self.team2_dict[min_key_2])>10:
+            if len(self.team1_dict[min_key_1])>self.frame_duration and len(self.team2_dict[min_key_2])>self.frame_duration:
                 if min_distance_1 < min_distance_2: #red offense,gray defense
-                    Attack_list = self.team1_dict[min_key_1][-10:]
-                    Defend_list = self.team2_dict[min_key_2][-10:]
+                    Attack_list = self.team1_dict[min_key_1][-self.frame_duration:]
+                    Defend_list = self.team2_dict[min_key_2][-self.frame_duration:]
+                    attack=1
                 else:
-                    Attack_list = self.team2_dict[min_key_2][-10:]
-                    Defend_list = self.team1_dict[min_key_1][-10:]
+                    Attack_list = self.team2_dict[min_key_2][-self.frame_duration:]
+                    Defend_list = self.team1_dict[min_key_1][-self.frame_duration:]
+                    attack=2
                 if Attack_list[-1][1]<Defend_list[-1][1]:
                     Door_list=[83,542]
                 else:
@@ -48,13 +51,18 @@ class MovingReverseChecker:
         '''
 
     def visualize(self, frame):
-        if len(self.flaglist)>10:
-            if sum(self.flaglist[-10:])>5:
-                cv2.putText(frame, "Normal", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0),
+        if len(self.flaglist)>self.frame_duration:
+            if sum(self.flaglist[-self.frame_duration:])>self.frame_duration*self.thre:
+                cv2.putText(frame, "Normal", (100, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0),
                             2, cv2.LINE_AA)
             else:
-                cv2.putText(frame, "Someone is reverse", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
+                cv2.putText(frame, "Someone is reverse", (100, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
                             2, cv2.LINE_AA)
+        '''
+        else:
+            cv2.putText(frame, "No tracking", (100, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255),
+                        2, cv2.LINE_AA)
+        '''
 
     def visualize_details(self, frame):
         self.visualize(frame)

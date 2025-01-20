@@ -53,7 +53,7 @@ def make_parser():
     parser.add_argument(
         "--court_image",
         type=str,
-        default='court_reference.png',
+        default='court_reference/soccer-field.png',
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -232,6 +232,7 @@ class Predictor(object):
             return None, img_info
         output = pred[0]
         output[:, :4] = scale_boxes(im.shape[2:], output[:, :4], ori_img.shape).round()
+        output = clip_coords(output, ori_img.shape[:2])
         return output.detach().cpu(), img_info
         # img_info["ratio"] = ratio
         # ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
@@ -256,6 +257,13 @@ class Predictor(object):
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=self.args.nms_thr, score_thr=self.args.score_thr)
         return dets, img_info
 
+def clip_coords(boxes, img_shape):
+    # Clip bounding xyxy bounding boxes to image shape (height, width)
+    boxes[:, 0].clamp_(0, img_shape[1])  # x1
+    boxes[:, 1].clamp_(0, img_shape[0])  # y1
+    boxes[:, 2].clamp_(0, img_shape[1])  # x2
+    boxes[:, 3].clamp_(0, img_shape[0])  # y2
+    return boxes
 
 def imageflow_demo(predictor, args):
     cap = cv2.VideoCapture(args.video_path)
@@ -271,7 +279,7 @@ def imageflow_demo(predictor, args):
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
     )
     topview_writer = cv2.VideoWriter(
-        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_w, tv_h)
+        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_h, tv_w)
     )
     # tracker = BYTETracker(args, frame_rate=30)
     frame_id = 0
@@ -427,6 +435,7 @@ def imageflow_demo(predictor, args):
                                [img_info['height'], img_info['width']])
                 for player_target in player_targets:
                     player_box = player_target.tlbr
+
                     team_id = team_assigner.get_player_team_test(frame, player_box, "")
                     team_boxes[team_id].append(player_target)
                 team_targets = team_boxes
@@ -496,13 +505,14 @@ def imageflow_demo(predictor, args):
                 ball_box = ball_targets[0].tlwh if ball_targets else []
 
             if len(ball_box) > 0:
-                ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]/2]
+                ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]]
                 ball_locations = np.array([[ball_location]])
                 real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
                 real_ball_locations = real_ball_locations[0][0]
                 real_ball_history.append(real_ball_locations.tolist())
                 cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                 img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
+                #ball_keeper =
 
             analysis.process(team1_players=team1_dict,
                              team2_players=team2_dict,

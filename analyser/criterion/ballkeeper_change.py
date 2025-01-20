@@ -30,14 +30,14 @@ class BallKeeperChangeChecker:
 
     def visualize(self, frame):
         if self.holder == 1:
-            cv2.putText(frame, f'Team1 catch the ball', (50, 150),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+            cv2.putText(frame, f'Red Team catch the ball', (50, 150),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
         elif self.holder == 2:
-            cv2.putText(frame, f'Team2 catch the ball', (50, 150),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv2.LINE_AA)
+            cv2.putText(frame, f'Gray Team catch the ball', (50, 150),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
         elif self.holder == 0:
             cv2.putText(frame, f'Fighting for the ball', (50, 150),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1, cv2.LINE_AA)
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 1, cv2.LINE_AA)
         if self.flag == True:
             cv2.putText(frame, f'Ball change', (50, 100),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)

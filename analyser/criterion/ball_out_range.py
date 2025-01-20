@@ -18,15 +18,13 @@ class BallOutRangeChecker:
             else:
                 self.flag = False
 
-
     def visualize(self, frame):
         if self.flag == True:
             cv2.putText(frame, f'out of court', (50, 150),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
         else:
             cv2.putText(frame, f'In court', (50, 150),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
 
     def visualize_details(self, frame):
         self.visualize(frame)

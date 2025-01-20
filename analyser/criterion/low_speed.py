@@ -28,10 +28,10 @@ class LowSpeedChecker:
 
     def visualize(self, frame):
         if not self.flag:
-            cv2.putText(frame, "Normal speed", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0),
+            cv2.putText(frame, "Normal speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
                         2, cv2.LINE_AA)
         else:
-            cv2.putText(frame, "Low Speed", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
+            cv2.putText(frame, "Low Speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255),
                         2, cv2.LINE_AA)
 
     def visualize_details(self, frame):
@@ -42,7 +42,7 @@ class LowSpeedChecker:
                 # vis_duration = min(len(locations), self.curve_duration)
                 # self.vis_path(frame, locations, vis_duration, color)
                 speed = round(self.speeds[t_idx][player], 5)
-                cv2.putText(frame, "id {}: Speed {}".format(player, speed), (100 + t_idx * 500, 100 + p_idx * 50),
+                cv2.putText(frame, "id {}: Speed {:.3f}".format(player, speed), (100 + t_idx * 500, 150 + p_idx * 50),
                             cv2.FONT_HERSHEY_PLAIN, 2, color, thickness=2)
 
     def vis_path(self, frame, locations, vis_duration, color):

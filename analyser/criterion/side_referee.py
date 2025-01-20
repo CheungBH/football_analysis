@@ -25,14 +25,14 @@ class SideRefereeChecker:
                     self.flag = -1
     def visualize(self, frame):
         if self.flag == 1:
-            cv2.putText(frame, f"referee in court", (50, 300),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(frame, f"referee in court", (50, 200),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
         elif self.flag == 0:
-            cv2.putText(frame, f"referee out of court", (50, 300),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(frame, f"referee out of court", (50, 200),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
         elif self.flag == -1:
-            cv2.putText(frame, f"No referee", (50, 300),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(frame, f"No referee", (50, 200),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, cv2.LINE_AA)
     def visualize_details(self, frame):
         self.visualize(frame)
         pass

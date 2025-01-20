@@ -1,4 +1,4 @@
-topview_height = 400
-topview_width = 800
+topview_height = 800
+topview_width = 400
 
 check_action = "reverse_moving"

@@ -107,22 +107,13 @@ def is_vector_in_angle(A, B, C, B_motion_vector):
 
 def compare_motion_direction(A, B, C):
     """比较 A 和 B 在第一帧的位置，并计算 B 的运动方向，判断是否在三角形 B 角内"""
-    # 获取 A 和 B 在第一帧和第十帧的坐标
-    A_first, A_last = A[0], A[9]
-    B_first, B_last = B[0], B[9]
+    A_first, A_last = A[0], A[-1]
+    B_first, B_last = B[0], B[-1]
 
     # 计算 B 的运动方向
     B_motion_vector = np.array(B_last) - np.array(B_first)
 
     # 判断 B 的运动方向是否在角 ABC 的范围内
-    return is_vector_in_angle(A_first, B_first, C, B_motion_vector)
-
-# 示例数据
-A = [[1, 1], [1.1, 1.1], [1.2, 1.2], [1.3, 1.3], [1.4, 1.4], [1.5, 1.5], [1.6, 1.6], [1.7, 1.7], [1.8, 1.8], [2, 2]]
-B = [[0, 2], [0.1, 2.1], [0.2, 2.2], [0.3, 2.3], [0.4, 2.4], [0.5, 2.5], [0.6, 2.6], [0.7, 2.7], [0.8, 2.8], [2, 1]]
-C = [3, 1]
-
-# 调用函数
-result = compare_motion_direction(A, B, C)
-print(result)  # 输出结果
-
+    #return is_vector_in_angle(A_first, B_first, C, B_motion_vector)
+    A_motion_vector = np.array(A_last) - np.array(A_first)
+    return True if A_motion_vector[0]*B_motion_vector[0]>0 else False
