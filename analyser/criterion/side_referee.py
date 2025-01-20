@@ -23,21 +23,6 @@ class SideRefereeChecker:
                         self.flag = 0
                 else:
                     self.flag = -1
-
-        '''
-        defaultdict(<class 'list'>, {7: [[[165.13565067217837, 957.2850765398875], 0], [[165.2379354575891, 957.0820731218867], 1]],59: [[[168.44876559009623, 955.0804552127336], 553], [[177.66906955076163, 948.9450571785179], 572]]})    
-        if len(side_referees):
-            for k, v in side_referees.items():
-                side_referees = v
-            if (side_referees[-1][1] < court_line_bottom and
-                    side_referees[-1][1] > court_line_top and
-                    side_referees[-1][0] > court_line_left and
-                    side_referees[-1][0] < court_line_right):
-                self.flag = True
-            else:
-                self.flag = False
-        '''
-
     def visualize(self, frame):
         if self.flag == 1:
             cv2.putText(frame, f"referee in court", (50, 300),
