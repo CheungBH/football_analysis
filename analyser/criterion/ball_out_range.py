@@ -32,3 +32,6 @@ class BallOutRangeChecker:
         self.visualize(frame)
         pass
 
+
+if __name__ == '__main__':
+    import time
