@@ -2,12 +2,21 @@ import numpy as np
 import math
 
 
-def check_speed_ls(location_ls):
+
+def check_speed_distance(location_ls):
     speed = 0
     for i in range(len(location_ls)-1):
         speed += abs(np.linalg.norm(np.array(location_ls[i]) - np.array(location_ls[i+1])))
     return speed/(len(location_ls)-1)
 
+def check_speed_displacement(location_ls):
+    speed_x, speed_y = 0, 0
+    for i in range(len(location_ls)-1):
+        speed_x += np.array(location_ls[i+1][0]) - np.array(location_ls[i][0])
+        speed_y += np.array(location_ls[i+1][1]) - np.array(location_ls[i][1])
+
+    speed = abs(speed_x) + abs(speed_y)
+    return speed/(len(location_ls)-1)
 
 def calculate_vector(point1, point2):
     vector = (point2[0] - point1[0], point2[1] - point1[1])
@@ -117,3 +126,15 @@ def compare_motion_direction(A, B, C):
     #return is_vector_in_angle(A_first, B_first, C, B_motion_vector)
     A_motion_vector = np.array(A_last) - np.array(A_first)
     return True if A_motion_vector[0]*B_motion_vector[0]>0 else False
+
+
+def polygon_area(points):
+    n = len(points)
+    area = 0
+    for i in range(n):
+        j = (i + 1) % n
+        area += points[i][0][0] * points[j][0][1]
+        area -= points[j][0][0] * points[i][0][1]
+    area = abs(area) / 2.0
+    return area
+

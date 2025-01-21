@@ -2,7 +2,7 @@ import cv2
 
 class SideRefereeChecker:
     def __init__(self, court, **kwargs):
-        self.flag = 0
+        self.flag = -1
         self.side_referee_coords = []
         self.court = court
 

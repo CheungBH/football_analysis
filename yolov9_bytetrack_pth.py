@@ -512,14 +512,14 @@ def imageflow_demo(predictor, args):
                 real_ball_history.append(real_ball_locations.tolist())
                 cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                 img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
-                #ball_keeper =
 
             analysis.process(team1_players=team1_dict,
                              team2_players=team2_dict,
                              side_referees=referee_dict,
                              goalkeepers=goalkeeper_dict,
                              balls=real_ball_history,
-                             frame_id=frame_id)
+                             frame_id=frame_id,
+                             matrix=matrix)
             analysis.visualize(img)
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_h, tv_w))

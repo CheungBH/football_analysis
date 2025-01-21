@@ -14,10 +14,10 @@ class AnalysisManager:
     def __init__(self, check_list, court):
         self.criterion = [checkers[check_item](court=court) for check_item in check_list]
 
-    def process(self, team1_players, team2_players, balls, side_referees, goalkeepers, frame_id):
+    def process(self, team1_players, team2_players, balls, side_referees, goalkeepers, frame_id,matrix):
         for criterion in self.criterion:
             criterion.process(players1=team1_players, players2=team2_players, balls=balls,
-                              side_referees=side_referees, goalkeepers=goalkeepers, frame_id=frame_id)
+                              side_referees=side_referees, goalkeepers=goalkeepers, frame_id=frame_id,matrix=matrix)
 
     def visualize(self, frame):
         for criterion in self.criterion:
