@@ -40,28 +40,10 @@ def make_parser():
     )
     parser.add_argument(
         "-i",
-        "--video_path1",
+        "--video_path",
         type=str,
-        default='/vol/datastore/zhangbh/Downloads/20241224_HKUCourt_SideFar1_5_2.mp4',
-        help="Path to your input image.",
-    )
-    parser.add_argument(
-        "--video_path2",
-        type=str,
-        default='/media/hkuit164/Backup/football_analysis/2.mp4',
-        help="Path to your input image.",
-    )
-    parser.add_argument(
-        "--video_path3",
-        type=str,
-        default='/media/hkuit164/Backup/football_analysis/blackreferee.mp4',
-        help="Path to your input image.",
-    )
-    parser.add_argument(
-        "--video_path4",
-        type=str,
-        default='/media/hkuit164/Backup/football_analysis/blackreferee.mp4',
-        help="Path to your input image.",
+        default='/media/hkuit164/Backup/football_analysis/2',
+        help="Path to your input video folder",
     )
     parser.add_argument(
         "--click_image",
@@ -268,10 +250,17 @@ class Predictor(object):
 
 
 def imageflow_demo(predictor, args):
-    cap1 = cv2.VideoCapture(args.video_path1)
-    cap2 = cv2.VideoCapture(args.video_path2)
-    cap3 = cv2.VideoCapture(args.video_path3)
-    cap4 = cv2.VideoCapture(args.video_path4)
+    video_folder = args.video_path
+    files_in_folder = os.listdir(video_folder)
+    mp4_files = [file for file in files_in_folder if file.endswith('.mp4')]
+    video_path1 =os.path.join(video_folder, mp4_files[0])
+    video_path2 =os.path.join(video_folder, mp4_files[1])
+    video_path3 =os.path.join(video_folder, mp4_files[2])
+    video_path4 =os.path.join(video_folder, mp4_files[3])
+    cap1 = cv2.VideoCapture(video_path1)
+    cap2 = cv2.VideoCapture(video_path2)
+    cap3 = cv2.VideoCapture(video_path3)
+    cap4 = cv2.VideoCapture(video_path4)
 
     width = cap1.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
     height = cap1.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
@@ -339,7 +328,8 @@ def imageflow_demo(predictor, args):
         if ret_val1 and ret_val2 and ret_val3 and ret_val4:
             if frame_id == 0:
                 if args.use_json:
-                    json_path = ".".join(args.video_path1.split(".")[:-1]) + '.json'
+                    json_name = args.video_path.split("/")[-1] + '.json'
+                    json_path = os.path.join(args.video_path,json_name)
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
                     matrix_list=[]
@@ -377,7 +367,8 @@ def imageflow_demo(predictor, args):
                         matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
                         matrix_list.append(matrix)
                         if args.save_asset:
-                            asset_path = ".".join(args.video_path1.split(".")[:-1]) + '.json'
+                            asset_name = args.video_path.split("/")[-1] + '.json'
+                            asset_path = os.path.join(args.video_path,asset_name)
                             assets[idx] = {
                                 "view": f"view{idx}",
                                 "court_matrix": matrix.tolist(),
