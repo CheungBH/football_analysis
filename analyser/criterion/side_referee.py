@@ -14,10 +14,10 @@ class SideRefereeChecker:
 
         for key, value_list in side_referees.items():
             # 遍历每个键对应的list
-            for item in value_list:
-                # 检查最后一个数字是否等于frame_id
-                if item[-1] == frame_id:
-                    if (item[0][1] < court_line_bottom and item[0][1] > court_line_top and item[0][0] > court_line_left and  item[0][0] < court_line_right):
+            if value_list:
+                if value_list[-1][-1] == frame_id:
+                    if (value_list[-1][0][1] < court_line_bottom and value_list[-1][0][1] > court_line_top
+                            and value_list[-1][0][0] > court_line_left and  value_list[-1][0][0] < court_line_right):
                         self.flag = 1
                     else:
                         self.flag = 0
