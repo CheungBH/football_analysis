@@ -326,7 +326,7 @@ def imageflow_demo(predictor, args):
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(start_frame))
         width_list.append(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height_list.append(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps_list.append(int(cap.get(cv2.CAP_PROP_FPS)))
+        fps_list.append(round(cap.get(cv2.CAP_PROP_FPS)))
 
 
     width = caps[0].get(cv2.CAP_PROP_FRAME_WIDTH)  # float,
@@ -387,7 +387,7 @@ def imageflow_demo(predictor, args):
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
         for i,cap in enumerate(caps):
-            frame_interval = int(cap.get(cv2.CAP_PROP_FPS))/fpsmin
+            frame_interval = round(cap.get(cv2.CAP_PROP_FPS))/fpsmin
             if frame_id !=0 :
                 for i in range(int(frame_interval)):
                     ret_val,frame = cap.read()
@@ -399,8 +399,11 @@ def imageflow_demo(predictor, args):
         if sum(ret_vals) == len(ret_vals):
             if frame_id == 0:
                 if args.use_json:
-                    json_name = args.video_path.split("\\")[-1] + '.json'
+                    # os.path.dirname()
+                    # os.path.basename()
+                    json_name = os.path.basename(args.video_path)+ '.json'
                     json_path = os.path.join(args.video_path,json_name)
+
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
                     matrix_list=[]
@@ -449,7 +452,7 @@ def imageflow_demo(predictor, args):
                     cv2.destroyAllWindows()
                 # if args.use_color:
 
-                color_json_name = args.video_path.split("\\")[-1] + '_color.json'
+                color_json_name = os.path.basename(args.video_path)+ '_color.json'
                 color_json_path = os.path.join(args.video_path,color_json_name)
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
@@ -493,7 +496,7 @@ def imageflow_demo(predictor, args):
                 ball_boxes = []
 
                 max_ball_output = None
-                team_targets = [[],[],[],[]]
+                team_targets = [[],[],[],[],[]]
 
                 if args.track_before_knn:
                     player_boxes = []
@@ -583,7 +586,7 @@ def imageflow_demo(predictor, args):
                     real_ball_history.append(real_ball_locations.tolist())
                     cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                     img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
-                resized_frame = cv2.resize(img, (540, 360))
+                resized_frame = cv2.resize(img, (720, 640))
                 img_list.append(resized_frame)
 
             analysis.process(team1_players=team1_dict,
@@ -621,7 +624,7 @@ def imageflow_demo(predictor, args):
                 frame_id += 1
             vid_writer.write(combined_frame)
             topview_writer.write(top_view_img)
-            ch = cv2.waitKey(1)
+            ch = cv2.waitKey(0)
 
             if ch == 27 or ch == ord("q") or ch == ord("Q"):
                 break

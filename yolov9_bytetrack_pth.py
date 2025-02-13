@@ -348,7 +348,7 @@ def imageflow_demo(predictor, args):
     goalkeeper_dict = defaultdict(list)
     referee_dict = defaultdict(list)
 
-    analysis = AnalysisManager([config.check_action], ((0, 0)))
+    analysis = AnalysisManager(config.check_action, ((0, 0)))
 
     while True:
         #referee_dict = defaultdict(list)
