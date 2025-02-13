@@ -11,6 +11,7 @@ import argparse
 import copy
 from team_assigner import TeamAssigner
 from analyser.analysis import AnalysisManager
+from analyser.preprocess import sync_frame
 import json
 import cv2
 import numpy as np
@@ -19,6 +20,9 @@ from threading import Thread
 from visualize import plot_tracking
 from tracker import BYTETracker
 import config.config as config
+import math
+from functools import reduce
+
 
 team_colors = []
 img_full_list = []
@@ -89,6 +93,12 @@ def make_parser():
         help="Specify an input shape for inference.",
     )
     parser.add_argument(
+        "--start_frames",
+        default=['0','0','0','0'],
+        nargs='+',
+        help='mask'
+    )
+    parser.add_argument(
         "--with_p6",
         action="store_true",
         help="Whether your model uses p6 in FPN/PAN.",
@@ -132,7 +142,6 @@ def preprocess(image, input_size, swap=(2, 0, 1), return_origin_size=False):
         start_y = 0
         padded_img = resized_img
     else:
-    #padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
         start_y = (input_size[0] - int(img.shape[0] * r)) // 2
         start_x = (input_size[1] - int(img.shape[1] * r)) // 2
         padded_img[start_y:start_y + int(img.shape[0] * r), start_x:start_x + int(img.shape[1] * r)] = resized_img
@@ -208,14 +217,11 @@ class Predictor(object):
         self.stride = self.model.stride
 
     def inference(self, ori_img):
-
-
         img_info = {"id": 0}
         height, width = ori_img.shape[:2]
         img_info["height"] = height
         img_info["width"] = width
         img_info["raw_img"] = ori_img
-
         # img, ratio,start_y = preprocess(ori_img, self.input_shape, return_origin_size=True)
         # img = img.to(self.device)
         im = letterbox(ori_img, list(self.input_shape), stride=self.stride, auto=True)[0]  # padded resize
@@ -253,18 +259,30 @@ def imageflow_demo(predictor, args):
     video_folder = args.video_path
     files_in_folder = os.listdir(video_folder)
     mp4_files = [file for file in files_in_folder if file.endswith('.mp4')]
-    video_path1 =os.path.join(video_folder, mp4_files[0])
-    video_path2 =os.path.join(video_folder, mp4_files[1])
-    video_path3 =os.path.join(video_folder, mp4_files[2])
-    video_path4 =os.path.join(video_folder, mp4_files[3])
-    cap1 = cv2.VideoCapture(video_path1)
-    cap2 = cv2.VideoCapture(video_path2)
-    cap3 = cv2.VideoCapture(video_path3)
-    cap4 = cv2.VideoCapture(video_path4)
+    video_paths = []
+    for mp4 in mp4_files:
+        video_path = os.path.join(video_folder,mp4)
+        video_paths.append(video_path)
+    #sync_frame.resample_videos(video_paths, 30)
+    start_frames = args.start_frames if args.start_frames else []
+    if start_frames == []:
+        for video_path in video_paths:
+            start_frame = sync_frame.select_start_frame(video_path)
+            start_frames.append(start_frame)
+    print(start_frames)
+    caps = [cv2.VideoCapture(path) for path in video_paths]
+    width_list,height_list,fps_list = [],[],[]
+    for cap, start_frame in zip(caps, start_frames):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(start_frame))
+        width_list.append(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height_list.append(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps_list.append(int(cap.get(cv2.CAP_PROP_FPS)))
 
-    width = cap1.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
-    height = cap1.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
-    fps = cap1.get(cv2.CAP_PROP_FPS)
+
+    width = caps[0].get(cv2.CAP_PROP_FRAME_WIDTH)  # float,
+    height = caps[0].get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
+    fps = caps[0].get(cv2.CAP_PROP_FPS)
+    fpsmin = reduce(math.gcd,fps_list)
     if args.use_json:
         args.save_asset = False
     tv_h, tv_w = config.topview_height, config.topview_width
@@ -312,20 +330,25 @@ def imageflow_demo(predictor, args):
     team2_dict = defaultdict(list)
     goalkeeper_dict = defaultdict(list)
     referee_dict = defaultdict(list)
-    analysis = AnalysisManager([config.check_action], ((0, 0)))
+    analysis = AnalysisManager(config.check_action, ((0, 0)))
 
 
     while True:
         # if frame_id ==1:
         #      break
         top_view_img = copy.deepcopy(top_view_img_tpl)
-        ret_val1, frame1 = cap1.read()
-        ret_val2, frame2 = cap2.read()
-        ret_val3, frame3 = cap3.read()
-        ret_val4, frame4 = cap4.read()
-        frames_list = [frame1,frame2,frame3,frame4]
-        assets = [[],[],[],[]]
-        if ret_val1 and ret_val2 and ret_val3 and ret_val4:
+        ret_vals,frames_list=[],[]
+        for i,cap in enumerate(caps):
+            frame_interval = int(cap.get(cv2.CAP_PROP_FPS))/fpsmin
+            if frame_id !=0 :
+                for i in range(int(frame_interval)):
+                    ret_val,frame = cap.read()
+            else:
+                ret_val, frame = cap.read()
+            ret_vals.append(ret_val)
+            frames_list.append(frame)
+        assets = [[] for _ in range(len(ret_vals))]
+        if sum(ret_vals) == len(ret_vals):
             if frame_id == 0:
                 if args.use_json:
                     json_name = args.video_path.split("/")[-1] + '.json'
@@ -339,20 +362,18 @@ def imageflow_demo(predictor, args):
                         matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
                         matrix_list.append(matrix)
                     #matrix = np.array(assets["court_matrix"])
-                    team_colors = {0: np.array([0, 0, 255], dtype=np.uint8),
-                                   1: np.array([125, 125, 125], dtype=np.uint8),
-                                   2: np.array([255, 0, 0], dtype=np.uint8), 3: np.array([0, 0, 0], dtype=np.uint8)}
-                    team_assigner.assign_color()
+                    # team_colors = {0: np.array([0, 0, 255], dtype=np.uint8),
+                    #                1: np.array([125, 125, 125], dtype=np.uint8),
+                    #                2: np.array([255, 0, 0], dtype=np.uint8), 3: np.array([0, 0, 0], dtype=np.uint8)}
+                    # team_assigner.assign_color(team_colors)
+
 
                 else:
-                    team_assigner.assign_color()
-                    team_colors = {0: np.array([0, 0, 255], dtype=np.uint8),
-                                   1: np.array([125, 125, 125], dtype=np.uint8),
-                                   2: np.array([255, 0, 0], dtype=np.uint8), 3: np.array([0, 0, 0], dtype=np.uint8)}
-                    team_box_colors = team_colors
-                    #trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_box_colors))]
-                    #ball_tracker = BYTETracker(args, frame_rate=30)
-                    print(team_colors)
+                    # team_assigner.assign_color(team_colors)
+                    # team_colors = {0: np.array([0, 0, 255], dtype=np.uint8),
+                    #                1: np.array([125, 125, 125], dtype=np.uint8),
+                    #                2: np.array([255, 0, 0], dtype=np.uint8), 3: np.array([0, 0, 0], dtype=np.uint8)}
+
                     court_img = cv2.imread(args.court_image)
                     matrix_list= []
                     for idx,frame in enumerate(frames_list):
@@ -377,9 +398,21 @@ def imageflow_demo(predictor, args):
                                 "team_colors": [color.tolist() for index, color in team_colors.items()],
                             }
                     print(matrix_list)
-
-
                     cv2.destroyAllWindows()
+                # if args.use_color:
+
+                color_json_name = args.video_path.split("/")[-1] + '_color.json'
+                color_json_path = os.path.join(args.video_path,color_json_name)
+                with open(color_json_path, 'r') as f:
+                    color_asset = json.load(f)
+
+                team_colors = color_asset
+                team_colors = {int(k): v for k, v in team_colors.items()}
+                team_assigner.assign_color(team_colors)
+                # team_colors = team_assigner.team_colors
+                # team_box_colors = team_colors
+                print(team_colors)
+
 
                 if args.track_before_knn:
                     tracker_list = [BYTETracker(args, frame_rate=30),
@@ -471,11 +504,11 @@ def imageflow_demo(predictor, args):
                     foot_locations = np.array([foot_locations])
                     real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
                     real_foot_locations = real_foot_locations[0]
+                    t_color = team_colors[t_idx]
+                    t_color = t_color if isinstance(t_color, list) else t_color.tolist()
                     for real_foot_location in real_foot_locations:
-                        cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20,
-                                   tuple(team_colors[t_idx].tolist()), -1)
-                    img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,
-                                              color=tuple(team_colors[t_idx].tolist()))
+                        cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
+                    img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=t_color)
 
                 if args.no_ball_tracker:
                     if max_ball_output is not None:

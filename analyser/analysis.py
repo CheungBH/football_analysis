@@ -20,7 +20,6 @@ class AnalysisManager:
     def process(self, team1_players, team2_players, balls, side_referees, goalkeepers, frame_id):
         for criterion in self.criterion:
             criterion.process(players1=team1_players, players2=team2_players, balls=balls,
-
                               side_referees=side_referees, goalkeepers=goalkeepers, frame_id=frame_id)
             self.flag= sum(self.criterion[i].flag for i in range(len(self.criterion)))
 

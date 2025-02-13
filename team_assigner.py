@@ -136,12 +136,11 @@ class TeamAssigner:
 
         return player_color
 
-    def assign_color(self):
+    def assign_color(self,team_colors):
 
         #self.team_colors = {0:np.array([0,0,255]), 1:np.array([125,125,125]), 2:np.array([255,0,0]), 3: np.array([0,0,0])}
 
-        self.team_colors = {0:np.array([0,0,255],dtype=np.uint8), 1:np.array([125,125,125],dtype=np.uint8),
-                            2:np.array([255,0,0],dtype=np.uint8), 3: np.array([0,0,0],dtype=np.uint8)}
+        self.team_colors = team_colors
 
         self.team_reverse_color = {tuple(value): key for key, value in self.team_colors.items()}
         '''
@@ -163,7 +162,7 @@ class TeamAssigner:
 
         #team_id = self.kmeans.predict(player_color.reshape(1, -1))[0]
 
-        return team_id
+        return team_id if team_id is not None else 0
 
     def get_player_team(self, frame, player_bbox, player_id):
         if self.kmeans is None:
