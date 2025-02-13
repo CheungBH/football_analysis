@@ -33,7 +33,7 @@ def make_parser():
         "-m",
         "--model",
         type=str,
-        default="/vol/datastore/zhangbh/Downloads/best.pt",
+        default=r"D:\tmp\2.7\best.pt",
         help="Input your onnx model.",
     )
     parser.add_argument(
@@ -46,7 +46,7 @@ def make_parser():
         "-i",
         "--video_path",
         type=str,
-        default='/media/hkuit164/Backup/football_analysis/2',
+        default=r'D:\tmp\1.3\2',
         help="Path to your input video folder",
     )
     parser.add_argument(
@@ -58,7 +58,7 @@ def make_parser():
     parser.add_argument(
         "--court_image",
         type=str,
-        default='court_reference.png',
+        default='court_reference/soccer-field.png',
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -254,6 +254,56 @@ class Predictor(object):
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=self.args.nms_thr, score_thr=self.args.score_thr)
         return dets, img_info
 
+    def batch_inference(self, imgs):
+        imgs_info = []
+        input_imgs = []
+        for img in imgs:
+            height, width = img.shape[:2]
+            img_info = {}
+            img_info["height"] = height
+            img_info["width"] = width
+            img_info["raw_img"] = img
+            im = letterbox(img, list(self.input_shape), stride=self.stride, auto=True)[0]  # padded resize
+            im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            im = np.ascontiguousarray(im)  # contiguous
+            im = torch.from_numpy(im).to(self.model.device)
+            im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
+            im /= 255  # 0 - 255 to 0.0 - 1.0
+            img_info["tensor_size"] = im.shape
+            input_imgs.append(im[None])
+            imgs_info.append(img_info)
+        batch_imgs = torch.ones(1, 3, input_imgs[0].shape[2], input_imgs[0].shape[3]).to(self.model.device)
+        for input_img in input_imgs:
+            batch_imgs = torch.cat((batch_imgs, input_img), dim=0)
+        # if len(im.shape) == 3:
+        #     im = im[None]  # expand for batch dim
+        preds = self.model(batch_imgs[1:,...])
+        preds = non_max_suppression(preds, self.args.score_thr, self.args.nms_thr, None, False, max_det=1000)
+        # pred = pred[0]
+        if preds is None:
+            return None, img_info
+        outputs = []
+        for idx, (pred, img_info) in enumerate(zip(preds, imgs_info)):
+            output = pred#[0]
+            height, width, raw_img = img_info["height"], img_info["width"], img_info["raw_img"]
+            tensor_size = img_info["tensor_size"]
+            output[:, :4] = scale_boxes(tensor_size[1:], output[:, :4], raw_img.shape).round()
+            outputs.append(output.detach().cpu())
+        return outputs, imgs_info
+        #     predictions = np.squeeze(output[0]).T
+        #
+        #     boxes = predictions[:, :4]
+        #     scores = predictions[:, 4:]
+        #
+        #     boxes_xyxy = np.ones_like(boxes)
+        #     boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2] / 2.
+        #     boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3] / 2 - int(start_y)
+        #     boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2] / 2.
+        #     boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3] / 2 - int(start_y)
+        #     boxes_xyxy /= ratio
+        #     dets = multiclass_nms(boxes_xyxy, scores, nms_thr=self.args.nms_thr, score_thr=self.args.score_thr)
+        # return dets, img_info
+
 
 def imageflow_demo(predictor, args):
     video_folder = args.video_path
@@ -287,10 +337,10 @@ def imageflow_demo(predictor, args):
         args.save_asset = False
     tv_h, tv_w = config.topview_height, config.topview_width
     vid_writer = cv2.VideoWriter(
-        args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
+        args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (1080, 720)
     )
     topview_writer = cv2.VideoWriter(
-        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_w, tv_h)
+        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_h, tv_w)
     )
     frame_id = 0
     team_assigner = TeamAssigner()
@@ -334,8 +384,6 @@ def imageflow_demo(predictor, args):
 
 
     while True:
-        # if frame_id ==1:
-        #      break
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
         for i,cap in enumerate(caps):
@@ -351,7 +399,7 @@ def imageflow_demo(predictor, args):
         if sum(ret_vals) == len(ret_vals):
             if frame_id == 0:
                 if args.use_json:
-                    json_name = args.video_path.split("/")[-1] + '.json'
+                    json_name = args.video_path.split("\\")[-1] + '.json'
                     json_path = os.path.join(args.video_path,json_name)
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
@@ -401,7 +449,7 @@ def imageflow_demo(predictor, args):
                     cv2.destroyAllWindows()
                 # if args.use_color:
 
-                color_json_name = args.video_path.split("/")[-1] + '_color.json'
+                color_json_name = args.video_path.split("\\")[-1] + '_color.json'
                 color_json_path = os.path.join(args.video_path,color_json_name)
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
@@ -428,11 +476,13 @@ def imageflow_demo(predictor, args):
 
                 ball_tracker = BYTETracker(args, frame_rate=30)
 
+            yolo_outputs = predictor.batch_inference(frames_list)
             for index,frame in enumerate(frames_list):
                 #trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
                 trackers = tracker_list[index]
                 #trackers = trackers
                 outputs, img_info = predictor.inference(frame)
+                # ai = predictor.batch_inference([frame, frame, frame, frame])
                 matrix = matrix_list[index]
                 print(outputs.shape)
                 team_boxes = [[] for _ in range(len(team_colors))]
@@ -565,7 +615,7 @@ def imageflow_demo(predictor, args):
                     # Release the video writer
                     out.release()
                 frame_id += 1
-            vid_writer.write(img)
+            vid_writer.write(combined_frame)
             topview_writer.write(top_view_img)
             ch = cv2.waitKey(1)
 
