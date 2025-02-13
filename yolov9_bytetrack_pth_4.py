@@ -476,14 +476,18 @@ def imageflow_demo(predictor, args):
 
                 ball_tracker = BYTETracker(args, frame_rate=30)
 
-            yolo_outputs = predictor.batch_inference(frames_list)
-            for index,frame in enumerate(frames_list):
+            yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
+            for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
+            # for index,frame in enumerate(frames_list):
                 #trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
-                trackers = tracker_list[index]
                 #trackers = trackers
-                outputs, img_info = predictor.inference(frame)
                 # ai = predictor.batch_inference([frame, frame, frame, frame])
+
+                # outputs, img_info = predictor.inference(frame)
+                # outputs, img_info = yolo_output
                 matrix = matrix_list[index]
+                trackers = tracker_list[index]
+
                 print(outputs.shape)
                 team_boxes = [[] for _ in range(len(team_colors))]
                 ball_boxes = []
