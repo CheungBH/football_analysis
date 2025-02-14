@@ -306,13 +306,15 @@ class Predictor(object):
 
 
 def imageflow_demo(predictor, args):
+    video_names = config.cam4_videos_name
     video_folder = args.video_path
-    files_in_folder = os.listdir(video_folder)
-    mp4_files = [file for file in files_in_folder if file.endswith('.mp4')]
-    video_paths = []
-    for mp4 in mp4_files:
-        video_path = os.path.join(video_folder,mp4)
-        video_paths.append(video_path)
+    # files_in_folder = os.listdir(video_folder)
+    # mp4_files = [file for file in files_in_folder if file.endswith('.mp4')]
+    # video_paths = []
+    # for mp4 in mp4_files:
+    #     video_path = os.path.join(video_folder,mp4)
+    #     video_paths.append(video_path)
+    video_paths = [os.path.join(video_folder, name) for name in video_names]
     #sync_frame.resample_videos(video_paths, 30)
     start_frames = args.start_frames if args.start_frames else []
     if start_frames == []:
