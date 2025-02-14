@@ -313,7 +313,7 @@ def imageflow_demo(predictor, args):
     # video_paths = []
     # for mp4 in mp4_files:
     #     video_path = os.path.join(video_folder,mp4)
-    #     video_paths.append(video_path)
+    #     video_paths.append(video_path)1
     video_paths = [os.path.join(video_folder, name) for name in video_names]
     #sync_frame.resample_videos(video_paths, 30)
     start_frames = args.start_frames if args.start_frames else []
@@ -338,11 +338,12 @@ def imageflow_demo(predictor, args):
     if args.use_json:
         args.save_asset = False
     tv_h, tv_w = config.topview_height, config.topview_width
+    real_h, real_w = config.real_video_height, config.real_video_width
     vid_writer = cv2.VideoWriter(
-        args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (1080, 720)
+        args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (real_w, real_h)
     )
     topview_writer = cv2.VideoWriter(
-        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_h, tv_w)
+        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_w, tv_h)
     )
     frame_id = 0
     team_assigner = TeamAssigner()
@@ -386,6 +387,8 @@ def imageflow_demo(predictor, args):
 
 
     while True:
+        if frame_id == 10:
+            break
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
         for i,cap in enumerate(caps):
@@ -403,8 +406,8 @@ def imageflow_demo(predictor, args):
                 if args.use_json:
                     # os.path.dirname()
                     # os.path.basename()
-                    json_name = os.path.basename(args.video_path)+ '.json'
-                    json_path = os.path.join(args.video_path,json_name)
+                    # json_name = os.path.join()
+                    json_path = os.path.join(args.video_path, "assets.json")
 
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
@@ -441,21 +444,21 @@ def imageflow_demo(predictor, args):
                         matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
                         matrix_list.append(matrix)
                         if args.save_asset:
-                            asset_name = args.video_path.split("/")[-1] + '.json'
+                            asset_name = os.path.join(args.video_path, 'assets.json')
                             asset_path = os.path.join(args.video_path,asset_name)
                             assets[idx] = {
                                 "view": f"view{idx}",
                                 "court_matrix": matrix.tolist(),
                                 "game_point": game_points.tolist(),
                                 "court_point": court_points.tolist(),
-                                "team_colors": [color.tolist() for index, color in team_colors.items()],
+                                # "team_colors": [color.tolist() for index, color in team_colors.items()],
                             }
                     print(matrix_list)
                     cv2.destroyAllWindows()
                 # if args.use_color:
 
-                color_json_name = os.path.basename(args.video_path)+ '_color.json'
-                color_json_path = os.path.join(args.video_path,color_json_name)
+                # color_json_name = os.path.dirname(args.video_path)+ 'color.json'
+                color_json_path = os.path.join(args.video_path, 'color.json')
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
 
@@ -512,7 +515,10 @@ def imageflow_demo(predictor, args):
                                    [img_info['height'], img_info['width']])
                     for player_target in player_targets:
                         player_box = player_target.tlbr
-                        team_id = team_assigner.get_player_team_test(frame, player_box, "")
+                        try:
+                            team_id = team_assigner.get_player_team_test(frame, player_box, "")
+                        except:
+                            team_id = 0
                         team_boxes[team_id].append(player_target)
                     team_targets[index] = team_boxes
 
@@ -588,7 +594,7 @@ def imageflow_demo(predictor, args):
                     real_ball_history.append(real_ball_locations.tolist())
                     cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                     img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
-                resized_frame = cv2.resize(img, (720, 640))
+                resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
 
             analysis.process(team1_players=team1_dict,
@@ -600,7 +606,7 @@ def imageflow_demo(predictor, args):
             analysis.visualize(img)
             flag = analysis.flag
             # top_view.process()
-            top_view_img = cv2.resize(top_view_img, (tv_h, tv_w))
+            top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
             #cv2.imshow('Image', img)
 
             if len(img_list) == 4:
@@ -624,9 +630,9 @@ def imageflow_demo(predictor, args):
                     # Release the video writer
                     out.release()
                 frame_id += 1
-            vid_writer.write(combined_frame)
+            vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
             topview_writer.write(top_view_img)
-            ch = cv2.waitKey(0)
+            ch = cv2.waitKey(1)
 
             if ch == 27 or ch == ord("q") or ch == ord("Q"):
                 break
