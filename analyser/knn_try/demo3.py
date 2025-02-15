@@ -70,8 +70,8 @@ def process_images(folder_path, team_colors):
                 cv2.putText(full_img, f'G:{int(team_clustered_colors[i][0])} B:{int(team_clustered_colors[i][1])} R:{int(team_clustered_colors[i][2])}',
                             (i * 300 + 10, 450),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-                cv2.putText(full_img, f'Index: {i} ', (i * 300 + 50, 500),  # 添加索引值
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
+                # cv2.putText(full_img, f'Index: {i} ', (i * 300 + 50, 500),  # 添加索引值
+                #             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
                 cv2.putText(full_img, f'ratios:{round(ratios[i],2)}', (i * 300 + 50, 550),  # 添加索引值
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
 
@@ -80,10 +80,12 @@ def process_images(folder_path, team_colors):
             # 在第三行绘制过滤后的颜色块和相似度值
             for i in range(len(filtered_colors_raw)):
                 full_img[600:900, indices[i] * 300:(indices[i] + 1) * 300] = filtered_colors[i]  # 第三行
+                cv2.putText(full_img, f'G:{int(filtered_colors[i][0])} B:{int(filtered_colors[i][1])} R:{int(filtered_colors[i][2])}',
+                            (indices[i] * 300 + 10, 700),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
                 cv2.putText(full_img, 'similarity:{}'.format(similarity[i]), (indices[i] * 300 + 50, 750),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-                # cv2.putText(full_img, f'Index: {indices[i]}', (indices[i] * 300 + 50, 800),  # 添加索引值
-                #             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
+
 
             # key = cv2.waitKey(0)
             # Keep the unique colors from a list of colors
@@ -126,15 +128,8 @@ def process_images(folder_path, team_colors):
             cv2.waitKey(0)
 
 
-            # Get color with the most samples
-            # dominant_color = kmeans_2.cluster_centers_[np.argmax(label_counts_2)].astype(int)
 
-    # return dominant_colors
-
-# 获取A文件夹中的所有图片的第一个像素的颜色
 team_colors = get_first_pixel_colors('knn_assets/team_colors')
 
-dominant_colors = process_images('knn_assets/111', team_colors)
-# 打印结果
-for i, color in enumerate(dominant_colors):
-    print(f"图片 {i+1} 的主导颜色: {color}")
+process_images('knn_assets/team_colors/raw_img/yellow', team_colors)
+
