@@ -63,7 +63,6 @@ def process_images(folder_path, team_colors, output_folder):
             kmeans.fit(image_2d)
             labels=kmeans.labels_
             label_counts = np.bincount(labels)
-# 计算每个类的占有比例
             total_samples = len(labels)
             ratios = label_counts / total_samples
             cluster_centers = kmeans.cluster_centers_
@@ -98,6 +97,14 @@ def process_images(folder_path, team_colors, output_folder):
             second_color = np.array(filtered_team_color)
             # initial_centers = np.array(filtered_colors)
             kmeans_2 = KMeans(n_clusters=len(second_color), init=second_color, n_init=1) # init  team_colors
+            kmeans_2.fit(image_2d)
+            labels=kmeans_2.labels_
+            label_counts = np.bincount(labels)
+            cluster_centers_2 = kmeans_2.cluster_centers_
+            filtered_colors_second, filtered_colors, indices, similarity = filter_colors(cluster_centers_2, team_colors)
+
+
+
             kmeans_2.fit(second_color)
             labels_2 = kmeans_2.predict(image_2d)
             # labels_2 = kmeans_2.labels_
@@ -137,8 +144,8 @@ def process_images(folder_path, team_colors, output_folder):
         return outputs
 
 if __name__ == '__main__':
-    root_folder = "knn_assets/sample"
-    output_folder = "knn_assets/out"
+    root_folder = "/media/hkuit164/Backup/football_analysis/datasets/game1"
+    output_folder = "/media/hkuit164/Backup/football_analysis/datasets/knn_assets/out"
     os.makedirs(output_folder, exist_ok=True)
 
     checker_folder = os.path.join(root_folder, 'check')

@@ -290,19 +290,7 @@ class Predictor(object):
             output[:, :4] = scale_boxes(tensor_size[1:], output[:, :4], raw_img.shape).round()
             outputs.append(output.detach().cpu())
         return outputs, imgs_info
-        #     predictions = np.squeeze(output[0]).T
-        #
-        #     boxes = predictions[:, :4]
-        #     scores = predictions[:, 4:]
-        #
-        #     boxes_xyxy = np.ones_like(boxes)
-        #     boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2] / 2.
-        #     boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3] / 2 - int(start_y)
-        #     boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2] / 2.
-        #     boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3] / 2 - int(start_y)
-        #     boxes_xyxy /= ratio
-        #     dets = multiclass_nms(boxes_xyxy, scores, nms_thr=self.args.nms_thr, score_thr=self.args.score_thr)
-        # return dets, img_info
+
 
 
 def imageflow_demo(predictor, args):
@@ -381,7 +369,8 @@ def imageflow_demo(predictor, args):
     real_ball_history=[]
     team1_dict = defaultdict(list)
     team2_dict = defaultdict(list)
-    goalkeeper_dict = defaultdict(list)
+    goalkeeper1_dict = defaultdict(list)
+    goalkeeper2_dict = defaultdict(list)
     referee_dict = defaultdict(list)
     analysis = AnalysisManager(config.check_action, ((0, 0)))
 
@@ -516,7 +505,7 @@ def imageflow_demo(predictor, args):
                     for player_target in player_targets:
                         player_box = player_target.tlbr
                         try:
-                            team_id = team_assigner.get_player_team_test(frame, player_box, "")
+                            team_id = team_assigner.get_player_team_test(frame, player_box, "",team_colors)
                         except:
                             team_id = 0
                         team_boxes[team_id].append(player_target)
@@ -525,7 +514,7 @@ def imageflow_demo(predictor, args):
                 else:
                     for output in outputs:
                         if output[5] == 1:
-                            team_id = team_assigner.get_player_team_test(frame, output[:4], "")
+                            team_id = team_assigner.get_player_team_test(frame, output[:4], "",team_colors)
                             team_boxes[team_id].append(output.tolist())
                         elif output[5] == 0:
                             if max_ball_output is None or output[4] > max_ball_output[4]:
@@ -559,8 +548,10 @@ def imageflow_demo(predictor, args):
                         elif t_idx == 1:
                             team2_dict[tid].append(real_foot_location)
                         elif t_idx == 2:
-                            goalkeeper_dict[tid].append(real_foot_location)
+                            goalkeeper1_dict[tid].append(real_foot_location)
                         elif t_idx == 3:
+                            goalkeeper2_dict[tid].append(real_foot_location)
+                        elif t_idx == 4:
                             #referee_dict[tid].append(real_foot_location)
                             referee_dict[tid].append([real_foot_location,frame_id])
 
@@ -600,7 +591,8 @@ def imageflow_demo(predictor, args):
             analysis.process(team1_players=team1_dict,
                              team2_players=team2_dict,
                              side_referees=referee_dict,
-                             goalkeepers=goalkeeper_dict,
+                             goalkeepers1=goalkeeper1_dict,
+                             goalkeepers2=goalkeeper2_dict,
                              balls=real_ball_history,
                              frame_id=frame_id)
             analysis.visualize(img)

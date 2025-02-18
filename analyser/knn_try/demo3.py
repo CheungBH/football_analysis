@@ -57,7 +57,7 @@ def process_images(folder_path, team_colors):
             initial_centers = np.array(team_colors)
             kmeans = KMeans(n_clusters=len(team_colors), init=initial_centers, n_init=1) # init  team_colors
             kmeans.fit(image_2d)
-            labels=kmeans.labels_
+            labels = kmeans.labels_
             label_counts = np.bincount(labels)
 # 计算每个类的占有比例
             total_samples = len(labels)
@@ -129,7 +129,7 @@ def process_images(folder_path, team_colors):
 
 
 
-team_colors = get_first_pixel_colors('knn_assets/team_colors')
+team_colors = get_first_pixel_colors('/media/hkuit164/Backup/football_analysis/datasets/game1/ref')
 
-process_images('knn_assets/team_colors/raw_img/yellow', team_colors)
+process_images('/media/hkuit164/Backup/football_analysis/datasets/game1/check/player1', team_colors)
 
