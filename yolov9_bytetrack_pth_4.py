@@ -33,7 +33,7 @@ def make_parser():
         "-m",
         "--model",
         type=str,
-        default=r"D:\tmp\2.7\best.pt",
+        default=r"E:\0219\best.pt",
         help="Input your onnx model.",
     )
     parser.add_argument(
@@ -46,7 +46,7 @@ def make_parser():
         "-i",
         "--video_path",
         type=str,
-        default=r'D:\tmp\1.3\2',
+        default=r'E:\0219\video_set_907',
         help="Path to your input video folder",
     )
     parser.add_argument(
@@ -58,7 +58,7 @@ def make_parser():
     parser.add_argument(
         "--court_image",
         type=str,
-        default='court_reference/soccer-field.png',
+        default=r"E:\0219\mk_soccer.jpeg",
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -72,7 +72,7 @@ def make_parser():
         "-s",
         "--score_thr",
         type=float,
-        default=0.25,
+        default=0.1,
         help="Score threshould to filter the result.",
     )
     parser.add_argument(
@@ -328,10 +328,10 @@ def imageflow_demo(predictor, args):
     tv_h, tv_w = config.topview_height, config.topview_width
     real_h, real_w = config.real_video_height, config.real_video_width
     vid_writer = cv2.VideoWriter(
-        args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (real_w, real_h)
+        args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w, real_h)
     )
     topview_writer = cv2.VideoWriter(
-        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (tv_w, tv_h)
+        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
     frame_id = 0
     team_assigner = TeamAssigner()
@@ -460,18 +460,18 @@ def imageflow_demo(predictor, args):
 
 
                 if args.track_before_knn:
-                    tracker_list = [BYTETracker(args, frame_rate=30),
-                                BYTETracker(args, frame_rate=30),
-                                BYTETracker(args, frame_rate=30),
-                                BYTETracker(args, frame_rate=30)]
+                    tracker_list = [BYTETracker(args, frame_rate=fpsmin),
+                                BYTETracker(args, frame_rate=fpsmin),
+                                BYTETracker(args, frame_rate=fpsmin),
+                                BYTETracker(args, frame_rate=fpsmin)]
                 else:
-                    tracker_list = [[BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))],
-                                [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))],
-                                [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))],
-                                [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
+                    tracker_list = [[BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
+                                [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
+                                [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
+                                [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))]
                                 ]
 
-                ball_tracker = BYTETracker(args, frame_rate=30)
+                ball_tracker = BYTETracker(args, frame_rate=fpsmin)
 
             yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
             for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
