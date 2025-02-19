@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 
-input_folder = '/Users/cheungbh/Downloads/game1/check/referee'
+input_folder = '/Users/cheungbh/Downloads/game1/check/goalkeeper1'
 team_colors_folder = '/Users/cheungbh/Downloads/game1/ref'
 
 def get_first_pixel_colors(folder_path):
