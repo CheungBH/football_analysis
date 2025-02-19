@@ -56,10 +56,14 @@ for image_name in os.listdir(input_folder):
 
     index_list=[]
     labels = kmeans1.labels_ # pixel2
+    masks = np.zeros_like(labels)
     for index,label in enumerate(labels):
         if label in indices:
+            masks[index] = 255
             index_list.append(index)
     pixels = [image_2d[idx] for idx in index_list]
+    masks = masks.reshape(image.shape[0], image.shape[1], )
+    cv2.imshow("mask", masks)
 
     filtered_team_color = list(set([tuple(color) for color in filtered_colors]))
     initial_centers2 = np.array(filtered_team_color)
