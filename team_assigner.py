@@ -13,6 +13,7 @@ class TeamAssigner:
         self.player_team_dict = {}
         self.kmeans = None
         self.green_idx = 2
+        self.larger_criterion = {0: 1}
 
     def get_clustering_model(self, image,n_clusters):
         # Reshape the image to 2D array
@@ -140,7 +141,7 @@ class TeamAssigner:
 
             # player_color = np.array([0,0,0])
             for idx in range(len(filtered_colors2)):
-                if is_green[idx] and ratios_2[idx] > 0.9:
+                if is_green[idx] and ratios_2[idx] > 0.92:
                     player_color = is_green[idx]
                     return player_color
 
