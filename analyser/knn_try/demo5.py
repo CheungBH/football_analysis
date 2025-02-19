@@ -3,8 +3,9 @@ import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 
-input_folder = '/media/hkuit164/Backup/football_analysis/datasets/game1/check/player2'
-team_colors_folder = '/media/hkuit164/Backup/football_analysis/datasets/game1/ref'
+input_folder = '/Users/cheungbh/Downloads/game1/check/referee'
+team_colors_folder = '/Users/cheungbh/Downloads/game1/ref'
+
 def get_first_pixel_colors(folder_path):
     team_color = []
     for file_name in os.listdir(folder_path):
@@ -13,6 +14,7 @@ def get_first_pixel_colors(folder_path):
             first_pixel_color = image[0, 0]
             team_color.append(first_pixel_color.tolist())
     return team_color
+
 def filter_colors(clustered_colors, team_colors, threshold=80):
     filtered_colors_raw = []
     filtered_colors = []
@@ -63,7 +65,13 @@ for image_name in os.listdir(input_folder):
             index_list.append(index)
     pixels = [image_2d[idx] for idx in index_list]
     masks = masks.reshape(image.shape[0], image.shape[1], )
-    cv2.imshow("mask", masks)
+    # Add mask to 3d
+    masks = np.stack([masks] * 3, axis=-1)
+    # convert to uint
+    masks = masks.astype(np.uint8)
+
+    # cv2.imshow("mask", masks)
+    # cv2.waitKey(0)
 
     filtered_team_color = list(set([tuple(color) for color in filtered_colors]))
     initial_centers2 = np.array(filtered_team_color)
@@ -83,27 +91,29 @@ for image_name in os.listdir(input_folder):
             final_color = color2
 
 
-
-
-    full_img = np.zeros((500, 900, 3), np.uint8)
+    first_img = np.zeros((500, 700, 3), np.uint8)
     resized_img = cv2.resize(image, (500, 500))
-    full_img[0:500, 0:500] = resized_img
+    resized_mask = cv2.resize(masks, (500, 500))
+    first_img[0:500, 0:500] = resized_img
     for i, color in enumerate(filtered_colors_raw):
-        full_img[i * 100:(i + 1) * 100, 500:600] = color
-        full_img[i * 100:(i + 1) * 100, 600:700] = filtered_colors[i]
-        cv2.putText(full_img, 'sim:{}'.format(int(similarity[i])), (550, 100*i+30),
+        first_img[i * 100:(i + 1) * 100, 500:600] = color
+        first_img[i * 100:(i + 1) * 100, 600:700] = filtered_colors[i]
+        cv2.putText(first_img, 'sim:{}'.format(int(similarity[i])), (550, 100*i+30),
                           cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 1, cv2.LINE_AA)
-        cv2.putText(full_img, 'ratio:{}'.format(round(ratios_1[i],2)), (550, 100*i+70),
-                          cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 1, cv2.LINE_AA)
-    for i, color in enumerate(filtered_colors_raw2):
-        full_img[i * 100:(i + 1) * 100, 700:800] = color
-        full_img[i * 100:(i + 1) * 100, 800:900] = filtered_colors2[i]
-        full_img[400:500, 800:900] = final_color
-        cv2.putText(full_img, 'sim:{}'.format(int(similarity2[i])), (750, 100*i+30),
-                          cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 1, cv2.LINE_AA)
-        cv2.putText(full_img, 'ratio:{}'.format(round(ratios_2[i],2)), (750, 100*i+70),
+        cv2.putText(first_img, 'ratio:{}'.format(round(ratios_1[i],2)), (550, 100*i+70),
                           cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 1, cv2.LINE_AA)
 
+    second_img = np.zeros((500, 200, 3), np.uint8)
+    for i, color in enumerate(filtered_colors_raw2):
+        second_img[i * 100:(i + 1) * 100, 0:100] = color
+        second_img[i * 100:(i + 1) * 100, 100:200] = filtered_colors2[i]
+        second_img[400:500, 100:200] = final_color
+        cv2.putText(second_img, 'sim:{}'.format(int(similarity2[i])), (750, 100*i+30),
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 1, cv2.LINE_AA)
+        cv2.putText(second_img, 'ratio:{}'.format(round(ratios_2[i],2)), (750, 100*i+70),
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 1, cv2.LINE_AA)
+
+    full_img = np.concatenate([first_img, resized_mask, second_img], axis=1)
     cv2.imshow('Result', full_img)
     #cv2.imwrite(f'output2/{image_name}.jpg',full_img)
     cv2.waitKey(0)
