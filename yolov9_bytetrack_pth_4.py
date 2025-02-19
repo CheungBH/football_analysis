@@ -376,7 +376,7 @@ def imageflow_demo(predictor, args):
 
 
     while True:
-        if frame_id == 10:
+        if frame_id == 10000:
             break
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
@@ -478,7 +478,6 @@ def imageflow_demo(predictor, args):
             # for index,frame in enumerate(frames_list):
                 #trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
                 #trackers = trackers
-                # ai = predictor.batch_inference([frame, frame, frame, frame])
 
                 # outputs, img_info = predictor.inference(frame)
                 # outputs, img_info = yolo_output

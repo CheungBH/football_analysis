@@ -12,6 +12,7 @@ class TeamAssigner:
         self.team_reverse_color = {}
         self.player_team_dict = {}
         self.kmeans = None
+        self.green_idx = 2
 
     def get_clustering_model(self, image,n_clusters):
         # Reshape the image to 2D array
@@ -123,9 +124,32 @@ class TeamAssigner:
             color2 = kmeans2.cluster_centers_
             filtered_colors_raw2, filtered_colors2, indices2, similarity2 = self.filter_colors(color2, initial_centers2,99999)
 
+            labels_2 = kmeans2.predict(pixels)
+            label_counts_2 = np.bincount(labels_2)
+            total_samples2 = len(labels_2)
+            ratios_2 = label_counts_2 / total_samples2
+
+            is_green = []
             for idx,color2 in enumerate(filtered_colors2):
+                if color2.tolist() == self.team_colors[2]:
+                    is_green.append(True)
+                else:
+                    is_green.append(False)
                 if similarity2[idx] == min(similarity2):
                     player_color = color2
+
+            # player_color = np.array([0,0,0])
+            for idx in range(len(filtered_colors2)):
+                if is_green[idx] and ratios_2[idx] > 0.9:
+                    player_color = is_green[idx]
+                    return player_color
+
+            max_ratio = float("-inf")
+            for idx in range(len(filtered_colors2)):
+                if not is_green:
+                    if ratios_2[idx] > max_ratio:
+                        player_color = filtered_colors2[idx]
+            return player_color
 
 
             full_img = np.zeros((500, 700, 3), np.uint8)
