@@ -46,7 +46,7 @@ def make_parser():
         "-i",
         "--video_path",
         type=str,
-        default=r'D:\tmp\2.18\video_set_907',
+        default=r'D:\tmp\2.18\video_set_1486',
         help="Path to your input video folder",
     )
     parser.add_argument(
@@ -502,7 +502,7 @@ def imageflow_demo(predictor, args):
         box_f = open(box_asset_path, 'w')
 
     while True:
-        if frame_id == 2:
+        if frame_id == 10000:
             break
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
@@ -587,6 +587,7 @@ def imageflow_demo(predictor, args):
             for index,frame in enumerate(frames_list):
                 cropped_frames[index] = sliding_window_crop(frame, (args.crop_size, args.crop_size), (args.window_size, args.window_size))
 
+            all_points = []
             if not args.use_saved_box:
                 yolo_outputs, imgs_info = [], []
                 for index in range(len(frames_list)):
@@ -636,12 +637,18 @@ def imageflow_demo(predictor, args):
                                 max_ball_output = output
                     player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
                                    [img_info['height'], img_info['width']])
-                    for player_target in player_targets:
-                        player_box = player_target.tlbr
-                        try:
-                            team_id = team_assigner.get_player_team_test(frame, player_box, "",team_colors)
-                        except:
-                            team_id = 0
+                    # for player_target in player_targets:
+                    #     player_box = player_target.tlbr
+                    #     try:
+                    #         team_id = team_assigner.get_player_team_test(frame, player_box, "",team_colors)
+                    #     except:
+                    #         team_id = 0
+                    #     team_boxes[team_id].append(player_target)
+                    # team_targets[index] = team_boxes
+
+                    team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
+                                                                    "", team_colors)
+                    for player_target, team_id in zip(player_targets, team_ids):
                         team_boxes[team_id].append(player_target)
                     team_targets[index] = team_boxes
 
@@ -695,10 +702,11 @@ def imageflow_demo(predictor, args):
                     real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
                     real_foot_locations = real_foot_locations[0]
                     t_color = team_colors[t_idx]
-                    t_color = t_color if isinstance(t_color, list) else t_color.tolist()
+                    # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
                     for real_foot_location in real_foot_locations:
-                        cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
-                    img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=t_color)
+                        all_points.append(real_foot_location.tolist() + [t_idx, t_color])
+                    #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
+                    # img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=t_color)
 
                 if args.no_ball_tracker:
                     if max_ball_output is not None:
@@ -722,6 +730,8 @@ def imageflow_demo(predictor, args):
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
 
+            for point in all_points:
+                cv2.circle(top_view_img, (int(point[0]), int(point[1])), 20, tuple(point[3]), -1)
             analysis.process(team1_players=team1_dict,
                              team2_players=team2_dict,
                              side_referees=referee_dict,
