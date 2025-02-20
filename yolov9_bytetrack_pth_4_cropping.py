@@ -497,12 +497,12 @@ def imageflow_demo(predictor, args):
     else:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
         box_assets = {}
-        if os.path.exists(box_asset_path):
-            input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+        # if os.path.exists(box_asset_path):
+        #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
         box_f = open(box_asset_path, 'w')
 
     while True:
-        if frame_id == 1:
+        if frame_id == 2:
             break
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
@@ -755,21 +755,21 @@ def imageflow_demo(predictor, args):
 
                     # Release the video writer
                     out.release()
-                frame_id += 1
+            frame_id += 1
             vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
             topview_writer.write(top_view_img)
             ch = cv2.waitKey(1)
 
-            if ch == 27 or ch == ord("q") or ch == ord("Q"):
-                break
+            # if ch == 27 or ch == ord("q") or ch == ord("Q"):
+            #     break
         else:
             break
 
-        if args.save_asset:
-            with open(asset_path, 'w') as f:
-                json.dump(assets, f, indent=4)
-        if not args.use_saved_box:
-            json.dump(box_assets, box_f, indent=4)
+    if args.save_asset:
+        with open(asset_path, 'w') as f:
+            json.dump(assets, f, indent=4)
+    if not args.use_saved_box:
+        json.dump(box_assets, box_f, indent=4)
 
 
 if __name__ == '__main__':
