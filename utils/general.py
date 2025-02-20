@@ -825,6 +825,27 @@ def resample_segments(segments, n=1000):
     return segments
 
 
+def scale_and_remove_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
+    # Rescale boxes (xyxy) from img1_shape to img0_shape
+    if ratio_pad is None:  # calculate from img0_shape
+        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
+        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
+    else:
+        gain = ratio_pad[0][0]
+        pad = ratio_pad[1]
+
+    boxes[:, [2, 4]] -= pad[0]  # x padding
+    boxes[:, [3, 5]] -= pad[1]  # y padding
+    boxes[:, :6] /= gain
+    # Remove boxes reaching the boundary
+    boxes = boxes[boxes[:, 2] > 0]
+    boxes = boxes[boxes[:, 3] > 0]
+    boxes = boxes[boxes[:, 4] < img0_shape[1]]
+    boxes = boxes[boxes[:, 5] < img0_shape[0]]
+    clip_boxes(boxes, img0_shape)
+    return boxes
+
+
 def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
     # Rescale boxes (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
@@ -919,7 +940,7 @@ def non_max_suppression(
     # min_wh = 2  # (pixels) minimum box width and height
     max_wh = 7680  # (pixels) maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
-    time_limit = 2.5 + 0.05 * bs  # seconds to quit after
+    time_limit = 99999999999 + 0.05 * bs  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
