@@ -587,7 +587,7 @@ def imageflow_demo(predictor, args):
             for index,frame in enumerate(frames_list):
                 cropped_frames[index] = sliding_window_crop(frame, (args.crop_size, args.crop_size), (args.window_size, args.window_size))
 
-            all_points = []
+            all_players, all_balls = [], []
             if not args.use_saved_box:
                 yolo_outputs, imgs_info = [], []
                 for index in range(len(frames_list)):
@@ -704,7 +704,7 @@ def imageflow_demo(predictor, args):
                     t_color = team_colors[t_idx]
                     # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
                     for real_foot_location in real_foot_locations:
-                        all_points.append(real_foot_location.tolist() + [t_idx, t_color])
+                        all_players.append(real_foot_location.tolist() + [t_idx, t_color])
                     #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
                     img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=t_color)
 
@@ -725,14 +725,19 @@ def imageflow_demo(predictor, args):
                     real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
                     real_ball_locations = real_ball_locations[0][0]
                     real_ball_history.append(real_ball_locations.tolist())
-                    cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
+                    all_balls.append(real_ball_locations.tolist())
+                    # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                     img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
 
-            all_points = merge_points_in_fixed_area(all_points, (50,50,1100,720), 100)
-            for point in all_points:
-                cv2.circle(top_view_img, (int(point[0]), int(point[1])), 20, tuple(point[3]), -1)
+            all_players = merge_points_in_fixed_area(all_players, (50,50,1100,720), 100)
+            for player in all_players:
+                cv2.circle(top_view_img, (int(player[0]), int(player[1])), 20, tuple(player[3]), -1)
+            all_balls = [ball for ball in all_balls if ball[0] > 50 and ball[0] < 1100 and ball[1] > 50 and ball[1] < 720]
+            for ball in all_balls:
+                cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 20, (0, 255, 0),
+                           -1)
 
             analysis.process(team1_players=team1_dict,
                              team2_players=team2_dict,

@@ -141,7 +141,7 @@ class TeamAssigner:
 
             # player_color = np.array([0,0,0])
             for idx in range(len(filtered_colors2)):
-                if is_green[idx] and ratios_2[idx] > 0.9:
+                if is_green[idx] and ratios_2[idx] > 0.93:
                     player_color = filtered_colors2[idx]
                     return player_color
 
