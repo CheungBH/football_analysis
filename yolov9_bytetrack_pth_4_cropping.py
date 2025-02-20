@@ -14,7 +14,7 @@ from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
 import json
 import cv2
-from utils.utils import merge_points_in_fixed_area
+from utils.utils import merge_points_in_fixed_area, merge_points_same_team
 from utils.general import non_max_suppression, scale_boxes, scale_and_remove_boxes
 from utils.crop_img_sliding_window import sliding_window_crop
 from visualize import plot_tracking
@@ -731,6 +731,7 @@ def imageflow_demo(predictor, args):
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
 
+            all_players = merge_points_same_team(all_players, (50,50,1100,720), 10)
             all_players = merge_points_in_fixed_area(all_players, (50,50,1100,720), 100)
             for player in all_players:
                 cv2.circle(top_view_img, (int(player[0]), int(player[1])), 20, tuple(player[3]), -1)
