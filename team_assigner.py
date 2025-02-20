@@ -7,7 +7,7 @@ import os
 
 
 class TeamAssigner:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.team_colors = {}
         self.team_reverse_color = {}
         self.player_team_dict = {}
@@ -142,7 +142,7 @@ class TeamAssigner:
             # player_color = np.array([0,0,0])
             for idx in range(len(filtered_colors2)):
                 if is_green[idx] and ratios_2[idx] > 0.9:
-                    player_color = is_green[idx]
+                    player_color = filtered_colors2[idx]
                     return player_color
 
             max_ratio = float("-inf")
@@ -257,7 +257,7 @@ class TeamAssigner:
         '''
 
 
-    def get_player_team_test(self, frame, playerbbox, frame_id,team_colors):
+    def get_player_team_test(self, frame, playerbbox, frame_id, team_colors):
         # if self.kmeans is None:
         #     raise ValueError("Team colors have not been assigned yet. Call assign_team_color_test first.")
 
@@ -267,6 +267,16 @@ class TeamAssigner:
         #team_id = self.kmeans.predict(player_color.reshape(1, -1))[0]
 
         return team_id if team_id is not None else 0
+
+    def get_player_whole_team(self, frame, player_bboxs, player_id, team_colors):
+        team_ids = []
+        for player_bbox in player_bboxs:
+            try:
+                team_id = self.get_player_team_test(frame, player_bbox, player_id, team_colors)
+            except:
+                team_id = 0
+            team_ids.append(team_id)
+        return team_ids
 
     def get_player_team(self, frame, player_bbox, player_id):
         if self.kmeans is None:

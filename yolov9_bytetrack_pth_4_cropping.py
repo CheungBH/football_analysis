@@ -14,7 +14,7 @@ from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
 import json
 import cv2
-import numpy as np
+from utils.utils import merge_points_in_fixed_area
 from utils.general import non_max_suppression, scale_boxes, scale_and_remove_boxes
 from utils.crop_img_sliding_window import sliding_window_crop
 from visualize import plot_tracking
@@ -58,7 +58,7 @@ def make_parser():
     parser.add_argument(
         "--court_image",
         type=str,
-        default=r"court_reference/soccer-field.png",
+        default=r"D:\tmp\2.19\MK_field.jpg",
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -449,7 +449,7 @@ def imageflow_demo(predictor, args):
         "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
     frame_id = 0
-    team_assigner = TeamAssigner()
+    team_assigner = TeamAssigner(root_folder=r"D:\tmp\2.19\feature")
     points = []
     img_list = []
     def click_court(court_img):
@@ -706,7 +706,7 @@ def imageflow_demo(predictor, args):
                     for real_foot_location in real_foot_locations:
                         all_points.append(real_foot_location.tolist() + [t_idx, t_color])
                     #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
-                    # img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=t_color)
+                    img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=t_color)
 
                 if args.no_ball_tracker:
                     if max_ball_output is not None:
@@ -730,8 +730,10 @@ def imageflow_demo(predictor, args):
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
 
+            all_points = merge_points_in_fixed_area(all_points, (50,50,1100,720), 100)
             for point in all_points:
                 cv2.circle(top_view_img, (int(point[0]), int(point[1])), 20, tuple(point[3]), -1)
+
             analysis.process(team1_players=team1_dict,
                              team2_players=team2_dict,
                              side_referees=referee_dict,
