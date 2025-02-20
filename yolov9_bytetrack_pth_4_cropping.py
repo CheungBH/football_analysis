@@ -46,7 +46,7 @@ def make_parser():
         "-i",
         "--video_path",
         type=str,
-        default=r'D:\tmp\2.18\video_set_161',
+        default=r'D:\tmp\2.18\video_set_907',
         help="Path to your input video folder",
     )
     parser.add_argument(
@@ -127,6 +127,11 @@ def make_parser():
     )
     parser.add_argument(
         "--use_json",
+        action="store_true",
+        help="Load json for inference",
+    )
+    parser.add_argument(
+        "--use_saved_box",
         action="store_true",
         help="Load json for inference",
     )
@@ -318,8 +323,6 @@ class Predictor(object):
         img_raw_info["width"] = width
         img_raw_info["raw_img"] = frame
 
-        # for i, im in enumerate(imgs):
-        #     cv2.imwrite(f"tmp/{i}.jpg", im)
 
         imgs_info = []
         input_imgs = []
@@ -433,8 +436,6 @@ def imageflow_demo(predictor, args):
         fps_list.append(round(cap.get(cv2.CAP_PROP_FPS)))
 
 
-    width = caps[0].get(cv2.CAP_PROP_FRAME_WIDTH)  # float,
-    height = caps[0].get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = caps[0].get(cv2.CAP_PROP_FPS)
     fpsmin = reduce(math.gcd,fps_list)
     if args.use_json:
@@ -488,10 +489,21 @@ def imageflow_demo(predictor, args):
     referee_dict = defaultdict(list)
     analysis = AnalysisManager(config.check_action, ((0, 0)))
 
+    if args.use_saved_box:
+        box_asset_path = os.path.join(args.video_path, 'yolo.json')
+        assert os.path.exists(box_asset_path), "The box asset file does not exist."
+        with open(box_asset_path, 'r') as f:
+            box_assets = json.load(f)
+    else:
+        box_asset_path = os.path.join(args.video_path, 'yolo.json')
+        box_assets = {}
+        if os.path.exists(box_asset_path):
+            input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+        box_f = open(box_asset_path, 'w')
 
     while True:
-        # if frame_id == 100000:
-        #     break
+        if frame_id == 1:
+            break
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
         for i,cap in enumerate(caps):
@@ -510,9 +522,6 @@ def imageflow_demo(predictor, args):
 
             if frame_id == 0:
                 if args.use_json:
-                    # os.path.dirname()
-                    # os.path.basename()
-                    # json_name = os.path.join()
                     json_path = os.path.join(args.video_path, "assets.json")
 
                     with open(json_path, 'r') as f:
@@ -523,19 +532,8 @@ def imageflow_demo(predictor, args):
                         game_points = np.array(i["game_point"])
                         matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
                         matrix_list.append(matrix)
-                    #matrix = np.array(assets["court_matrix"])
-                    # team_colors = {0: np.array([0, 0, 255], dtype=np.uint8),
-                    #                1: np.array([125, 125, 125], dtype=np.uint8),
-                    #                2: np.array([255, 0, 0], dtype=np.uint8), 3: np.array([0, 0, 0], dtype=np.uint8)}
-                    # team_assigner.assign_color(team_colors)
-
 
                 else:
-                    # team_assigner.assign_color(team_colors)
-                    # team_colors = {0: np.array([0, 0, 255], dtype=np.uint8),
-                    #                1: np.array([125, 125, 125], dtype=np.uint8),
-                    #                2: np.array([255, 0, 0], dtype=np.uint8), 3: np.array([0, 0, 0], dtype=np.uint8)}
-
                     court_img = cv2.imread(args.court_image)
                     matrix_list= []
                     for idx,frame in enumerate(frames_list):
@@ -557,13 +555,10 @@ def imageflow_demo(predictor, args):
                                 "court_matrix": matrix.tolist(),
                                 "game_point": game_points.tolist(),
                                 "court_point": court_points.tolist(),
-                                # "team_colors": [color.tolist() for index, color in team_colors.items()],
                             }
                     print(matrix_list)
                     cv2.destroyAllWindows()
-                # if args.use_color:
 
-                # color_json_name = os.path.dirname(args.video_path)+ 'color.json'
                 color_json_path = os.path.join(args.video_path, 'color.json')
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
@@ -571,8 +566,6 @@ def imageflow_demo(predictor, args):
                 team_colors = color_asset
                 team_colors = {int(k): v for k, v in team_colors.items()}
                 team_assigner.assign_color(team_colors)
-                # team_colors = team_assigner.team_colors
-                # team_box_colors = team_colors
                 print(team_colors)
 
 
@@ -593,24 +586,36 @@ def imageflow_demo(predictor, args):
             cropped_frames = {}
             for index,frame in enumerate(frames_list):
                 cropped_frames[index] = sliding_window_crop(frame, (args.crop_size, args.crop_size), (args.window_size, args.window_size))
-            # save_folder = "tmp"
-            # os.makedirs(save_folder, exist_ok=True)
-            # for idx, cropped_frame in enumerate(cropped_frames):
-            #     cv2.imwrite(os.path.join(save_folder, f"{idx}.jpg"), cropped_frame)
-            yolo_outputs, imgs_info = [], []
-            for index in range(len(frames_list)):
-                yolo_output, img_info = predictor.batch_inference_cropped(cropped_frames[index], frames_list[index])
-                yolo_outputs.append(yolo_output)
-                imgs_info.append(img_info)
+
+            if not args.use_saved_box:
+                yolo_outputs, imgs_info = [], []
+                for index in range(len(frames_list)):
+                    yolo_output, img_info = predictor.batch_inference_cropped(cropped_frames[index], frames_list[index])
+                    yolo_outputs.append(yolo_output)
+                    imgs_info.append(img_info)
+
+                box_assets[frame_id] = {}
+
+                for yolo_idx, yolo_output in enumerate(yolo_outputs):
+                    box_assets[frame_id][yolo_idx] = yolo_output.tolist()
+
+            else:
+                yolo_outputs = []
+                for index in range(len(frames_list)):
+                    yolo_output = torch.tensor(box_assets[str(frame_id)][str(index)])
+                    yolo_outputs.append(yolo_output)
+                imgs_info = []
+                for frame in frames_list:
+                    img_info = {}
+                    height, width = frame.shape[:2]
+                    img_info["height"] = height
+                    img_info["width"] = width
+                    img_info["raw_img"] = frame
+                    imgs_info.append(img_info)
 
             # yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
             for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
-            # for index,frame in enumerate(frames_list):
-                #trackers = [BYTETracker(args, frame_rate=30) for _ in range(len(team_colors))]
-                #trackers = trackers
 
-                # outputs, img_info = predictor.inference(frame)
-                # outputs, img_info = yolo_output
                 matrix = matrix_list[index]
                 trackers = tracker_list[index]
 
@@ -763,6 +768,9 @@ def imageflow_demo(predictor, args):
         if args.save_asset:
             with open(asset_path, 'w') as f:
                 json.dump(assets, f, indent=4)
+        if not args.use_saved_box:
+            json.dump(box_assets, box_f, indent=4)
+
 
 if __name__ == '__main__':
     args = make_parser().parse_args()
