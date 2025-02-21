@@ -1,4 +1,4 @@
-import copy
+from analyser.utils import FrameQueue
 import os
 import time
 from collections import defaultdict
@@ -27,13 +27,15 @@ from functools import reduce
 team_colors = []
 img_full_list = []
 
+
 def make_parser():
     parser = argparse.ArgumentParser("onnxruntime inference")
+    parser.add_argument('--output_dir', type=str, default='output', help='output directory')
     parser.add_argument(
         "-m",
         "--model",
         type=str,
-        default=r"C:\Users\User\Downloads\yolov9-e-converted.pt",
+        default=r"assets/checkpoints/yolov9-e-converted.pt",
         help="Input your onnx model.",
     )
     parser.add_argument(
@@ -46,7 +48,7 @@ def make_parser():
         "-i",
         "--video_path",
         type=str,
-        default=r'D:\tmp\2.18\video_set_1486',
+        default=r'D:\tmp\2.18\video_set_1579',
         help="Path to your input video folder",
     )
     parser.add_argument(
@@ -419,6 +421,11 @@ def imageflow_demo(predictor, args):
     # for mp4 in mp4_files:
     #     video_path = os.path.join(video_folder,mp4)
     #     video_paths.append(video_path)
+
+    args.track_before_knn = True
+    args.no_ball_tracker = True
+    args.use_json = True
+
     video_paths = [os.path.join(video_folder, name) for name in video_names]
     #sync_frame.resample_videos(video_paths, 30)
     start_frames = args.start_frames if args.start_frames else []
@@ -437,6 +444,7 @@ def imageflow_demo(predictor, args):
 
 
     fps = caps[0].get(cv2.CAP_PROP_FPS)
+    frame_queue = fps * 5
     fpsmin = reduce(math.gcd,fps_list)
     if args.use_json:
         args.save_asset = False
@@ -479,7 +487,6 @@ def imageflow_demo(predictor, args):
         cv2.destroyAllWindows()
 
 
-    # real_player_location = {defaultdict}
     top_view_img_tpl = cv2.imread(args.court_image)
     real_ball_history=[]
     team1_dict = defaultdict(list)
@@ -488,6 +495,8 @@ def imageflow_demo(predictor, args):
     goalkeeper2_dict = defaultdict(list)
     referee_dict = defaultdict(list)
     analysis = AnalysisManager(config.check_action, ((0, 0)))
+    frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
+    topview_queue = FrameQueue(frame_queue)
 
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
@@ -495,11 +504,12 @@ def imageflow_demo(predictor, args):
         with open(box_asset_path, 'r') as f:
             box_assets = json.load(f)
     else:
-        box_asset_path = os.path.join(args.video_path, 'yolo.json')
-        box_assets = {}
-        if os.path.exists(box_asset_path):
-            input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
-        box_f = open(box_asset_path, 'w')
+        if args.save_asset:
+            box_asset_path = os.path.join(args.video_path, 'yolo.json')
+            box_assets = {}
+            if os.path.exists(box_asset_path):
+                input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            box_f = open(box_asset_path, 'w')
 
     while True:
         if frame_id == 10000:
@@ -595,10 +605,10 @@ def imageflow_demo(predictor, args):
                     yolo_outputs.append(yolo_output)
                     imgs_info.append(img_info)
 
-                box_assets[frame_id] = {}
-
-                for yolo_idx, yolo_output in enumerate(yolo_outputs):
-                    box_assets[frame_id][yolo_idx] = yolo_output.tolist()
+                if args.save_asset:
+                    box_assets[frame_id] = {}
+                    for yolo_idx, yolo_output in enumerate(yolo_outputs):
+                        box_assets[frame_id][yolo_idx] = yolo_output.tolist()
 
             else:
                 yolo_outputs = []
@@ -637,14 +647,6 @@ def imageflow_demo(predictor, args):
                                 max_ball_output = output
                     player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
                                    [img_info['height'], img_info['width']])
-                    # for player_target in player_targets:
-                    #     player_box = player_target.tlbr
-                    #     try:
-                    #         team_id = team_assigner.get_player_team_test(frame, player_box, "",team_colors)
-                    #     except:
-                    #         team_id = 0
-                    #     team_boxes[team_id].append(player_target)
-                    # team_targets[index] = team_boxes
 
                     team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
                                                                     "", team_colors)
@@ -751,6 +753,7 @@ def imageflow_demo(predictor, args):
             flag = analysis.flag
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
+            topview_queue.push_frame(top_view_img)
             #cv2.imshow('Image', img)
 
             if len(img_list) == 4:
@@ -760,19 +763,36 @@ def imageflow_demo(predictor, args):
                 # Display the combined frame
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
-                img_full_list.append(img_list)
-                img_list = []
-                if flag != 0:
-                    start_index = max(0, frame_id - 30)
-                    end_index = frame_id
-                    output_video_path = f'result/output_segment_{index}_{frame_id}.mp4'
-                    out = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (540, 360))
-                    # Write frames to the video
-                    for i in range(start_index, end_index):
-                        out.write(img_full_list[i][index])
+                # img_full_list.append(img_list)
+                # img_list = []
+                if flag == 100 or frame_id+1 % 300 == 0:
+                    output_time = frame_id / fpsmin
+                    # Convert to real time
+                    minutes = int(output_time // 60)
+                    seconds = int(output_time % 60)
+                    output_time = f"{minutes:02d}-{seconds:02d}"
+                    out_subfolder = os.path.join(video_folder, output_time)
+                    os.makedirs(out_subfolder, exist_ok=True)
+                    video_paths = [os.path.join(out_subfolder, "{}.mp4".format(idx+1)) for idx in range(len(frames_list))]
 
-                    # Release the video writer
-                    out.release()
+                    for index in range(len(frames_list)):
+                        out_h, out_w = frames_list[index].shape[:2]
+                        out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fps, (out_w, out_h))
+                        out_frames = frames_queue_ls[index].get_frames()
+                        for f in out_frames:
+                            out.write(f)
+                        out.release()
+
+                    # Save the top view video
+                    out_h, out_w = top_view_img.shape[:2]
+                    tv_out = cv2.VideoWriter(os.path.join(out_subfolder, "top_view.mp4"), cv2.VideoWriter_fourcc(*'mp4v'),
+                                          fps, (out_w, out_h))
+                    out_frames = topview_queue.get_frames()
+                    for f in out_frames:
+                        tv_out.write(f)
+                    tv_out.release()
+
+
             frame_id += 1
             vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
             topview_writer.write(top_view_img)
@@ -786,8 +806,8 @@ def imageflow_demo(predictor, args):
     if args.save_asset:
         with open(asset_path, 'w') as f:
             json.dump(assets, f, indent=4)
-    if not args.use_saved_box:
-        json.dump(box_assets, box_f, indent=4)
+        if not args.use_saved_box:
+            json.dump(box_assets, box_f, indent=4)
 
 
 if __name__ == '__main__':
