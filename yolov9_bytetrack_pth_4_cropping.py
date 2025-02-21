@@ -9,6 +9,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from models.common import DetectMultiBackend
 import argparse
 import copy
+from analyser.topview import TopViewGenerator
 from team_assigner import TeamAssigner
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
@@ -430,9 +431,9 @@ def imageflow_demo(predictor, args):
     #     video_path = os.path.join(video_folder,mp4)
     #     video_paths.append(video_path)
 
-    # args.track_before_knn = True
-    # args.no_ball_tracker = True
-    # args.use_json = True
+    args.track_before_knn = True
+    args.no_ball_tracker = True
+    args.use_json = True
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
 
@@ -510,6 +511,8 @@ def imageflow_demo(predictor, args):
     analysis = AnalysisManager(config.check_action, ((0, 0)))
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
     topview_queue = FrameQueue(frame_queue)
+
+    PlayerTopView = TopViewGenerator((50,50,1100,720))
 
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
@@ -763,14 +766,8 @@ def imageflow_demo(predictor, args):
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
 
-            all_players = merge_points_same_team(all_players, (50,50,1100,720), 10)
-            all_players = merge_points_in_fixed_area(all_players, (50,50,1100,720), 100)
-            for player in all_players:
-                cv2.circle(top_view_img, (int(player[0]), int(player[1])), 20, tuple(player[3]), -1)
-            all_balls = [ball for ball in all_balls if ball[0] > 50 and ball[0] < 1100 and ball[1] > 50 and ball[1] < 720]
-            for ball in all_balls:
-                cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 20, (0, 255, 0),
-                           -1)
+            PlayerTopView.process(all_players, all_balls)
+            PlayerTopView.visualize(top_view_img)
 
             flag = analysis.flag # 异常条件激活
             # top_view.process()
@@ -817,9 +814,6 @@ def imageflow_demo(predictor, args):
                 ch = cv2.waitKey(1)
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
-                # img_full_list.append(img_list)
-                # img_list = []
-
 
 
             frame_id += 1
@@ -834,6 +828,7 @@ def imageflow_demo(predictor, args):
         else:
             break
 
+    print("Video process finished.")
     if args.save_asset:
         with open(asset_path, 'w') as f:
             json.dump(assets, f, indent=4)
