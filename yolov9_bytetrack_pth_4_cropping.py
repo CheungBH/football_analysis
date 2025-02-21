@@ -60,7 +60,7 @@ def make_parser():
     parser.add_argument(
         "--court_image",
         type=str,
-        default=r"D:\tmp\2.19\MK_field.jpg",
+        default="",
         help="Path to your input image.",
     )
     parser.add_argument(
@@ -130,12 +130,12 @@ def make_parser():
     parser.add_argument(
         "--use_json",
         action="store_true",
-        help="Load json for inference",
+        help="Load json for court",
     )
     parser.add_argument(
         "--use_saved_box",
         action="store_true",
-        help="Load json for inference",
+        help="Load box json for fast inference",
     )
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
@@ -425,6 +425,8 @@ def imageflow_demo(predictor, args):
     args.track_before_knn = True
     args.no_ball_tracker = True
     args.use_json = True
+    args.show_video = False
+    court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
 
     video_paths = [os.path.join(video_folder, name) for name in video_names]
     #sync_frame.resample_videos(video_paths, 30)
@@ -487,7 +489,7 @@ def imageflow_demo(predictor, args):
         cv2.destroyAllWindows()
 
 
-    top_view_img_tpl = cv2.imread(args.court_image)
+    top_view_img_tpl = cv2.imread(court_image)
     real_ball_history=[]
     team1_dict = defaultdict(list)
     team2_dict = defaultdict(list)
@@ -544,7 +546,7 @@ def imageflow_demo(predictor, args):
                         matrix_list.append(matrix)
 
                 else:
-                    court_img = cv2.imread(args.court_image)
+                    court_img = cv2.imread(court_image)
                     matrix_list= []
                     for idx,frame in enumerate(frames_list):
                         real_court_img = copy.deepcopy(frame)
@@ -757,48 +759,55 @@ def imageflow_demo(predictor, args):
             topview_queue.push_frame(top_view_img)
             #cv2.imshow('Image', img)
 
-            if len(img_list) == 4:
+            if flag == 100 or frame_id + 1 % 100 == 0:
+                print("Saving the video")
+                output_time = frame_id / fpsmin
+                # Convert to real time
+                minutes = int(output_time // 60)
+                seconds = int(output_time % 60)
+                output_time = f"{minutes:02d}-{seconds:02d}"
+                out_subfolder = os.path.join(video_folder, output_time)
+                os.makedirs(out_subfolder, exist_ok=True)
+                video_paths = [os.path.join(out_subfolder, "{}.mp4".format(idx + 1)) for idx in range(len(frames_list))]
+
+                for index in range(len(frames_list)):
+                    out_h, out_w = frames_list[index].shape[:2]
+                    out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fps, (out_w, out_h))
+                    out_frames = frames_queue_ls[index].get_frames()
+                    for f in out_frames:
+                        out.write(f)
+                    out.release()
+
+                # Save the top view video
+                out_h, out_w = top_view_img.shape[:2]
+                tv_out = cv2.VideoWriter(os.path.join(out_subfolder, "top_view.mp4"), cv2.VideoWriter_fourcc(*'mp4v'),
+                                         fps, (out_w, out_h))
+                out_frames = topview_queue.get_frames()
+                for f in out_frames:
+                    tv_out.write(f)
+                tv_out.release()
+
+            # if len(img_list) == 4:
+            if args.show_video:
                 top_row = np.hstack(img_list[:2])
                 bottom_row = np.hstack(img_list[2:])
                 combined_frame = np.vstack([top_row, bottom_row])
-                # Display the combined frame
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
+                ch = cv2.waitKey(1)
+                vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
+                topview_writer.write(top_view_img)
                 # img_full_list.append(img_list)
                 # img_list = []
-                if flag == 100 or frame_id+1 % 300 == 0:
-                    print("Saving the video")
-                    output_time = frame_id / fpsmin
-                    # Convert to real time
-                    minutes = int(output_time // 60)
-                    seconds = int(output_time % 60)
-                    output_time = f"{minutes:02d}-{seconds:02d}"
-                    out_subfolder = os.path.join(video_folder, output_time)
-                    os.makedirs(out_subfolder, exist_ok=True)
-                    video_paths = [os.path.join(out_subfolder, "{}.mp4".format(idx+1)) for idx in range(len(frames_list))]
 
-                    for index in range(len(frames_list)):
-                        out_h, out_w = frames_list[index].shape[:2]
-                        out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fps, (out_w, out_h))
-                        out_frames = frames_queue_ls[index].get_frames()
-                        for f in out_frames:
-                            out.write(f)
-                        out.release()
-
-                    # Save the top view video
-                    out_h, out_w = top_view_img.shape[:2]
-                    tv_out = cv2.VideoWriter(os.path.join(out_subfolder, "top_view.mp4"), cv2.VideoWriter_fourcc(*'mp4v'),
-                                          fps, (out_w, out_h))
-                    out_frames = topview_queue.get_frames()
-                    for f in out_frames:
-                        tv_out.write(f)
-                    tv_out.release()
 
 
             frame_id += 1
-            vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
-            topview_writer.write(top_view_img)
-            ch = cv2.waitKey(1)
+            # vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
+            # topview_writer.write(top_view_img)
+            # ch = cv2.waitKey(1)
+            if frame_id % 100 == 0:
+                print(f"Frame {frame_id} processed.")
 
             # if ch == 27 or ch == ord("q") or ch == ord("Q"):
             #     break
