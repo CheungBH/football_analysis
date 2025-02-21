@@ -138,3 +138,20 @@ def polygon_area(points):
     area = abs(area) / 2.0
     return area
 
+def vector_angle(v1, v2):
+    # 计算两个向量的夹角（以弧度为单位）
+    dot_product = sum(a*b for a, b in zip(v1, v2))
+    magnitude_v1 = math.sqrt(sum(a**2 for a in v1))
+    magnitude_v2 = math.sqrt(sum(a**2 for a in v2))
+    cosine_angle = dot_product / (magnitude_v1 * magnitude_v2)
+    angle = math.acos(cosine_angle)
+    return math.degrees(angle)
+
+
+def is_in_rectangle(value, rect):
+    return rect[0][0] <= value[0] <= rect[1][0] and rect[0][1] <= value[1] <= rect[1][1]
+
+def calculate_ratio(v1, v2, boundary):
+            diff1 = abs(v1 - boundary)
+            diff2 = abs(v2 - boundary)
+            return min(diff1, diff2) / max(diff1, diff2)

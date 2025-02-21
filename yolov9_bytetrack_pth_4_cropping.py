@@ -489,7 +489,7 @@ def imageflow_demo(predictor, args):
         while True:
             cv2.imshow("click_court", court_img)
             key = cv2.waitKey(1) & 0xFF
-            if key == 27:  # ESC key to break
+            if key == 27:  # 0SC key to break
                 break
             court_img = copy.deepcopy(court_img)
 
@@ -499,6 +499,7 @@ def imageflow_demo(predictor, args):
 
     top_view_img_tpl = cv2.imread(court_image)
     real_ball_history=[]
+    all_player_dict = [defaultdict(list)for _ in range(4)]
     team1_dict = [defaultdict(list)for _ in range(4)]
     team2_dict = [defaultdict(list)for _ in range(4)]
     goalkeeper1_dict = [defaultdict(list)for _ in range(4)]
@@ -700,6 +701,7 @@ def imageflow_demo(predictor, args):
                         foot_locations[index].append(foot_location)
                         real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
                         real_foot_locations[index].append(real_foot_location)
+                        all_player_dict[index][tid].append(real_foot_location)
                         if t_idx == 0:
                             team1_dict[index][tid].append(real_foot_location)
                         elif t_idx == 1:
@@ -746,15 +748,17 @@ def imageflow_demo(predictor, args):
                     img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
-                analysis_list[index].process(team1_players=team1_dict[index],
-                                 team2_players=team2_dict[index],
-                                 side_referees=referee_dict[index],
-                                 goalkeepers1=goalkeeper1_dict[index],
-                                 goalkeepers2=goalkeeper2_dict[index],
-                                 balls=real_ball_history,
-                                 frame_id=frame_id,
-                                 matrix=matrix,
-                                frame_queue=frame_queue)
+                # analysis_list[index].process(team1_players=team1_dict[index],
+                #                  team2_players=team2_dict[index],
+                #                  side_referees=referee_dict[index],
+                #                  goalkeepers1=goalkeeper1_dict[index],
+                #                  goalkeepers2=goalkeeper2_dict[index],
+                #                  balls=real_ball_history,
+                #                  frame_id=frame_id,
+                #                  matrix=matrix,
+                #                 frame_queue=frame_queue)
+                analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,
+                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
                 analysis_list[index].visualize(img_list[index])
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
@@ -768,7 +772,7 @@ def imageflow_demo(predictor, args):
                 cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 20, (0, 255, 0),
                            -1)
 
-            flag = analysis.flag
+            flag = analysis.flag # 异常条件激活
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
             topview_queue.push_frame(top_view_img)
@@ -810,7 +814,7 @@ def imageflow_demo(predictor, args):
                 combined_frame = np.vstack([top_row, bottom_row])
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
-                ch = cv2.waitKey(0)
+                ch = cv2.waitKey(1)
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
                 # img_full_list.append(img_list)
