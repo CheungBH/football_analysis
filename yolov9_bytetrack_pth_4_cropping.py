@@ -827,3 +827,8 @@ if __name__ == '__main__':
     args = make_parser().parse_args()
     predictor = Predictor(args)
     imageflow_demo(predictor, args)
+
+
+'''
+Usage python yolov9_bytetrack_pth_4_cropping.py --video_path /path/to/vidoe --output_dir /path/to/output
+'''
