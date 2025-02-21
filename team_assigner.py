@@ -1,9 +1,7 @@
-from networkx.algorithms.bipartite.basic import color
+# from networkx.algorithms.bipartite.basic import color
 from sklearn.cluster import KMeans
 import numpy as np
 import cv2
-from collections import defaultdict
-import os
 
 
 class TeamAssigner:
