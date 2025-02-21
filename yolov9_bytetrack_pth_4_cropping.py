@@ -764,9 +764,10 @@ def imageflow_demo(predictor, args):
                 print("Saving the video")
                 output_time = frame_id / fpsmin
                 # Convert to real time
+                hours = int(output_time // 3600)
                 minutes = int(output_time // 60)
                 seconds = int(output_time % 60)
-                output_time = f"{minutes:02d}-{seconds:02d}"
+                output_time = f"{hours:02d}_{minutes:02d}_{seconds:02d}"
                 out_subfolder = os.path.join(args.output_dir, output_time)
                 os.makedirs(out_subfolder, exist_ok=True)
                 video_paths = [os.path.join(out_subfolder, "{}.mp4".format(idx + 1)) for idx in range(len(frames_list))]
