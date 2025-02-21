@@ -9,6 +9,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from models.common import DetectMultiBackend
 import argparse
 import copy
+from analyser.topview import TopViewGenerator
 from team_assigner import TeamAssigner
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
@@ -510,6 +511,8 @@ def imageflow_demo(predictor, args):
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
     topview_queue = FrameQueue(frame_queue)
 
+    PlayerTopView = TopViewGenerator((50,50,1100,720))
+
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
         assert os.path.exists(box_asset_path), "The box asset file does not exist."
@@ -759,14 +762,10 @@ def imageflow_demo(predictor, args):
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
 
-            all_players = merge_points_same_team(all_players, (50,50,1100,720), 10)
-            all_players = merge_points_in_fixed_area(all_players, (50,50,1100,720), 100)
-            for player in all_players:
-                cv2.circle(top_view_img, (int(player[0]), int(player[1])), 20, tuple(player[3]), -1)
-            all_balls = [ball for ball in all_balls if ball[0] > 50 and ball[0] < 1100 and ball[1] > 50 and ball[1] < 720]
-            for ball in all_balls:
-                cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 20, (0, 255, 0),
-                           -1)
+
+
+
+
 
             flag = analysis.flag
             # top_view.process()
