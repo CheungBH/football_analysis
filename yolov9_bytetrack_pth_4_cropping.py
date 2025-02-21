@@ -35,7 +35,7 @@ def make_parser():
         "-m",
         "--model",
         type=str,
-        default=r"assets/checkpoints/yolov9-e-converted.pt",
+        default=r"assets/checkpoints/best.pt",
         help="Input your onnx model.",
     )
     parser.add_argument(
