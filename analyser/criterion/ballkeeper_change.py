@@ -8,14 +8,16 @@ class BallKeeperChangeChecker:
         self.flag = False
         self.catcher = 1
         self.first_catcher = 1
+        self.last_holder = 1
         self.catch_list = []
+        self.last_catch_list = []
         self.thre = 5
         self.holder = 0
 
     def process(self, players1, players2, balls, **kwargs):
         if len(balls):
             ball_position = balls[-1]
-            # 找到第一次接球者
+            # 找到第一次接球者(上一次接球)
             min_key_raw1, min_distance_raw1 = find_closest_player(players1, ball_position, 0)
             min_key_raw2, min_distance_raw2 = find_closest_player(players2, ball_position, 0)
             self.first_catcher = 1 if min_distance_raw1 < min_distance_raw2 else 2
@@ -28,12 +30,13 @@ class BallKeeperChangeChecker:
             if len(self.catch_list) > 5:
                 self.holder, self.flag = check_ball_possession(self.catch_list,self.thre)
 
+
     def visualize(self, frame):
         if self.holder == 1:
-            cv2.putText(frame, f'Red Team catch the ball', (50, 150),
+            cv2.putText(frame, f'Team1 catch the ball', (50, 150),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
         elif self.holder == 2:
-            cv2.putText(frame, f'Gray Team catch the ball', (50, 150),
+            cv2.putText(frame, f'Team2 catch the ball', (50, 150),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
         elif self.holder == 0:
             cv2.putText(frame, f'Fighting for the ball', (50, 150),
