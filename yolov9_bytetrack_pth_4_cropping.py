@@ -445,9 +445,9 @@ def imageflow_demo(predictor, args):
         fps_list.append(round(cap.get(cv2.CAP_PROP_FPS)))
 
 
-    fps = caps[0].get(cv2.CAP_PROP_FPS)
-    frame_queue = fps * 5
+    # fps = caps[0].get(cv2.CAP_PROP_FPS)
     fpsmin = reduce(math.gcd,fps_list)
+    frame_queue = fpsmin * 5
     if args.use_json:
         args.save_asset = False
     tv_h, tv_w = config.topview_height, config.topview_width
