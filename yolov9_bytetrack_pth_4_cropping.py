@@ -133,6 +133,11 @@ def make_parser():
         help="Load json for court",
     )
     parser.add_argument(
+        "--show_video",
+        action="store_true",
+        help="Load json for court",
+    )
+    parser.add_argument(
         "--use_saved_box",
         action="store_true",
         help="Load box json for fast inference",
@@ -319,6 +324,9 @@ class Predictor(object):
         imgs = imgs_dict["images"]
         img_tl = imgs_dict["top_left"]
 
+        for idx, img in enumerate(imgs):
+            cv2.imwrite("img/{}.jpg".format(idx), img)
+
         height, width = frame.shape[:2]
         img_raw_info = {}
         img_raw_info["height"] = height
@@ -349,7 +357,7 @@ class Predictor(object):
         # if len(im.shape) == 3:
         #     im = im[None]  # expand for batch dim
         preds = self.model(batch_imgs[1:,...])
-        preds = non_max_suppression(preds[0], self.args.score_thr, self.args.nms_thr, None, False, max_det=1000)
+        preds = non_max_suppression(preds[0][0], self.args.score_thr, self.args.nms_thr, None, False, max_det=1000)
         # pred = pred[0]
         if preds is None:
             return None, img_raw_info
@@ -422,10 +430,10 @@ def imageflow_demo(predictor, args):
     #     video_path = os.path.join(video_folder,mp4)
     #     video_paths.append(video_path)
 
-    args.track_before_knn = True
-    args.no_ball_tracker = True
-    args.use_json = True
-    args.show_video = False
+    # args.track_before_knn = True
+    # args.no_ball_tracker = True
+    # args.use_json = True
+    # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
 
     video_paths = [os.path.join(video_folder, name) for name in video_names]
@@ -491,11 +499,13 @@ def imageflow_demo(predictor, args):
 
     top_view_img_tpl = cv2.imread(court_image)
     real_ball_history=[]
-    team1_dict = defaultdict(list)
-    team2_dict = defaultdict(list)
-    goalkeeper1_dict = defaultdict(list)
-    goalkeeper2_dict = defaultdict(list)
-    referee_dict = defaultdict(list)
+    team1_dict = [defaultdict(list)for _ in range(4)]
+    team2_dict = [defaultdict(list)for _ in range(4)]
+    goalkeeper1_dict = [defaultdict(list)for _ in range(4)]
+    goalkeeper2_dict = [defaultdict(list)for _ in range(4)]
+    referee_dict = [defaultdict(list)for _ in range(4)]
+    analysis_list = [AnalysisManager(config.check_action, ((0, 0))) for _ in range(4)]
+
     analysis = AnalysisManager(config.check_action, ((0, 0)))
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
     topview_queue = FrameQueue(frame_queue)
@@ -539,16 +549,16 @@ def imageflow_demo(predictor, args):
 
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
-                    matrix_list=[]
-                    for i in assets:
+                    matrix_list=[[] for _ in range(4)]
+                    for idx,i in enumerate(assets):
                         court_points = np.array(i["court_point"])
                         game_points = np.array(i["game_point"])
                         matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
-                        matrix_list.append(matrix)
+                        matrix_list[idx].append(matrix)
 
                 else:
                     court_img = cv2.imread(court_image)
-                    matrix_list= []
+                    matrix_list= [[] for _ in range(4)]
                     for idx,frame in enumerate(frames_list):
                         real_court_img = copy.deepcopy(frame)
                         points=[]
@@ -559,7 +569,7 @@ def imageflow_demo(predictor, args):
                         click_court(court_img)
                         court_points = np.array(points)
                         matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
-                        matrix_list.append(matrix)
+                        matrix_list[idx].append(matrix)
                         if args.save_asset:
                             asset_name = os.path.join(args.video_path, 'assets.json')
                             asset_path = os.path.join(args.video_path,asset_name)
@@ -575,12 +585,10 @@ def imageflow_demo(predictor, args):
                 color_json_path = os.path.join(args.video_path, 'color.json')
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
-
                 team_colors = color_asset
                 team_colors = {int(k): v for k, v in team_colors.items()}
                 team_assigner.assign_color(team_colors)
                 print(team_colors)
-
 
                 if args.track_before_knn:
                     tracker_list = [BYTETracker(args, frame_rate=fpsmin),
@@ -631,7 +639,7 @@ def imageflow_demo(predictor, args):
             for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
                 frames_queue_ls[index].push_frame(frame)
 
-                matrix = matrix_list[index]
+                matrix = matrix_list[index][0]
                 trackers = tracker_list[index]
 
                 print(outputs.shape)
@@ -644,9 +652,9 @@ def imageflow_demo(predictor, args):
                 if args.track_before_knn:
                     player_boxes = []
                     for output in outputs:
-                        if output[5] == 0:
+                        if output[5] == 1:
                             player_boxes.append(output.tolist())
-                        elif output[5] == 32:
+                        elif output[5] == 0:
                             if max_ball_output is None or output[4] > max_ball_output[4]:
                                 max_ball_output = output
                     player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
@@ -675,9 +683,10 @@ def imageflow_demo(predictor, args):
                     ball_boxes.append(max_ball_output.tolist())
 
                 img = frame
-
+                real_foot_locations = [[] for _ in range(4)]
                 for t_idx, team_target in enumerate(team_targets[index]):
-                    foot_locations = []
+                    foot_locations = [[] for _ in range(4)]
+
                     online_tlwhs = []
                     online_ids = []
                     online_scores = []
@@ -688,31 +697,32 @@ def imageflow_demo(predictor, args):
                         online_ids.append(tid)
                         online_scores.append(t.score)
                         foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
-                        foot_locations.append(foot_location)
+                        foot_locations[index].append(foot_location)
                         real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
+                        real_foot_locations[index].append(real_foot_location)
                         if t_idx == 0:
-                            team1_dict[tid].append(real_foot_location)
+                            team1_dict[index][tid].append(real_foot_location)
                         elif t_idx == 1:
-                            team2_dict[tid].append(real_foot_location)
+                            team2_dict[index][tid].append(real_foot_location)
                         elif t_idx == 2:
-                            goalkeeper1_dict[tid].append(real_foot_location)
+                            goalkeeper1_dict[index][tid].append(real_foot_location)
                         elif t_idx == 3:
-                            goalkeeper2_dict[tid].append(real_foot_location)
+                            goalkeeper2_dict[index][tid].append(real_foot_location)
                         elif t_idx == 4:
                             #referee_dict[tid].append(real_foot_location)
-                            referee_dict[tid].append([real_foot_location,frame_id])
+                            referee_dict[index][tid].append([real_foot_location,frame_id])
 
                     if len(foot_locations) == 0:
                         continue
-                    foot_locations = np.array([foot_locations])
-                    real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
-                    real_foot_locations = real_foot_locations[0]
-                    t_color = team_colors[t_idx]
+                    # foot_locations = np.array([foot_locations])
+                    # real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
+                    # real_foot_locations = real_foot_locations[0]
+                    # t_color =
                     # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
-                    for real_foot_location in real_foot_locations:
-                        all_players.append(real_foot_location.tolist() + [t_idx, t_color])
+                    for real_foot_location in real_foot_locations[index]:
+                        all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
                     #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
-                    img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=t_color)
+                    img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=team_colors[t_idx])
 
                 if args.no_ball_tracker:
                     if max_ball_output is not None:
@@ -736,6 +746,17 @@ def imageflow_demo(predictor, args):
                     img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
+                analysis_list[index].process(team1_players=team1_dict[index],
+                                 team2_players=team2_dict[index],
+                                 side_referees=referee_dict[index],
+                                 goalkeepers1=goalkeeper1_dict[index],
+                                 goalkeepers2=goalkeeper2_dict[index],
+                                 balls=real_ball_history,
+                                 frame_id=frame_id,
+                                 matrix=matrix)
+                analysis_list[index].visualize(img_list[index])
+                # for i in range(len(real_foot_locations[index])):
+                #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
 
             all_players = merge_points_same_team(all_players, (50,50,1100,720), 10)
             all_players = merge_points_in_fixed_area(all_players, (50,50,1100,720), 100)
@@ -746,14 +767,6 @@ def imageflow_demo(predictor, args):
                 cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 20, (0, 255, 0),
                            -1)
 
-            analysis.process(team1_players=team1_dict,
-                             team2_players=team2_dict,
-                             side_referees=referee_dict,
-                             goalkeepers1=goalkeeper1_dict,
-                             goalkeepers2=goalkeeper2_dict,
-                             balls=real_ball_history,
-                             frame_id=frame_id)
-            analysis.visualize(img)
             flag = analysis.flag
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
@@ -796,7 +809,7 @@ def imageflow_demo(predictor, args):
                 combined_frame = np.vstack([top_row, bottom_row])
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
-                ch = cv2.waitKey(1)
+                ch = cv2.waitKey(0)
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
                 # img_full_list.append(img_list)

@@ -1,135 +1,206 @@
-import os
+'''import os
 import cv2
-import numpy as np
-from sklearn.cluster import KMeans
-from sklearn.neighbors import KNeighborsClassifier
-from collections import Counter
+def process_file(filepath, ouput_txt_dir):
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
 
-def get_first_pixel_colors(folder_path):
-    team_color = []
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.jpg') or file_name.endswith('.png'):
-            image = cv2.imread(os.path.join(folder_path, file_name))
-            first_pixel_color = image[0, 0]
-            team_color.append(first_pixel_color.tolist())
-    return team_color
-
-def filter_colors(clustered_colors, team_colors, threshold=80):
-    filtered_colors_raw = []
-    filtered_colors = []
-    indices = []
-    similarities = []
-
-    for index, color1 in enumerate(clustered_colors):
-        min_similarity = float('inf')
-        closest_color = None
-
-        for color2 in team_colors:
-            similarity = np.linalg.norm(np.array(color1) - np.array(color2))
-            if similarity < min_similarity:
-                min_similarity = similarity
-                closest_color = color2
-
-        if min_similarity < threshold:
-            filtered_colors_raw.append([int(c) for c in color1.tolist()])
-            filtered_colors.append(closest_color)
-            similarities.append(min_similarity)
-            indices.append(index)
-
-    return filtered_colors_raw, filtered_colors, indices, similarities
-
-
-def process_images(folder_path, team_colors):
-    dominant_colors = []
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.jpg') or file_name.endswith('.png'):
-            full_img = np.zeros((900, 1500, 3), np.uint8)
-            # hsv_team_colors = [cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_BGR2HSV)[0][0].tolist() for color in team_colors]
-            for i, color in enumerate(team_colors):
-                full_img[0:300, i * 300:(i + 1) * 300] = color  # 第一行
-                cv2.putText(full_img, f'G:{team_colors[i][0]} B:{team_colors[i][1]} R:{team_colors[i][2]}',
-                            (i * 300 + 10, 150),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-            image = cv2.imread(os.path.join(folder_path, file_name))
-            image_2d = image.reshape(-1, 3)
-
-            # KMeans聚类出6种颜色
-            initial_centers = np.array(team_colors)
-            kmeans = KMeans(n_clusters=len(team_colors), init=initial_centers, n_init=1) # init  team_colors
-            kmeans.fit(image_2d)
-            labels = kmeans.labels_
-            label_counts = np.bincount(labels)
-# 计算每个类的占有比例
-            total_samples = len(labels)
-            ratios = label_counts / total_samples
-            cluster_centers = kmeans.cluster_centers_
-            team_clustered_colors = cluster_centers.tolist()
-            #hsv_clustered_colors = [cv2.cvtColor(np.uint8([[color]]), cv2.COLOR_BGR2HSV)[0][0].tolist() for color in team_clustered_colors]
-            for i, color in enumerate(team_clustered_colors):
-                full_img[300:600, i * 300:(i + 1) * 300] = color  # 第二行
-                cv2.putText(full_img, f'G:{int(team_clustered_colors[i][0])} B:{int(team_clustered_colors[i][1])} R:{int(team_clustered_colors[i][2])}',
-                            (i * 300 + 10, 450),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-                # cv2.putText(full_img, f'Index: {i} ', (i * 300 + 50, 500),  # 添加索引值
-                #             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-                cv2.putText(full_img, f'ratios:{round(ratios[i],2)}', (i * 300 + 50, 550),  # 添加索引值
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-
-            filtered_colors_raw, filtered_colors, indices, similarity = filter_colors(cluster_centers, team_colors)
-
-            # 在第三行绘制过滤后的颜色块和相似度值
-            for i in range(len(filtered_colors_raw)):
-                full_img[600:900, indices[i] * 300:(indices[i] + 1) * 300] = filtered_colors[i]  # 第三行
-                cv2.putText(full_img, f'G:{int(filtered_colors[i][0])} B:{int(filtered_colors[i][1])} R:{int(filtered_colors[i][2])}',
-                            (indices[i] * 300 + 10, 700),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-                cv2.putText(full_img, 'similarity:{}'.format(similarity[i]), (indices[i] * 300 + 50, 750),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
+    for line in lines:
+        data = line.strip().split()
+        id = data[0]
+        x = float(data[1])
+        y = float(data[2])
+        w = float(data[3])
+        h = float(data[4])
+        y_ratio = crop_y/1080
+        if 0 <= x < 1/3:
+            x_new = x * 3
+            y_new = (y - y_ratio) / (1 - y_ratio)
+            w_new = w * 3
+            h_new = h / (1 - y_ratio)
+            output_file1 = os.path.join(ouput_txt_dir, os.path.splitext(os.path.basename(filepath))[0] + '_1.txt')
+            if x_new + w_new > 1 or y_new - h_new/2 < 0:
+                a=1
+            else:
+                with open(output_file1, 'a') as f_out:
+                    f_out.write(f'{id} {x_new} {y_new} {w_new} {h_new}\n')
+        if 1/6 <= x < 1/2:
+            x_new = (x - 1/6) * 3
+            y_new = (y - y_ratio) / (1 - y_ratio)
+            w_new = w * 3
+            h_new = h / (1 - y_ratio)
+            output_file2 = os.path.join(ouput_txt_dir, os.path.splitext(os.path.basename(filepath))[0] + '_2.txt')
+            if x_new + w_new/2 > 1 or y_new - h_new/2 < 0:
+                a=1
+            else:
+                with open(output_file2, 'a') as f_out:
+                    f_out.write(f'{id} {x_new} {y_new} {w_new} {h_new}\n')
+        if 1/3 <= x < 2/3:
+            x_new = (x - 1/3) * 3
+            y_new = (y - y_ratio) / (1 - y_ratio)
+            w_new = w * 3
+            h_new = h / (1 - y_ratio)
+            output_file3 = os.path.join(ouput_txt_dir, os.path.splitext(os.path.basename(filepath))[0] + '_3.txt')
+            if x_new + w_new/2 > 1 or y_new - h_new/2 < 0:
+                a=1
+            else:
+                with open(output_file3, 'a') as f_out:
+                    f_out.write(f'{id} {x_new} {y_new} {w_new} {h_new}\n')
+        if 1/2 <= x < 5/6:
+            x_new = (x - 1/2) * 3
+            y_new = (y - y_ratio) / (1 - y_ratio)
+            w_new = w * 3
+            h_new = h / (1 - y_ratio)
+            output_file4 = os.path.join(ouput_txt_dir, os.path.splitext(os.path.basename(filepath))[0] + '_4.txt')
+            if x_new + w_new/2 > 1 or y_new - h_new/2 < 0:
+                a=1
+            else:
+                with open(output_file4, 'a') as f_out:
+                    f_out.write(f'{id} {x_new} {y_new} {w_new} {h_new}\n')
+        if 2/3 <= x <= 1:
+            x_new = (x - 2/3) * 3
+            y_new = (y - y_ratio) / (1 - y_ratio)
+            w_new = w * 3
+            h_new = h / (1 - y_ratio)
+            output_file5 = os.path.join(ouput_txt_dir, os.path.splitext(os.path.basename(filepath))[0] + '_5.txt')
+            if x_new + w_new/2 > 1 or y_new - h_new/2 < 0:
+                a=1
+            else:
+                with open(output_file5, 'a') as f_out:
+                    f_out.write(f'{id} {x_new} {y_new} {w_new} {h_new}\n')
+        # if is_written1 ==True:
 
 
-            # key = cv2.waitKey(0)
-            # Keep the unique colors from a list of colors
-            filtered_team_color = list(set([tuple(color) for color in filtered_colors]))
+def process_image(filepath, ouput_img_dir):
+    # 读取图片
+    image = cv2.imread(filepath)
+    # 调整大小到1920x1080
+    resized_image = cv2.resize(image, (1920, 1080))
+    # 保留y值在440到1080的部分
+    cropped_image = resized_image[crop_y:1080, :]
 
-            second_color = np.array(filtered_team_color)
-            # initial_centers = np.array(filtered_colors)
-            kmeans_2 = KMeans(n_clusters=len(second_color), init=second_color, n_init=1) # init  team_colors
-            kmeans_2.fit(second_color)
-            labels_2 = kmeans_2.predict(image_2d)
-            # labels_2 = kmeans_2.labels_
-            label_counts_2 = np.bincount(labels_2)
-            # label_counts = np.bincount(labels)
-            # 计算每个类的占有比例
-            total_samples = len(labels_2)
-            ratios_2 = label_counts_2 / total_samples
-            team_clustered_colors2 = kmeans_2.cluster_centers_
-            new_img = np.zeros((600, 300*len(team_clustered_colors2), 3), np.uint8)
+    height, width, _ = cropped_image.shape
+    segment_width = width // 6
 
-            filtered_colors_raw_2, filtered_colors_2, indices_2, similarity_2 = filter_colors(team_clustered_colors2, filtered_colors, threshold=1000)
+    # 分割并保存图像
+    for i in range(5):
+        if i == 0:
+            segment = cropped_image[:, :segment_width*2]
+            output_file = os.path.join(ouput_img_dir, os.path.splitext(os.path.basename(filepath))[0] + '_1.jpg')
+        elif i == 1:
+            segment = cropped_image[:, segment_width:3*segment_width]
+            output_file = os.path.join(ouput_img_dir, os.path.splitext(os.path.basename(filepath))[0] + '_2.jpg')
+        elif i == 2:
+            segment = cropped_image[:, 2*segment_width:4*segment_width]
+            output_file = os.path.join(ouput_img_dir, os.path.splitext(os.path.basename(filepath))[0] + '_3.jpg')
+        elif i == 3:
+            segment = cropped_image[:, 3*segment_width:5*segment_width]
+            output_file = os.path.join(ouput_img_dir, os.path.splitext(os.path.basename(filepath))[0] + '_4.jpg')
+        elif i == 4:
+            segment = cropped_image[:, 4*segment_width:]
+            output_file = os.path.join(ouput_img_dir, os.path.splitext(os.path.basename(filepath))[0] + '_5.jpg')
 
-            for i, color in enumerate(filtered_team_color):
-                new_img[0:300, i * 300:(i + 1) * 300] = color  # 第一行
-                cv2.putText(new_img, f'G:{filtered_team_color[i][0]} B:{filtered_team_color[i][1]} R:{filtered_team_color[i][2]}',
-                            (i * 300 + 10, 150),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.imwrite(output_file, segment)
 
-            for i, color in enumerate(filtered_colors_raw_2):
-                new_img[300:600, i * 300:(i + 1) * 300] = color  # 第二行
-                cv2.putText(new_img, f'G:{int(filtered_colors_raw_2[i][0])} B:{int(filtered_colors_raw_2[i][1])} R:{int(filtered_colors_raw_2[i][2])}',
-                            (i * 300 + 10, 450),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-                cv2.putText(new_img, f'Index: {i} ', (i * 300 + 50, 500),  # 添加索引值
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-                cv2.putText(new_img, f'ratios:{round(ratios_2[i],2)}', (i * 300 + 50, 550),  # 添加索引值
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 1, cv2.LINE_AA)
-            cv2.imshow('cluster_second',new_img)
-            cv2.imshow('full_img', full_img)
-            cv2.imshow('raw', image)
+def process_directory(input_dir, ouput_dir,cnt):
+    for filename in os.listdir(input_dir):
+        if filename.endswith('.txt'):
+            filepath = os.path.join(input_dir, filename)
+            process_file(filepath, ouput_dir)
+        elif filename.endswith('.jpg'):
+            filepath = os.path.join(input_dir, filename)
+            process_image(filepath, ouput_dir)
+        cnt+=1
+        print(cnt)
+
+
+if __name__ == "__main__":
+    input_txt_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/labels/val"
+    ouput_txt_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/labels1/val"
+    input_img_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/images/val"
+    ouput_img_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/images1/val"
+    crop_y = 440
+    cnt=0
+    os.makedirs(ouput_img_dir, exist_ok=True)
+    process_directory(input_img_dir, ouput_img_dir,cnt)
+    os.makedirs(ouput_txt_dir, exist_ok=True)
+    process_directory(input_txt_dir, ouput_txt_dir,cnt)
+'''
+
+
+
+import cv2
+import os
+
+def draw_bounding_box(image, bbox, color=(0, 255, 0), thickness=2):
+    x_center, y_center, width, height = bbox
+    h, w, _ = image.shape
+    x_center *= w
+    y_center *= h
+    width *= w
+    height *= h
+    x_min = int(x_center - width / 2)
+    y_min = int(y_center - height / 2)
+    x_max = int(x_center + width / 2)
+    y_max = int(y_center + height / 2)
+
+    return cv2.rectangle(image, (x_min, y_min), (x_max, y_max), color, thickness)
+
+def process_files(img_dir, txt_dir):
+    for filename in os.listdir(txt_dir):
+        if filename.endswith('.txt'):
+            txt_filepath = os.path.join(txt_dir, filename)
+            img_filename = os.path.splitext(filename)[0] + '.jpg'
+            img_filepath = os.path.join(img_dir, img_filename)
+
+            if not os.path.exists(img_filepath):
+                continue
+
+            image = cv2.imread(img_filepath)
+
+            with open(txt_filepath, 'r') as f:
+                lines = f.readlines()
+
+            for line in lines:
+                data = line.strip().split()
+                x = float(data[1])
+                y = float(data[2])
+                w = float(data[3])
+                h = float(data[4])
+                bbox = (x, y, w, h)
+                image = draw_bounding_box(image, bbox)
+            resize_img = cv2.resize(image,(1080,720))
+            cv2.imshow('Visualized Image', resize_img)
             cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
 
+if __name__ == "__main__":
+    txt_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/labels1/train"
 
-team_colors = get_first_pixel_colors('/media/hkuit164/Backup/football_analysis/datasets/game1/ref')
+    img_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/images1/train"
 
-process_images('/media/hkuit164/Backup/football_analysis/datasets/game1/check/player1', team_colors)
+    process_files(img_dir, txt_dir)
 
+
+'''import os
+
+def compare_and_delete(txt_dir, jpg_dir):
+    # 获取txt文件的基本文件名（不带扩展名）
+    txt_filenames = {os.path.splitext(filename)[0] for filename in os.listdir(txt_dir) if filename.endswith('.txt')}
+
+    # 遍历jpg文件夹
+    for filename in os.listdir(jpg_dir):
+        if filename.endswith('.jpg'):
+            # 获取jpg文件的基本文件名
+            jpg_basename = os.path.splitext(filename)[0]
+            # 检查jpg文件是否在txt文件列表中
+            if jpg_basename not in txt_filenames:
+                # 如果不在，则删除
+                os.remove(os.path.join(jpg_dir, filename))
+                print(f"Deleted: {filename}")
+
+if __name__ == "__main__":
+    txt_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/labels1/train"
+    jpg_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/images1/train"
+    compare_and_delete(txt_dir, jpg_dir)
+'''

@@ -23,7 +23,8 @@ def merge_points_same_team(points, area_bounds, window_size):
             merged_points.append((avg_x, avg_y, t, color))
         else:
             # If there are multiple teams in the same grid cell, ignore the cell
-            pass
+            for cell_point in cell_points:
+                merged_points.append(cell_point)
 
     return merged_points
 

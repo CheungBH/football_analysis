@@ -23,11 +23,11 @@ class BallOutRangeChecker:
 
         if len(self.flag_list)>5:
             if sum(self.flag_list[-5:]) >4:
-                cv2.putText(frame, f'out of court', (50, 150),
+                cv2.putText(frame, f'Ball out of court', (50, 150),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
                 self.flag = True
             else:
-                cv2.putText(frame, f'In court', (50, 150),
+                cv2.putText(frame, f'Ball in court', (50, 150),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
                 self.flag = False
 
