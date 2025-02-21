@@ -4,7 +4,7 @@ topview_width = 800
 real_video_height = 1080
 real_video_width = 1920
 
-check_action = ["ball_out_range","side_referee"]
+check_action = ["ball_out_range","reverse_moving","low_speed"]
 
 cam4_videos_name = \
     [

@@ -8,13 +8,14 @@ class LowSpeedChecker:
         self.speed_threshold_low = 0.7
         self.speed_threshold_nomove = 0.4
         self.frame_duration = 10
-
+        self.flag = 1
         self.colors = [(0, 0, 255), (125, 125, 125)]
         self.curve_duration = 10
 
-    def process(self, players1, players2, balls, **kwargs):
+    def process(self, players1, players2, balls,frame_queue, **kwargs):
         self.team1_dict = players1
         self.team2_dict = players2
+        self.frame_duration = frame_queue
         self.flag = 1
         self.balls = balls
         self.speeds = [defaultdict(float), defaultdict(float)]
@@ -23,7 +24,7 @@ class LowSpeedChecker:
 
         for team_id, team in enumerate([players1, players2]):
             for p_id, position in team.items():
-                if len(position) >= self.frame_duration:
+                if len(position) >= self.frame_duration: # *ratio
                     speed = check_speed_displacement(position[-self.frame_duration:])
                     self.speeds[team_id][p_id] = speed
                     if speed < self.speed_threshold_low:

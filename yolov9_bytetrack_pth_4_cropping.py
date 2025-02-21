@@ -753,7 +753,8 @@ def imageflow_demo(predictor, args):
                                  goalkeepers2=goalkeeper2_dict[index],
                                  balls=real_ball_history,
                                  frame_id=frame_id,
-                                 matrix=matrix)
+                                 matrix=matrix,
+                                frame_queue=frame_queue)
                 analysis_list[index].visualize(img_list[index])
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
