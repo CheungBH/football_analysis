@@ -48,7 +48,7 @@ def make_parser():
         "-i",
         "--video_path",
         type=str,
-        default=r'D:\tmp\2.18\video_set_1579',
+        required=True,
         help="Path to your input video folder",
     )
     parser.add_argument(
@@ -461,7 +461,7 @@ def imageflow_demo(predictor, args):
     frame_id = 0
     team_assigner = TeamAssigner(root_folder=r"D:\tmp\2.19\feature")
     points = []
-    img_list = []
+
     def click_court(court_img):
         points.clear()
         def click_event(event, x, y, flags, param):
@@ -516,6 +516,7 @@ def imageflow_demo(predictor, args):
     while True:
         if frame_id == 10000:
             break
+        img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
         for i,cap in enumerate(caps):
@@ -759,20 +760,20 @@ def imageflow_demo(predictor, args):
             topview_queue.push_frame(top_view_img)
             #cv2.imshow('Image', img)
 
-            if flag == 100 or frame_id + 1 % 100 == 0:
+            if flag == 100 or (frame_id + 1) % 100 == 0:
                 print("Saving the video")
                 output_time = frame_id / fpsmin
                 # Convert to real time
                 minutes = int(output_time // 60)
                 seconds = int(output_time % 60)
                 output_time = f"{minutes:02d}-{seconds:02d}"
-                out_subfolder = os.path.join(video_folder, output_time)
+                out_subfolder = os.path.join(args.output_dir, output_time)
                 os.makedirs(out_subfolder, exist_ok=True)
                 video_paths = [os.path.join(out_subfolder, "{}.mp4".format(idx + 1)) for idx in range(len(frames_list))]
 
                 for index in range(len(frames_list)):
                     out_h, out_w = frames_list[index].shape[:2]
-                    out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fps, (out_w, out_h))
+                    out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fpsmin, (out_w, out_h))
                     out_frames = frames_queue_ls[index].get_frames()
                     for f in out_frames:
                         out.write(f)
@@ -781,7 +782,7 @@ def imageflow_demo(predictor, args):
                 # Save the top view video
                 out_h, out_w = top_view_img.shape[:2]
                 tv_out = cv2.VideoWriter(os.path.join(out_subfolder, "top_view.mp4"), cv2.VideoWriter_fourcc(*'mp4v'),
-                                         fps, (out_w, out_h))
+                                         fpsmin, (out_w, out_h))
                 out_frames = topview_queue.get_frames()
                 for f in out_frames:
                     tv_out.write(f)
