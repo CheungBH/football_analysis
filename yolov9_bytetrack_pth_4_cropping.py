@@ -830,5 +830,5 @@ if __name__ == '__main__':
 
 
 '''
-Usage python yolov9_bytetrack_pth_4_cropping.py --video_path /path/to/vidoe --output_dir /path/to/output
+Usage: python yolov9_bytetrack_pth_4_cropping.py --video_path /path/to/vidoe --output_dir /path/to/output
 '''
