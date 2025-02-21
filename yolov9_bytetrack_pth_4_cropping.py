@@ -626,6 +626,7 @@ def imageflow_demo(predictor, args):
 
             # yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
             for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
+                frames_queue_ls[index].push_frame(frame)
 
                 matrix = matrix_list[index]
                 trackers = tracker_list[index]
@@ -766,6 +767,7 @@ def imageflow_demo(predictor, args):
                 # img_full_list.append(img_list)
                 # img_list = []
                 if flag == 100 or frame_id+1 % 300 == 0:
+                    print("Saving the video")
                     output_time = frame_id / fpsmin
                     # Convert to real time
                     minutes = int(output_time // 60)
