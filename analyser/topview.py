@@ -1,11 +1,44 @@
 from collections import defaultdict
 import cv2
+import random
 
 
 class TopViewGenerator:
     def __init__(self, area_bounds):
         self.area_bounds = area_bounds
         self.points = []
+        self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
+
+    def constrain_number_of_points(self, points, all_points, idx):
+        number = self.num_dict[idx]
+        if len(points) == number:
+            return points
+        elif len(points) > number:
+            return random.sample(points, number)
+        else:
+            if len(all_points) <= number:
+                return all_points
+            sample_point = random.sample(all_points, number - len(points))
+            return points + sample_point
+
+    def player_stable(self, player_points, player_all_points):
+        points_dict = defaultdict(list)
+        point_all_dict = defaultdict(list)
+        for idx in range(5):
+            for point in player_points:
+                if point[2] == idx:
+                    points_dict[idx].append(point)
+
+            for all_point in player_all_points:
+                if all_point[2] == idx:
+                    point_all_dict[idx].append(all_point)
+
+        final_points = []
+
+        for idx, points in points_dict.items():
+            final_points += self.constrain_number_of_points(points_dict[idx], point_all_dict[idx], idx)
+        return final_points
+
 
     def merge_points_in_fixed_area(self, points, window_size):
         min_x, min_y, max_x, max_y = self.area_bounds
@@ -67,6 +100,7 @@ class TopViewGenerator:
         self.all_ball_points = ball_points
         player_points = self.merge_points_same_team(player_points, 10)
         player_points = self.merge_points_in_fixed_area(player_points, 100)
+        player_points = self.player_stable(player_points, self.all_player_points)
         self.player_points = player_points
         ball_points = self.remove_out_ball(ball_points)
         self.ball_points = ball_points

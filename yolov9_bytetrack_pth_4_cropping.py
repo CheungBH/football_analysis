@@ -431,9 +431,9 @@ def imageflow_demo(predictor, args):
     #     video_path = os.path.join(video_folder,mp4)
     #     video_paths.append(video_path)
 
-    # args.track_before_knn = True
-    # args.no_ball_tracker = True
-    # args.use_json = True
+    args.track_before_knn = True
+    args.no_ball_tracker = True
+    args.use_json = True
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
 
@@ -762,10 +762,8 @@ def imageflow_demo(predictor, args):
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
 
-
-
-
-
+            PlayerTopView.process(all_players, all_balls)
+            PlayerTopView.visualize(top_view_img)
 
             flag = analysis.flag
             # top_view.process()
@@ -812,9 +810,6 @@ def imageflow_demo(predictor, args):
                 ch = cv2.waitKey(0)
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
-                # img_full_list.append(img_list)
-                # img_list = []
-
 
 
             frame_id += 1
@@ -829,6 +824,7 @@ def imageflow_demo(predictor, args):
         else:
             break
 
+    print("Video process finished.")
     if args.save_asset:
         with open(asset_path, 'w') as f:
             json.dump(assets, f, indent=4)
