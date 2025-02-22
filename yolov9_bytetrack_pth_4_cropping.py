@@ -819,7 +819,7 @@ def imageflow_demo(predictor, args):
 
                 reason_file = os.path.join(out_subfolder, "reason.txt")
                 with open(reason_file, 'w') as f:
-                    f.write(flag)
+                    f.write(str(flag))
 
 
             # if len(img_list) == 4:
