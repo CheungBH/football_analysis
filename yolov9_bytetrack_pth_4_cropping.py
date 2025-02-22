@@ -114,6 +114,10 @@ def make_parser():
         help='mask'
     )
     parser.add_argument(
+        "--save_cropped_humans",
+        default="",
+    )
+    parser.add_argument(
         "--with_p6",
         action="store_true",
         help="Whether your model uses p6 in FPN/PAN.",
@@ -653,6 +657,13 @@ def imageflow_demo(predictor, args):
                 max_ball_output = None
                 team_targets = [[],[],[],[],[]]
 
+                if args.save_cropped_humans:
+                    for idx, output in enumerate(outputs):
+                        if output[5] == 1:
+                            box = output[:4]
+                            cropped_img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+                            cv2.imwrite(f"{args.save_cropped_humans}/human_{frame_id}_{index}_{idx}.jpg", cropped_img)
+
                 if args.track_before_knn:
                     player_boxes = []
                     for output in outputs:
@@ -830,10 +841,13 @@ def imageflow_demo(predictor, args):
 
     print("Video process finished.")
     if args.save_asset:
-        with open(asset_path, 'w') as f:
-            json.dump(assets, f, indent=4)
         if not args.use_saved_box:
             json.dump(box_assets, box_f, indent=4)
+        try:
+            with open(asset_path, 'w') as f:
+                json.dump(assets, f, indent=4)
+        except:
+            pass
 
 
 if __name__ == '__main__':

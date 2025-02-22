@@ -9,7 +9,7 @@ import PIL
 from torch.nn import functional as F
 
 
-model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\ckpt\model_epoch_11.pth"
+model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_MK\model_epoch_96.pth"
 
 
 class TeamAssigner:
@@ -192,6 +192,8 @@ class TeamAssigner:
         return team_id if team_id is not None else 0
 
     def get_player_whole_team(self, frame, player_bboxs, player_id, team_colors):
+        if not player_bboxs:
+            return []
         imgs, teams_id = [], []
         for player_bbox in player_bboxs:
             im = frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])]
