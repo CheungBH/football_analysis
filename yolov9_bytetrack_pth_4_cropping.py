@@ -815,6 +815,9 @@ def imageflow_demo(predictor, args):
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
 
+            reason_file = os.path.join(out_subfolder, "reason.txt")
+            with open(reason_file, 'w') as f:
+                f.write(flag)
 
             frame_id += 1
             # vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
@@ -843,5 +846,6 @@ if __name__ == '__main__':
 
 
 '''
-Usage: python yolov9_bytetrack_pth_4_cropping.py --video_path /path/to/vidoe --output_dir /path/to/output
+Usage: 
+python yolov9_bytetrack_pth_4_cropping.py --video_path /path/to/vidoe --output_dir /path/to/output
 '''
