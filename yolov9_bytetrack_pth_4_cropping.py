@@ -517,6 +517,8 @@ def imageflow_demo(predictor, args):
     topview_queue = FrameQueue(frame_queue)
 
     PlayerTopView = TopViewGenerator((50,50,1100,720))
+    if args.save_cropped_humans:
+        os.makedirs(save_cropped_path, exist_ok=True)
 
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
