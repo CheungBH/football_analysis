@@ -7,7 +7,7 @@ os.makedirs(output_folder, exist_ok=True)
 model_path = "assets/checkpoints/best.pt"
 court_img = r"D:\tmp\2.18\video_set_1474\court.jpg"
 
-cmd_tpl = "python yolov9_bytetrack_pth_4_cropping.py --save_cropped_humans {} --video_path {} --output_dir {} --save_asset -m {} --court_image {}"
+cmd_tpl = "python yolov9_bytetrack_pth_4_cropping.py --save_cropped_humans {} --video_path {} --output_dir {} --save_asset -m {} --court_image {} --show_video"
 
 for video in os.listdir(video_folder):
     video_path = os.path.join(video_folder, video)
