@@ -815,6 +815,11 @@ def imageflow_demo(predictor, args):
                     tv_out.write(f)
                 tv_out.release()
 
+                reason_file = os.path.join(out_subfolder, "reason.txt")
+                with open(reason_file, 'w') as f:
+                    f.write(flag)
+
+
             # if len(img_list) == 4:
             if args.show_video:
                 top_row = np.hstack(img_list[:2])
@@ -826,9 +831,6 @@ def imageflow_demo(predictor, args):
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
 
-            reason_file = os.path.join(out_subfolder, "reason.txt")
-            with open(reason_file, 'w') as f:
-                f.write(flag)
 
             frame_id += 1
             # vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
