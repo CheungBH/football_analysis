@@ -527,8 +527,8 @@ def imageflow_demo(predictor, args):
         if args.save_asset:
             box_asset_path = os.path.join(args.video_path, 'yolo.json')
             box_assets = {}
-            if os.path.exists(box_asset_path):
-                input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            # if os.path.exists(box_asset_path):
+            #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
             box_f = open(box_asset_path, 'w')
 
     while True:
