@@ -47,6 +47,7 @@ def process_images(folder_path, team_colors, output_folder, teams):
     # output_path = os.path.join(output_folder, os.path.basename(folder_path))
     for file_name in os.listdir(folder_path):
         output_path = os.path.join(output_folder, os.path.basename(folder_path), file_name)
+        os.makedirs(os.path.join(output_folder, os.path.basename(folder_path)), exist_ok=True)
         if file_name.startswith('.'):
             continue
         image_path = os.path.join(folder_path, file_name)
@@ -133,7 +134,7 @@ def process_images(folder_path, team_colors, output_folder, teams):
 
 
 if __name__ == '__main__':
-    root_folder = "/Users/cheungbh/Downloads/game1"
+    root_folder = r"C:\Users\User\Desktop\hku\football_analysis\analyser\knn_try\knn_assets\game1"
     output_folder = "knn_assets/out2"
     os.makedirs(output_folder, exist_ok=True)
 
@@ -153,7 +154,7 @@ if __name__ == '__main__':
         cnt += len(team_out)
         all_cnt += len(team_out)
         for out in team_out:
-            if out[1] == out[2]:
+            if os.path.basename(out[1]) == out[2]:
                 correct += 1
                 all_correct += 1
 

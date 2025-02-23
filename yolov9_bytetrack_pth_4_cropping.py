@@ -535,7 +535,7 @@ def imageflow_demo(predictor, args):
             box_f = open(box_asset_path, 'w')
 
     while True:
-        if frame_id == 2:
+        if frame_id == -1:
             break
         img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
