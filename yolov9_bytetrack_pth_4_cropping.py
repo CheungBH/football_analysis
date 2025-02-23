@@ -468,6 +468,7 @@ def imageflow_demo(predictor, args):
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w, real_h)
     )
+    print("Save video to: ", args.output_video_path)
     tv_path = os.path.join(os.path.dirname(args.output_video_path), "top_view.mp4")
     topview_writer = cv2.VideoWriter(tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
@@ -534,7 +535,7 @@ def imageflow_demo(predictor, args):
             box_f = open(box_asset_path, 'w')
 
     while True:
-        if frame_id == 10000:
+        if frame_id == 2:
             break
         img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
@@ -652,7 +653,7 @@ def imageflow_demo(predictor, args):
                 matrix = matrix_list[index][0]
                 trackers = tracker_list[index]
 
-                print(outputs.shape)
+                # print(outputs.shape)
                 team_boxes = [[] for _ in range(len(team_colors))]
                 ball_boxes = []
 
@@ -859,7 +860,7 @@ def imageflow_demo(predictor, args):
 
 if __name__ == '__main__':
     args = make_parser().parse_args()
-    predictor = Predictor(args)
+    predictor = None if args.use_saved_box else Predictor(args)
     imageflow_demo(predictor, args)
 
 
