@@ -144,14 +144,30 @@ if __name__ == '__main__':
     output_csv = os.path.join(output_folder, 'results.csv')
 
     outputs = [["raw_img", "class", "results"]]
+    all_cnt, all_correct = 0, 0
+    accuracy = []
     for team in teams:
+        cnt, correct = 0, 0
         team_out = process_images(os.path.join(checker_folder, team), team_colors, output_folder, teams)
         outputs += team_out
+        cnt += len(team_out)
+        all_cnt += len(team_out)
+        for out in team_out:
+            if out[1] == out[2]:
+                correct += 1
+                all_correct += 1
+
+        accuracy.append(correct/cnt)
+        print(f"Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct/cnt}")
+
     # print(outputs)
     with open(output_csv, 'w') as f:
         writer = csv.writer(f)
         for line in outputs:
             writer.writerow(line)
+
+    print(f"Total: {all_cnt}, Correct: {all_correct}")
+    print(f"Accuracy: {all_correct/all_cnt}")
         # writer.writerows(outputs)
     # process_images('knn_assets/team_colors/raw_img/yellow', team_colors)
 
