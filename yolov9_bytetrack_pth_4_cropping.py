@@ -437,7 +437,7 @@ def imageflow_demo(predictor, args):
 
     args.track_before_knn = True
     args.no_ball_tracker = True
-    args.use_json = True
+    # args.use_json = True
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
 
@@ -461,15 +461,15 @@ def imageflow_demo(predictor, args):
     # fps = caps[0].get(cv2.CAP_PROP_FPS)
     fpsmin = reduce(math.gcd,fps_list)
     frame_queue = fpsmin * 5
-    if args.use_json:
-        args.save_asset = False
+    # if args.use_json:
+    #     args.save_asset = False
     tv_h, tv_w = config.topview_height, config.topview_width
     real_h, real_w = config.real_video_height, config.real_video_width
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w, real_h)
     )
-    topview_writer = cv2.VideoWriter(
-        "/".join(args.output_video_path.split("/")[:-1]) + "top_view.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
+    tv_path = os.path.join(os.path.basename(args.output_video_path), "top_view.mp4")
+    topview_writer = cv2.VideoWriter(tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
     frame_id = 0
     team_assigner = TeamAssigner(root_folder=r"D:\tmp\2.19\feature")
