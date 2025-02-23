@@ -468,7 +468,7 @@ def imageflow_demo(predictor, args):
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w, real_h)
     )
-    tv_path = os.path.join(os.path.basename(args.output_video_path), "top_view.mp4")
+    tv_path = os.path.join(os.path.dirname(args.output_video_path), "top_view.mp4")
     topview_writer = cv2.VideoWriter(tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
     frame_id = 0
