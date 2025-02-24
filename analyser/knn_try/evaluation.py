@@ -135,7 +135,7 @@ def process_images(folder_path, team_colors, output_folder, teams):
     return outputs
 
 
-def process_game(root_folder, output_root, game_folder):
+def process_game(root_folder, output_root, game_folder, log_file):
     output_folder = os.path.join(output_root, game_folder)
     checker_folder = os.path.join(root_folder, game_folder, 'check')
     teams = ["player1", "player2", "goalkeeper1", "goalkeeper2", "referee"]
@@ -146,6 +146,8 @@ def process_game(root_folder, output_root, game_folder):
     outputs = [["raw_img", "class", "results"]]
     all_cnt, all_correct = 0, 0
     accuracy = []
+    with open(log_file, 'a') as f:
+        f.write(f"Processing Game: {game_folder}\n")
     for team in teams:
         cnt, correct = 0, 0
         team_out = process_images(os.path.join(checker_folder, team), team_colors, output_folder, teams)
@@ -158,7 +160,9 @@ def process_game(root_folder, output_root, game_folder):
                 all_correct += 1
 
         accuracy.append(correct / cnt)
-        print(f"Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct / cnt}")
+        print(f"Game: {game_folder}, Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct / cnt}")
+        with open(log_file, 'a') as f:
+            f.write(f"Game: {game_folder}, Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct / cnt}\n")
 
     # print(outputs)
     game_preds = [[o[1], o[2]] for o in outputs[1:]]
@@ -177,12 +181,13 @@ def process_game(root_folder, output_root, game_folder):
 if __name__ == '__main__':
     root_folder = "/Users/cheungbh/Downloads/game1"
     output_root = "knn_assets/out3"
+    log_file = os.path.join(output_root, 'log.txt')
 
     games_folder = os.listdir(root_folder)
     for game_folder in games_folder:
         if game_folder.startswith('.'):
             continue
-        process_game(root_folder, output_root, game_folder)
+        process_game(root_folder, output_root, game_folder, log_file)
         # writer.writerows(outputs)
     # process_images('knn_assets/team_colors/raw_img/yellow', team_colors)
 
