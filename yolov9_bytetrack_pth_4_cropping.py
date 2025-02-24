@@ -425,7 +425,6 @@ class Predictor(object):
         return outputs, imgs_info
 
 
-
 def imageflow_demo(predictor, args):
     video_names = config.cam4_videos_name
     video_folder = args.video_path
