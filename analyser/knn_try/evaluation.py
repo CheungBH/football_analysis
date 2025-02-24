@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 import csv
+from utils import generate_confusion_matrix, plot_confusion_matrix
+
 
 def get_first_pixel_colors(folder_path, teams):
     team_color = []
@@ -133,20 +135,19 @@ def process_images(folder_path, team_colors, output_folder, teams):
     return outputs
 
 
-if __name__ == '__main__':
-    root_folder = r"C:\Users\User\Desktop\hku\football_analysis\analyser\knn_try\knn_assets\game1"
-    output_folder = "knn_assets/out2"
-    os.makedirs(output_folder, exist_ok=True)
-
-    checker_folder = os.path.join(root_folder, 'check')
+def process_game(root_folder, output_root, game_folder, log_file):
+    output_folder = os.path.join(output_root, game_folder)
+    checker_folder = os.path.join(root_folder, game_folder, 'check')
     teams = ["player1", "player2", "goalkeeper1", "goalkeeper2", "referee"]
-    ref_folder = os.path.join(root_folder, 'ref')
+    ref_folder = os.path.join(root_folder, game_folder, 'ref')
     team_colors = get_first_pixel_colors(ref_folder, teams)
     output_csv = os.path.join(output_folder, 'results.csv')
 
     outputs = [["raw_img", "class", "results"]]
     all_cnt, all_correct = 0, 0
     accuracy = []
+    with open(log_file, 'a') as f:
+        f.write(f"Processing Game: {game_folder}\n")
     for team in teams:
         cnt, correct = 0, 0
         team_out = process_images(os.path.join(checker_folder, team), team_colors, output_folder, teams)
@@ -158,17 +159,35 @@ if __name__ == '__main__':
                 correct += 1
                 all_correct += 1
 
-        accuracy.append(correct/cnt)
-        print(f"Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct/cnt}")
+        accuracy.append(correct / cnt)
+        print(f"Game: {game_folder}, Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct / cnt}")
+        with open(log_file, 'a') as f:
+            f.write(f"Game: {game_folder}, Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct / cnt}\n")
 
     # print(outputs)
+    game_preds = [[o[1], o[2]] for o in outputs[1:]]
+    confusion_matrix = generate_confusion_matrix(game_preds)
+    plot_confusion_matrix(confusion_matrix, save_path=os.path.join(output_folder, 'confusion_matrix.png'))
+
     with open(output_csv, 'w') as f:
         writer = csv.writer(f)
         for line in outputs:
             writer.writerow(line)
 
     print(f"Total: {all_cnt}, Correct: {all_correct}")
-    print(f"Accuracy: {all_correct/all_cnt}")
+    print(f"Accuracy: {all_correct / all_cnt}")
+
+
+if __name__ == '__main__':
+    root_folder = "/Users/cheungbh/Downloads/game1"
+    output_root = "knn_assets/out3"
+    log_file = os.path.join(output_root, 'log.txt')
+
+    games_folder = os.listdir(root_folder)
+    for game_folder in games_folder:
+        if game_folder.startswith('.'):
+            continue
+        process_game(root_folder, output_root, game_folder, log_file)
         # writer.writerows(outputs)
     # process_images('knn_assets/team_colors/raw_img/yellow', team_colors)
 
