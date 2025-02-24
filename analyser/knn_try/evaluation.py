@@ -135,14 +135,11 @@ def process_images(folder_path, team_colors, output_folder, teams):
     return outputs
 
 
-if __name__ == '__main__':
-    root_folder = "/Users/cheungbh/Downloads/game1"
-    output_folder = "knn_assets/out2"
-    os.makedirs(output_folder, exist_ok=True)
-
-    checker_folder = os.path.join(root_folder, 'check')
+def process_game(root_folder, output_root, game_folder):
+    output_folder = os.path.join(output_root, game_folder)
+    checker_folder = os.path.join(root_folder, game_folder, 'check')
     teams = ["player1", "player2", "goalkeeper1", "goalkeeper2", "referee"]
-    ref_folder = os.path.join(root_folder, 'ref')
+    ref_folder = os.path.join(root_folder, game_folder, 'ref')
     team_colors = get_first_pixel_colors(ref_folder, teams)
     output_csv = os.path.join(output_folder, 'results.csv')
 
@@ -160,8 +157,8 @@ if __name__ == '__main__':
                 correct += 1
                 all_correct += 1
 
-        accuracy.append(correct/cnt)
-        print(f"Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct/cnt}")
+        accuracy.append(correct / cnt)
+        print(f"Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct / cnt}")
 
     # print(outputs)
     game_preds = [[o[1], o[2]] for o in outputs[1:]]
@@ -174,7 +171,18 @@ if __name__ == '__main__':
             writer.writerow(line)
 
     print(f"Total: {all_cnt}, Correct: {all_correct}")
-    print(f"Accuracy: {all_correct/all_cnt}")
+    print(f"Accuracy: {all_correct / all_cnt}")
+
+
+if __name__ == '__main__':
+    root_folder = "/Users/cheungbh/Downloads/game1"
+    output_root = "knn_assets/out3"
+
+    games_folder = os.listdir(root_folder)
+    for game_folder in games_folder:
+        if game_folder.startswith('.'):
+            continue
+        process_game(root_folder, output_root, game_folder)
         # writer.writerows(outputs)
     # process_images('knn_assets/team_colors/raw_img/yellow', team_colors)
 
