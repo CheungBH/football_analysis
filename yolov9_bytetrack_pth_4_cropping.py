@@ -149,6 +149,7 @@ def make_parser():
     )
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
+    parser.add_argument("--stop_at", type=int, default=-1, help="which frame to stop")
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
     parser.add_argument("--match_thresh", type=float, default=0.8, help="matching threshold for tracking")
     parser.add_argument('--min-box-area', type=float, default=10, help='filter out tiny boxes')
@@ -535,7 +536,7 @@ def imageflow_demo(predictor, args):
             box_f = open(box_asset_path, 'w')
 
     while True:
-        if frame_id == -1:
+        if frame_id == args.stop_at:
             break
         img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
