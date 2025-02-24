@@ -8,7 +8,7 @@ model_path = "assets/checkpoints/best.pt"
 court_img = r"D:\tmp\2.18\video_set_1474\court.jpg"
 
 use_save_box = False
-stop_at = 2 # -1 means no limit
+stop_at = -1 # -1 means no limit
 
 cmd_tpl = ("python yolov9_bytetrack_pth_4_cropping.py --save_cropped_humans {} --video_path {} --use_json "
            "--output_dir {} --save_asset -m {} --court_image {} --show_video -o {} --stop_at {}")
@@ -17,8 +17,6 @@ if use_save_box:
 
 
 for video in os.listdir(video_folder):
-    if "161" not in video:
-        continue
     video_path = os.path.join(video_folder, video)
     output_folder = os.path.join(output_folder_root, video.split('.')[0])
     output_dir = os.path.join(output_folder, "output")
