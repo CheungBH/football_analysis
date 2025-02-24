@@ -458,6 +458,8 @@ def imageflow_demo(predictor, args):
         height_list.append(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps_list.append(round(cap.get(cv2.CAP_PROP_FPS)))
 
+    if args.save_cropped_humans:
+        os.makedirs(args.save_cropped_humans, exist_ok=True)
 
     # fps = caps[0].get(cv2.CAP_PROP_FPS)
     fpsmin = reduce(math.gcd,fps_list)
@@ -470,6 +472,7 @@ def imageflow_demo(predictor, args):
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w, real_h)
     )
     print("Save video to: ", args.output_video_path)
+    print(os.path.exists(args.output_video_path))
     tv_path = os.path.join(os.path.dirname(args.output_video_path), "top_view.mp4")
     topview_writer = cv2.VideoWriter(tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
@@ -519,8 +522,6 @@ def imageflow_demo(predictor, args):
     topview_queue = FrameQueue(frame_queue)
 
     PlayerTopView = TopViewGenerator((50,50,1100,720))
-    if args.save_cropped_humans:
-        os.makedirs(args.save_cropped_humans, exist_ok=True)
 
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')

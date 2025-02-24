@@ -17,6 +17,8 @@ if use_save_box:
 
 
 for video in os.listdir(video_folder):
+    if "161" not in video:
+        continue
     video_path = os.path.join(video_folder, video)
     output_folder = os.path.join(output_folder_root, video.split('.')[0])
     output_dir = os.path.join(output_folder, "output")
