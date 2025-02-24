@@ -538,6 +538,7 @@ def imageflow_demo(predictor, args):
     while True:
         if frame_id == args.stop_at:
             break
+        print("Finish processing frame: ", frame_id)
         img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
