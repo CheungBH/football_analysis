@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 import csv
+from utils import generate_confusion_matrix, plot_confusion_matrix
+
 
 def get_first_pixel_colors(folder_path, teams):
     team_color = []
@@ -134,7 +136,7 @@ def process_images(folder_path, team_colors, output_folder, teams):
 
 
 if __name__ == '__main__':
-    root_folder = r"C:\Users\User\Desktop\hku\football_analysis\analyser\knn_try\knn_assets\game1"
+    root_folder = "/Users/cheungbh/Downloads/game1"
     output_folder = "knn_assets/out2"
     os.makedirs(output_folder, exist_ok=True)
 
@@ -162,6 +164,10 @@ if __name__ == '__main__':
         print(f"Team: {team}, Total: {cnt}, Correct: {correct}, Accuracy: {correct/cnt}")
 
     # print(outputs)
+    game_preds = [[o[1], o[2]] for o in outputs[1:]]
+    confusion_matrix = generate_confusion_matrix(game_preds)
+    plot_confusion_matrix(confusion_matrix, save_path=os.path.join(output_folder, 'confusion_matrix.png'))
+
     with open(output_csv, 'w') as f:
         writer = csv.writer(f)
         for line in outputs:
