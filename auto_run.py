@@ -5,7 +5,7 @@ video_folder = r"D:\tmp\2.18"
 output_folder_root = r"D:\tmp\2.24_output"
 os.makedirs(output_folder_root, exist_ok=True)
 model_path = "assets/checkpoints/best.pt"
-court_img = r"D:\tmp\2.18\video_set_1474\court.jpg"
+court_img = r"E:\0220\videocut\court.jpg"
 
 use_save_box = False
 stop_at = -1 # -1 means no limit
@@ -17,6 +17,8 @@ if use_save_box:
 
 
 for video in os.listdir(video_folder):
+    if not os.path.isdir(os.path.join(video_folder, video)):
+        continue
     video_path = os.path.join(video_folder, video)
     output_folder = os.path.join(output_folder_root, video.split('.')[0])
     output_dir = os.path.join(output_folder, "output")

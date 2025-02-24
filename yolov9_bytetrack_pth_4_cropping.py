@@ -778,7 +778,7 @@ def imageflow_demo(predictor, args):
                 #                  frame_id=frame_id,
                 #                  matrix=matrix,
                 #                 frame_queue=frame_queue)
-                analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,ball_now=real_ball_locations,
+                analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,#ball_now=real_ball_locations,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
                 analysis_list[index].visualize(img_list[index])
                 # for i in range(len(real_foot_locations[index])):
@@ -788,7 +788,7 @@ def imageflow_demo(predictor, args):
             PlayerTopView.visualize(top_view_img)
 
             flag = analysis.flag # 异常条件激活
-            flag_list = analysis.flag_list
+            # flag_list = analysis.flag_list
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
             topview_queue.push_frame(top_view_img)
