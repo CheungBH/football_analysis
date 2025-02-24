@@ -179,8 +179,9 @@ def process_game(root_folder, output_root, game_folder, log_file):
 
 
 if __name__ == '__main__':
-    root_folder = "/Users/cheungbh/Downloads/game1"
-    output_root = "knn_assets/out3"
+    root_folder = "knn_assets/game1_outer"
+    output_root = "knn_assets/out2"
+    os.makedirs(output_root, exist_ok=True)
     log_file = os.path.join(output_root, 'log.txt')
 
     games_folder = os.listdir(root_folder)
@@ -190,4 +191,6 @@ if __name__ == '__main__':
         process_game(root_folder, output_root, game_folder, log_file)
         # writer.writerows(outputs)
     # process_images('knn_assets/team_colors/raw_img/yellow', team_colors)
+
+    # process_game(root_folder, output_root, 'game1', log_file)
 

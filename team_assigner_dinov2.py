@@ -203,14 +203,17 @@ class TeamAssigner:
 
         return team_id if team_id is not None else 0
 
-    def get_player_whole_team(self, frame, player_bboxs, player_id, team_colors):
+    def get_player_whole_team(self, frame, player_bboxs, frame_idx, team_colors, save="tmp/human"):
 
         if not player_bboxs:
             return []
         imgs, teams_id = [], []
-        for player_bbox in player_bboxs:
+        for box_idx, player_bbox in enumerate(player_bboxs):
             player_bbox = self.clip_bounding_box(player_bbox, frame.shape[:2])
-
+            if save:
+                os.makedirs(save, exist_ok=True)
+                cv2.imwrite(f"{save}/{frame_idx}_{box_idx}.jpg",
+                            frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])])
             im = frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])]
             # To PIL image
             im = PIL.Image.fromarray(im)

@@ -10,12 +10,12 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from analyser.topview import TopViewGenerator
-from team_assigner import TeamAssigner
+from team_assigner_dinov2 import TeamAssigner
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
 import json
 import cv2
-from utils.utils import merge_points_in_fixed_area, merge_points_same_team
+from analyser.knn_try.get_jersey_color import process_jerseys
 from utils.general import non_max_suppression, scale_boxes, scale_and_remove_boxes
 from utils.crop_img_sliding_window import sliding_window_crop
 from visualize import plot_tracking
@@ -44,6 +44,12 @@ def make_parser():
         type=str,
         default='cuda:0',
         help="Path to your input image.",
+    )
+    parser.add_argument(
+        "--jersey_folder",
+        type=str,
+        default='',
+        help="Path to your input folder of jersey.",
     )
     parser.add_argument(
         "-i",
@@ -441,6 +447,14 @@ def imageflow_demo(predictor, args):
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
 
+    if args.jersey_folder:
+        output_folder = args.jersey_folder + "_output"
+        os.makedirs(output_folder, exist_ok=True)
+        output_json = os.path.join(args.video_path, "color.json")
+        process_jerseys(args.jersey_folder, output_folder, output_json)
+    else:
+        print("No jersey folder provided. Make sure to provide the color.json")
+
     video_paths = [os.path.join(video_folder, name) for name in video_names]
     #sync_frame.resample_videos(video_paths, 30)
     start_frames = args.start_frames if args.start_frames else []
@@ -476,7 +490,7 @@ def imageflow_demo(predictor, args):
     topview_writer = cv2.VideoWriter(tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
     frame_id = 0
-    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature\0208_game")
+    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature\video_set_161")
     points = []
 
     def click_court(court_img):

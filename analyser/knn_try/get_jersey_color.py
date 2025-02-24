@@ -43,7 +43,7 @@ def get_jersey_color(image_path, white_threshold=0.8):
     return avg_color.astype(int).tolist()
 
 
-def process_images(input_folder, output_folder, output_json):
+def process_jerseys(input_folder, output_folder, output_json):
     image_data = {}
 
     if not os.path.exists(output_folder):
@@ -77,4 +77,4 @@ def process_images(input_folder, output_folder, output_json):
 input_folder = 'knn_assets/jersey'
 output_folder = 'knn_assets/jersey_output'
 output_json = 'knn_assets/jersey_output/color.json'
-process_images(input_folder, output_folder, output_json)
+process_jerseys(input_folder, output_folder, output_json)
