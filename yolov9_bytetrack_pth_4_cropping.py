@@ -558,8 +558,8 @@ def imageflow_demo(predictor, args):
 
             if frame_id == 0:
                 if args.use_json:
-                    json_path = '/media/hkuit164/Backup/football_analysis/datasets/assets.json'
-                                #os.path.join(args.video_path, "assets.json")
+                    # json_path = '/media/hkuit164/Backup/football_analysis/datasets/assets.json'
+                    json_path = os.path.join(args.video_path, "assets.json")
 
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
@@ -596,8 +596,7 @@ def imageflow_demo(predictor, args):
                     print(matrix_list)
                     cv2.destroyAllWindows()
 
-                color_json_path = '/media/hkuit164/Backup/football_analysis/datasets/3/color.json'
-                #os.path.join(args.video_path, 'color.json')
+                color_json_path = os.path.join(args.video_path, 'color.json')
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
                 team_colors = color_asset
