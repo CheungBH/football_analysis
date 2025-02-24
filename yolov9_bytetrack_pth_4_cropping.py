@@ -10,7 +10,7 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from analyser.topview import TopViewGenerator
-from team_assigner import TeamAssigner
+from team_assigner_dinov2 import TeamAssigner
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
 import json

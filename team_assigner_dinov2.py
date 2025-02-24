@@ -9,7 +9,7 @@ import PIL
 from torch.nn import functional as F
 
 
-model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_MK\model_epoch_96.pth"
+model_path = r"D:\tmp\2.24\jersey_7games.pth"
 
 
 class TeamAssigner:
@@ -178,6 +178,18 @@ class TeamAssigner:
         self.team_colors = team_colors
         self.team_reverse_color = {tuple(value): key for key, value in self.team_colors.items()}
 
+    def clip_bounding_box(self, bbox, frame_size):
+        x1, y1, x2, y2 = bbox
+        frame_height, frame_width = frame_size
+
+        # Clip the coordinates
+        x1_clipped = max(0, min(x1, frame_width))
+        y1_clipped = max(0, min(y1, frame_height))
+        x2_clipped = max(0, min(x2, frame_width))
+        y2_clipped = max(0, min(y2, frame_height))
+
+        return np.array([x1_clipped, y1_clipped, x2_clipped, y2_clipped])
+
 
 
     def get_player_team_test(self, frame, playerbbox, frame_id, team_colors):
@@ -192,10 +204,13 @@ class TeamAssigner:
         return team_id if team_id is not None else 0
 
     def get_player_whole_team(self, frame, player_bboxs, player_id, team_colors):
+
         if not player_bboxs:
             return []
         imgs, teams_id = [], []
         for player_bbox in player_bboxs:
+            player_bbox = self.clip_bounding_box(player_bbox, frame.shape[:2])
+
             im = frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])]
             # To PIL image
             im = PIL.Image.fromarray(im)
@@ -211,8 +226,8 @@ class TeamAssigner:
             for player_feature in self.features:
                 similarity = F.cosine_similarity(feature, player_feature, dim=1)
                 similarities.append(similarity)
-            min_similarity = min(similarities)
-            team_id = similarities.index(min_similarity)
+            max_similarity = max(similarities)
+            team_id = similarities.index(max_similarity)
             teams_id.append(team_id)
         return teams_id
 
