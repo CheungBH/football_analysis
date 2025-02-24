@@ -557,7 +557,8 @@ def imageflow_demo(predictor, args):
 
             if frame_id == 0:
                 if args.use_json:
-                    json_path = os.path.join(args.video_path, "assets.json")
+                    json_path = '/media/hkuit164/Backup/football_analysis/datasets/assets.json'
+                                #os.path.join(args.video_path, "assets.json")
 
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
@@ -594,7 +595,8 @@ def imageflow_demo(predictor, args):
                     print(matrix_list)
                     cv2.destroyAllWindows()
 
-                color_json_path = os.path.join(args.video_path, 'color.json')
+                color_json_path = '/media/hkuit164/Backup/football_analysis/datasets/3/color.json'
+                #os.path.join(args.video_path, 'color.json')
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
                 team_colors = color_asset
@@ -755,13 +757,14 @@ def imageflow_demo(predictor, args):
                     print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
                     ball_box = ball_targets[0].tlwh if ball_targets else []
 
+                real_ball_locations=[]
                 if len(ball_box) > 0:
                     ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]/2]
                     ball_locations = np.array([[ball_location]])
                     real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
-                    real_ball_locations = real_ball_locations[0][0]
-                    real_ball_history.append(real_ball_locations.tolist())
-                    all_balls.append(real_ball_locations.tolist())
+                    real_ball_locations = real_ball_locations[0][0].tolist()
+                    real_ball_history.append(real_ball_locations)
+                    all_balls.append(real_ball_locations)
                     # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                     img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
@@ -775,7 +778,7 @@ def imageflow_demo(predictor, args):
                 #                  frame_id=frame_id,
                 #                  matrix=matrix,
                 #                 frame_queue=frame_queue)
-                analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,
+                analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,ball_now=real_ball_locations,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
                 analysis_list[index].visualize(img_list[index])
                 # for i in range(len(real_foot_locations[index])):
@@ -785,6 +788,7 @@ def imageflow_demo(predictor, args):
             PlayerTopView.visualize(top_view_img)
 
             flag = analysis.flag # 异常条件激活
+            flag_list = analysis.flag_list
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
             topview_queue.push_frame(top_view_img)
@@ -826,7 +830,7 @@ def imageflow_demo(predictor, args):
 
             # if len(img_list) == 4:
             if args.show_video:
-                top_row = np.hstack(img_list[:2])
+                top_row = np.hstack([img_list[1], img_list[0]])
                 bottom_row = np.hstack(img_list[2:])
                 combined_frame = np.vstack([top_row, bottom_row])
                 cv2.imshow("Combined Frame", combined_frame)
