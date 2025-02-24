@@ -21,7 +21,7 @@ def generate_confusion_matrix(predictions_labels):
     matrix = np.zeros((len(labels), len(labels)), dtype=int)
 
     # Populate the confusion matrix
-    for predicted, actual in predictions_labels:
+    for actual, predicted in predictions_labels:
         matrix[label_to_index[actual], label_to_index[predicted]] += 1  # Row: actual, Column: predicted
 
     # Convert to DataFrame for better readability
