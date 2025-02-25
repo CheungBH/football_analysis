@@ -16,21 +16,6 @@ class BallKeeperChangeChecker:
         self.ball_holder = None
         self.ball_holder_list =[]
 
-    # def process(self, players1, players2, balls, **kwargs):
-    #     if len(balls):
-    #         ball_position = balls[-1]
-    #         # 找到第一次接球者(上一次接球)
-    #         min_key_raw1, min_distance_raw1 = find_closest_player(players1, ball_position, 0)
-    #         min_key_raw2, min_distance_raw2 = find_closest_player(players2, ball_position, 0)
-    #         self.first_catcher = 1 if min_distance_raw1 < min_distance_raw2 else 2
-    #
-    #         # 找到最终接球者
-    #         min_key_1, min_distance_1 = find_closest_player(players1, ball_position, -1)
-    #         min_key_2, min_distance_2 = find_closest_player(players2, ball_position, -1)
-    #         self.catcher = 1 if min_distance_1 < min_distance_2 else 2
-    #         self.catch_list.append(self.catcher)
-    #         if len(self.catch_list) > 5:
-    #             self.holder, self.flag = check_ball_possession(self.catch_list,self.thre)
     def process(self, players,balls,frame_queue, **kwargs):
         if len(balls):
             self.flag = False

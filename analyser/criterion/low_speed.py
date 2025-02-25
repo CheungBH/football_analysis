@@ -8,38 +8,19 @@ class LowSpeedChecker:
         self.name = 'low_speed'
         self.speed_threshold_low = 0.7
         self.speed_threshold_nomove = 0.4
-        self.frame_duration = 50
+        self.frame_duration = 10
         self.thre = 0.8
         self.flag_low = 0
+        self.flag = False
         self.flag_nomove = 0
-        self.colors = [(0, 0, 255), (125, 125, 125)]
         self.curve_duration = 10
         self.flag_list=[[], []]
         self.low_speed_players = []
         self.nomove_players = []
-    # def process(self, players1, players2, balls,frame_queue, **kwargs):
-    #     self.team1_dict = players1
-    #     self.team2_dict = players2
-    #     self.frame_duration = frame_queue
-    #     self.flag = 0
-    #     self.balls = balls
-    #     self.speeds = [defaultdict(float), defaultdict(float)]
-    #     self.low_speed_players = [[], []]
-    #     self.nomove_players = [[], []]
-    #
-    #     for team_id, team in enumerate([players1, players2]):
-    #         for p_id, position in team.items():
-    #             if len(position) >= self.frame_duration: # *ratio
-    #                 speed = check_speed_displacement(position[-self.frame_duration:])
-    #                 self.speeds[team_id][p_id] = speed
-    #                 if speed < self.speed_threshold_low:
-    #                     self.flag = 0
-    #                     self.low_speed_players[team_id].append(p_id)
-    #                 else:
-    #                     self.flag = 1
+
     def process(self, players, balls,frame_queue, **kwargs):
         self.team_dict = players
-        self.flag = 0
+        self.flag = False
         self.flag_low, self.flag_nomove = 0,0
         self.speeds = [defaultdict(float),defaultdict(float)]
         self.low_speed_players = []
@@ -57,24 +38,13 @@ class LowSpeedChecker:
                     self.nomove_players.append(p_id)
                     self.flag_nomove += 1
             if self.flag_low > 0:
-                self.flag = 1
+                self.flag = True
 
-
-        for team_id, team in enumerate([players]):
-            for p_id, position in team.items():
-                if len(position) >= self.frame_duration: # *ratio
-                    speed = check_speed_displacement(position[-self.frame_duration:])
-                    self.speeds[team_id][p_id] = speed
-                    if speed < self.speed_threshold_low:
-                        self.flag = 0
-                        self.low_speed_players[team_id].append(p_id)
-                    else:
-                        self.flag = 1
     def visualize(self, frame):
-        if self.flag == 0:
+        if self.flag == False:
             cv2.putText(frame, "Normal speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
-        elif self.flag >= 1:
+        elif self.flag == True:
             cv2.putText(frame, "Low Speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         # elif self.flag == 2:
         #     cv2.putText(frame, "No moving", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
