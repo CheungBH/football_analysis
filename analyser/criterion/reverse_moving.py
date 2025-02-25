@@ -8,11 +8,11 @@ class MovingReverseChecker:
         self.name = 'reverse_moving'
         self.angle_threshold = 135
         self.frame_duration = 10
+        self.thre=0.6
         self.flag = False
         self.colors = [(0, 0, 255), (125, 125, 125)]
         self.curve_duration = 10
         self.base_vector = calculate_vector((0, 0), (0, 1))
-
         self.flaglist=[]
         self.reverse_count = {}
 
@@ -28,7 +28,7 @@ class MovingReverseChecker:
             if len(values) >= self.frame_duration:
                 first_vector = values[-self.frame_duration]
                 last_vector = values[-1]
-                key_speed = check_speed_distance[values[-self.frame_duration:]]
+                key_speed = check_speed_distance(values[-self.frame_duration:])
                 if key_speed > 1.0:
                     key_vectors[key] = [last_vector[0]-first_vector[0],last_vector[1]-first_vector[1]]
 
@@ -57,19 +57,20 @@ class MovingReverseChecker:
             for idx,reverse in enumerate(self.reverse_list):
                 cv2.putText(frame, "ID {} and ID{} is reverse".format(self.reverse_list[idx][0],self.reverse_list[idx][1]),
                             (500, 100 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
-
         else:
-            cv2.putText(frame, "Someone is reverse", (100, 1000), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255),
-                        2, cv2.LINE_AA)
+            cv2.putText(frame, "No reverse", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0),
+                            2, cv2.LINE_AA)
 
     def visualize_details(self, frame):
         self.visualize(frame)
-
+        pass
+        '''
         for t_idx, (color, team_dict) in enumerate(zip(self.colors, [self.team1_dict, self.team2_dict])):
             for p_idx, (player, locations) in enumerate(team_dict.items()):
                 angle = self.angles[t_idx][player]
                 cv2.putText(frame, "id {}: Angle {}".format(player, angle), (100 + t_idx * 500, 100 + p_idx * 50),
                             cv2.FONT_HERSHEY_PLAIN, 2, color, thickness=2)
+        '''
 
     def vis_path(self, frame, locations, vis_duration, color):
         for i in range(vis_duration):

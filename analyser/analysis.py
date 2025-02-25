@@ -1,18 +1,21 @@
 
 from .criterion import *
-
+# low_speed -- ball_out_range -- goalkeeper_single -- reverse
 checkers = {"low_speed": LowSpeedChecker,
             "reverse_moving": MovingReverseChecker,
-            "side_referee": SideRefereeChecker,
+            #"side_referee": SideRefereeChecker,
             "ballkeeper_change": BallKeeperChangeChecker,
             "goalkeeper_single": GoalKeeperSingleChecker,
             "ball_out_range": BallOutRangeChecker,
+            #"standing": StandingChecker,
+            "lack_pressure": LackPressureChecker,
             }
 
 class AnalysisManager:
 
     def __init__(self, check_list, court):
         self.criterion = [checkers[check_item](court=court) for check_item in check_list]
+        self.flag = 0
 
         self.flag = 0
         self.flag_list=[]

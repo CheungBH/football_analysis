@@ -11,11 +11,12 @@ import argparse
 import copy
 from analyser.topview import TopViewGenerator
 from team_assigner import TeamAssigner
+
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
 import json
 import cv2
-from utils.utils import merge_points_in_fixed_area, merge_points_same_team
+from analyser.knn_try.get_jersey_color import process_images
 from utils.general import non_max_suppression, scale_boxes, scale_and_remove_boxes
 from utils.crop_img_sliding_window import sliding_window_crop
 from visualize import plot_tracking
@@ -44,6 +45,13 @@ def make_parser():
         type=str,
         default='cuda:0',
         help="Path to your input image.",
+    )
+    parser.add_argument(
+
+        "--jersey_folder",
+        type=str,
+        default='',
+        help="Path to your input folder of jersey.",
     )
     parser.add_argument(
         "-i",
@@ -441,6 +449,14 @@ def imageflow_demo(predictor, args):
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
 
+    if args.jersey_folder:
+        output_folder = args.jersey_folder + "_output"
+        os.makedirs(output_folder, exist_ok=True)
+        output_json = os.path.join(args.video_path, "color.json")
+        process_images(args.jersey_folder, output_folder, output_json)
+    else:
+        print("No jersey folder provided. Make sure to provide the color.json")
+
     video_paths = [os.path.join(video_folder, name) for name in video_names]
     #sync_frame.resample_videos(video_paths, 30)
     start_frames = args.start_frames if args.start_frames else []
@@ -476,7 +492,9 @@ def imageflow_demo(predictor, args):
     topview_writer = cv2.VideoWriter(tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
     frame_id = 0
-    team_assigner = TeamAssigner(root_folder=r"D:\tmp\2.19\feature")
+
+    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature\0208_video_set_161")
+
     points = []
 
     def click_court(court_img):
@@ -507,7 +525,6 @@ def imageflow_demo(predictor, args):
 
 
     top_view_img_tpl = cv2.imread(court_image)
-
     all_player_dict = [defaultdict(list)for _ in range(4)]
     team1_dict = [defaultdict(list)for _ in range(4)]
     team2_dict = [defaultdict(list)for _ in range(4)]
@@ -539,6 +556,7 @@ def imageflow_demo(predictor, args):
 
         if frame_id == args.stop_at:
             break
+        # try:
         img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
         ret_vals,frames_list=[],[]
@@ -556,10 +574,11 @@ def imageflow_demo(predictor, args):
         if sum(ret_vals) == len(ret_vals):
             frames_list = [cv2.resize(frame, (real_w, real_h)) for frame in frames_list]
             flag_list=[]
+
             if frame_id == 0:
                 if args.use_json:
-                    json_path = '/media/hkuit164/Backup/football_analysis/datasets/video_set_907/assets.json'
-                                #os.path.join(args.video_path, "assets.json")
+                    # json_path = '/media/hkuit164/Backup/football_analysis/datasets/assets.json'
+                    json_path = os.path.join(args.video_path, "assets.json")
 
                     with open(json_path, 'r') as f:
                         assets = json.load(f)
@@ -596,8 +615,7 @@ def imageflow_demo(predictor, args):
                     print(matrix_list)
                     cv2.destroyAllWindows()
 
-                color_json_path = '/media/hkuit164/Backup/football_analysis/datasets/3/color.json'
-                #os.path.join(args.video_path, 'color.json')
+                color_json_path = os.path.join(args.video_path, 'color.json')
                 with open(color_json_path, 'r') as f:
                     color_asset = json.load(f)
                 team_colors = color_asset
@@ -654,6 +672,7 @@ def imageflow_demo(predictor, args):
             for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
                 frames_queue_ls[index].push_frame(frame)
                 real_ball_history=[]
+
                 matrix = matrix_list[index][0]
                 trackers = tracker_list[index]
 
@@ -675,7 +694,10 @@ def imageflow_demo(predictor, args):
                     player_boxes = []
                     for output in outputs:
                         if output[5] == 1:
-                            player_boxes.append(output.tolist())
+                            # Height > Width
+                            if output[3] - output[1] > output[2] - output[0]:
+                                player_boxes.append(output.tolist())
+
                         elif output[5] == 0:
                             if max_ball_output is None or output[4] > max_ball_output[4]:
                                 max_ball_output = output
@@ -683,7 +705,7 @@ def imageflow_demo(predictor, args):
                                    [img_info['height'], img_info['width']])
 
                     team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
-                                                                    "", team_colors)
+                                                                    index, team_colors=team_colors, cam_idx=index)
                     for player_target, team_id in zip(player_targets, team_ids):
                         team_boxes[team_id].append(player_target)
                     team_targets[index] = team_boxes
@@ -786,6 +808,7 @@ def imageflow_demo(predictor, args):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
                 flag_list.append(analysis_list[index].flag_list)
 
+
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
 
@@ -853,17 +876,15 @@ def imageflow_demo(predictor, args):
                 topview_writer.write(top_view_img)
 
 
-            frame_id += 1
-            # vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
-            # topview_writer.write(top_view_img)
-            # ch = cv2.waitKey(1)
+            print("Finish processing frame: ", frame_id)
             if frame_id % 100 == 0:
                 print(f"Frame {frame_id} processed.")
-
-            # if ch == 27 or ch == ord("q") or ch == ord("Q"):
-            #     break
         else:
             break
+        # except:
+        #     print("Error processing frame: {}. Skip".format(frame_id))
+        #     continue
+        frame_id += 1
 
     print("Video process finished.")
     if args.save_asset:

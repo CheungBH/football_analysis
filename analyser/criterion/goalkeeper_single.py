@@ -1,4 +1,6 @@
 import cv2
+from .utils import is_in_rectangle, calculate_ratio
+
 
 class GoalKeeperSingleChecker:
 
@@ -83,3 +85,4 @@ class GoalKeeperSingleChecker:
     def visualize_details(self, frame):
         self.visualize(frame)
         pass
+

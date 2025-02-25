@@ -1,0 +1,12 @@
+opencv-python
+IPython
+pandas
+PyYAML
+matplotlib
+psutil
+tqdm
+seaborn
+scikit-learn
+moviepy
+lap
+cython-bbox

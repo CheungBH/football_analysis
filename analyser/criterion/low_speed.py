@@ -1,11 +1,10 @@
 import cv2
-from .utils import check_speed_ls
 from collections import defaultdict
+from .utils import check_speed_displacement
 
 
 class LowSpeedChecker:
     def __init__(self, **kwargs):
-
         self.name = 'low_speed'
         self.speed_threshold_low = 0.7
         self.speed_threshold_nomove = 0.4
@@ -55,14 +54,26 @@ class LowSpeedChecker:
                     self.flag_low += 1
                 nomove_count =  sum(1 for speed in speeds[-self.frame_duration:] if speed < self.speed_threshold_nomove)
                 if nomove_count >= (self.frame_duration-10) * self.thre:
-                    self.nomove_count.append(p_id)
+                    self.nomove_players.append(p_id)
                     self.flag_nomove += 1
             if self.flag_low > 0:
                 self.flag = 1
 
+
+        for team_id, team in enumerate([players]):
+            for p_id, position in team.items():
+                if len(position) >= self.frame_duration: # *ratio
+                    speed = check_speed_displacement(position[-self.frame_duration:])
+                    self.speeds[team_id][p_id] = speed
+                    if speed < self.speed_threshold_low:
+                        self.flag = 0
+                        self.low_speed_players[team_id].append(p_id)
+                    else:
+                        self.flag = 1
     def visualize(self, frame):
         if self.flag == 0:
             cv2.putText(frame, "Normal speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+
         elif self.flag >= 1:
             cv2.putText(frame, "Low Speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         # elif self.flag == 2:
@@ -86,9 +97,10 @@ class LowSpeedChecker:
         #         cv2.putText(frame, "ID {} is no moving".format(p_id), (400, 100 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX,
         #                     1, (0, 0, 255), 2, cv2.LINE_AA)
 
+
     def vis_path(self, frame, locations, vis_duration, color):
         for i in range(vis_duration):
             cv2.circle(frame, (int(locations[-i][0]), int(locations[-i][1])), 20, color, -1)
-        for j in range(vis_duration-1):
+        for j in range(vis_duration - 1):
             cv2.line(frame, (int(locations[-j][0]), int(locations[-j][1])),
-                     (int(locations[-(j-1)][0]), int(locations[-j-1][1])), color, 3)
+                     (int(locations[-(j + 1)][0]), int(locations[-(j + 1)][1])), color, 3)
