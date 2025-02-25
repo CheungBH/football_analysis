@@ -72,9 +72,10 @@ def process_jerseys(input_folder, output_folder, output_json):
         json.dump(image_data, json_file, indent=4)
     print(f"Saved BGR color data to {output_json}")
 
+if __name__ == '__main__':
 
-# Example usage
-input_folder = 'knn_assets/jersey'
-output_folder = 'knn_assets/jersey_output'
-output_json = 'knn_assets/jersey_output/color.json'
-process_jerseys(input_folder, output_folder, output_json)
+    # Example usage
+    input_folder = 'knn_assets/jersey'
+    output_folder = 'knn_assets/jersey_output'
+    output_json = 'knn_assets/jersey_output/color.json'
+    process_jerseys(input_folder, output_folder, output_json)

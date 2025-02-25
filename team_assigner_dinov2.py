@@ -9,7 +9,7 @@ import PIL
 from torch.nn import functional as F
 
 
-model_path = r"D:\tmp\2.24\jersey_7games.pth"
+model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_9games_2\model_epoch_211.pth"
 
 
 class TeamAssigner:
@@ -25,6 +25,7 @@ class TeamAssigner:
             # Normalize the image with mean and standard deviation
         ])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.reassign = {2: [[4, 1]]}
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if model_path == 'dinov2':
@@ -203,7 +204,7 @@ class TeamAssigner:
 
         return team_id if team_id is not None else 0
 
-    def get_player_whole_team(self, frame, player_bboxs, frame_idx, team_colors, save="tmp/human"):
+    def get_player_whole_team(self, frame, player_bboxs, frame_idx, cam_idx=-1, save="tmp/human"):
 
         if not player_bboxs:
             return []
@@ -231,6 +232,12 @@ class TeamAssigner:
                 similarities.append(similarity)
             max_similarity = max(similarities)
             team_id = similarities.index(max_similarity)
+            if cam_idx in self.reassign:
+                id_replace = self.reassign[cam_idx]
+                for [i, j] in id_replace:
+                    if team_id == i:
+                        team_id = j
+                # team_id = self.reassign[cam_idx][team_id] if cam_idx in self.reassign[cam_idx][0] else team_id
             teams_id.append(team_id)
         return teams_id
 
