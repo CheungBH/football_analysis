@@ -10,12 +10,12 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from analyser.topview import TopViewGenerator
-from team_assigner_dinov2 import TeamAssigner
+from team_assigner import TeamAssigner
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
 import json
 import cv2
-from analyser.knn_try.get_jersey_color import process_jerseys
+from analyser.knn_try.get_jersey_color import process_images
 from utils.general import non_max_suppression, scale_boxes, scale_and_remove_boxes
 from utils.crop_img_sliding_window import sliding_window_crop
 from visualize import plot_tracking
@@ -451,7 +451,7 @@ def imageflow_demo(predictor, args):
         output_folder = args.jersey_folder + "_output"
         os.makedirs(output_folder, exist_ok=True)
         output_json = os.path.join(args.video_path, "color.json")
-        process_jerseys(args.jersey_folder, output_folder, output_json)
+        process_images(args.jersey_folder, output_folder, output_json)
     else:
         print("No jersey folder provided. Make sure to provide the color.json")
 
@@ -860,6 +860,8 @@ def imageflow_demo(predictor, args):
                     print(f"Frame {frame_id} processed.")
             else:
                 break
+        except KeyboardInterrupt:
+            break
         except:
             print("Error processing frame: {}. Skip".format(frame_id))
             continue
@@ -885,4 +887,5 @@ if __name__ == '__main__':
 '''
 Usage: 
 python yolov9_bytetrack_pth_4_cropping.py --video_path /path/to/vidoe --output_dir /path/to/output
+python3 yolov9_bytetrack_pth_4_cropping.py --video_path assets/sample --output_dir output --use_json
 '''

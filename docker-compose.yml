@@ -18,6 +18,8 @@ services:
     devices:
       - "/dev/ttyS3:/dev/ttyS3"  # Map the host COM port to the container (adjust ttyS3 as needed)
     volumes:
+      - .:/whole  # Mount the local code directory
+      - /tmp/.X11-unix:/tmp/.X11-unix  # Mount the X11 socket for GUI
       - /home/hkuit/john/icac_web/media:/whole/media
     stdin_open: true  # Equivalent to `-i` to keep STDIN open
     tty: true  # Allocate a pseudo-TTY

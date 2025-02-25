@@ -62,8 +62,8 @@ def process_images(input_folder, output_folder, output_json):
         # Create the pure color image if the jersey color is not classified as "White"
         if isinstance(jersey_color, list):
             color_image = np.full((100, 100, 3), jersey_color, dtype=np.uint8)
-            color_image_path = os.path.join(output_folder, f"{role}")
-            # cv2.imwrite(color_image_path, color_image)
+            color_image_path = os.path.join(output_folder, os.path.basename(file_path))
+            cv2.imwrite(color_image_path, color_image)
             print(f"Processed and saved pure color image for: {role}")
         else:
             print(f"Image {role} classified as White or no significant non-white regions detected.")

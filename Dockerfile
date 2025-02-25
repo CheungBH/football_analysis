@@ -28,10 +28,12 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     x11-apps \
     mesa-utils \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* 
 
 #RUN add-apt-repository universe && apt-get update
+
+# Remove existing cv2 if it's installed from another source
+RUN rm -rf /opt/conda/lib/python3.8/site-packages/cv2
 
 # Copy the requirements into the container
 COPY . .
@@ -42,4 +44,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # EXPOSE 8088
 
 # Set the default command to Python
-# CMD ["python3", "yolov9_bytetrack_pth_4_cropping.py", "--video_path", "assets/sample", "--output_path", "output"]
+# CMD ["python3", "yolov9_bytetrack_pth_4_cropping.py", "--video_path", "assets/sample", "--output_path", "output", "--use_json"]

@@ -8,5 +8,5 @@ tqdm
 seaborn
 scikit-learn
 moviepy
-lap
+lap==0.4.0
 cython-bbox
