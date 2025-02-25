@@ -43,39 +43,42 @@ def get_jersey_color(image_path, white_threshold=0.8):
     return avg_color.astype(int).tolist()
 
 
-def process_jerseys(input_folder, output_folder, output_json):
+def process_images(input_folder, output_folder, output_json):
     image_data = {}
+    roles = ["player1", "player2", "goalkeeper1", "goalkeeper2", "referee"]
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    for filename in os.listdir(input_folder):
-        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
-            file_path = os.path.join(input_folder, filename)
+    for idx, role in enumerate(roles):
+        # file_nam
+        file_path = os.path.join(input_folder, role + ".jpg")
 
-            jersey_color = get_jersey_color(file_path)
+        jersey_color = get_jersey_color(file_path)
 
-            # Save the BGR color data
-            image_data[filename] = jersey_color
+        # Save the BGR color data
+        image_data[idx] = jersey_color
 
-            # Create the pure color image if the jersey color is not classified as "White"
-            if isinstance(jersey_color, list):
-                color_image = np.full((100, 100, 3), jersey_color, dtype=np.uint8)
-                color_image_path = os.path.join(output_folder, f"{filename}")
-                cv2.imwrite(color_image_path, color_image)
-                print(f"Processed and saved pure color image for: {filename}")
-            else:
-                print(f"Image {filename} classified as White or no significant non-white regions detected.")
+        # Create the pure color image if the jersey color is not classified as "White"
+        if isinstance(jersey_color, list):
+            color_image = np.full((100, 100, 3), jersey_color, dtype=np.uint8)
+            color_image_path = os.path.join(output_folder, f"{role}")
+            # cv2.imwrite(color_image_path, color_image)
+            print(f"Processed and saved pure color image for: {role}")
+        else:
+            print(f"Image {role} classified as White or no significant non-white regions detected.")
 
     # Save the JSON data
     with open(output_json, 'w') as json_file:
         json.dump(image_data, json_file, indent=4)
     print(f"Saved BGR color data to {output_json}")
 
+
 if __name__ == '__main__':
 
-    # Example usage
     input_folder = 'knn_assets/jersey'
     output_folder = 'knn_assets/jersey_output'
     output_json = 'knn_assets/jersey_output/color.json'
-    process_jerseys(input_folder, output_folder, output_json)
+
+    process_images(input_folder, output_folder, output_json)
+
