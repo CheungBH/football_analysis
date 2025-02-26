@@ -9,7 +9,7 @@ import PIL
 from torch.nn import functional as F
 
 
-model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_9games_2\model_epoch_211.pth"
+model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_9games_2\best_model.pth"
 
 
 class TeamAssigner:
@@ -25,7 +25,11 @@ class TeamAssigner:
             # Normalize the image with mean and standard deviation
         ])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.reassign = {2: [[4, 1]]}
+        self.reassign = {
+            1: [[3, 2]],
+            3: [[3, 2]],
+            4: [[3, 2]],
+            2: [[4, 1], [2, 3]]}
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if model_path == 'dinov2':
@@ -204,7 +208,7 @@ class TeamAssigner:
 
         return team_id if team_id is not None else 0
 
-    def get_player_whole_team(self, frame, player_bboxs, frame_idx, cam_idx=-1, save="tmp/human"):
+    def get_player_whole_team(self, frame, player_bboxs, frame_idx, cam_idx=-1, save="tmp/human", **kwargs):
 
         if not player_bboxs:
             return []

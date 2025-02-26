@@ -7,7 +7,8 @@ class TopViewGenerator:
     def __init__(self, area_bounds):
         self.area_bounds = area_bounds
         self.points = []
-        self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
+        self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:2}
+        self.select_top = [[2,3], [0,10000]]
 
     def constrain_number_of_points(self, points, all_points, idx):
         number = self.num_dict[idx]
@@ -95,9 +96,34 @@ class TopViewGenerator:
         ball_points = [ball for ball in ball_points if ball[0] > 50 and ball[0] < 1100 and ball[1] > 50 and ball[1] < 720]
         return ball_points
 
+    def cal_dist(self, point1, point2):
+        return abs(point1 - point2)
+
+    def select_top_points(self, points):
+        select_team = self.select_top[0]
+        dist = self.select_top[1]
+        top_candidates = [point for point in points if point[2] in select_team]
+        others_candidates = [point for point in points if point[2] not in select_team]
+        # for candidate in top_candidates:
+        selected_points = []
+        for st, d in zip(select_team, dist):
+            team_candidates = [point for point in top_candidates if point[2] == st]
+            closest_idx = -1
+            closest_dist = float('inf')
+            for idx, candidate in enumerate(team_candidates):
+                dist = self.cal_dist(candidate[0], d)
+                if dist < closest_dist:
+                    closest_idx = idx
+                    closest_dist = dist
+            selected_points.append(team_candidates[closest_idx])
+        selected_points += others_candidates
+        return selected_points
+
+
     def process(self, player_points, ball_points):
         self.all_player_points = player_points
         self.all_ball_points = ball_points
+        player_points = self.select_top_points(player_points)
         player_points = self.merge_points_same_team(player_points, 10)
         player_points = self.merge_points_in_fixed_area(player_points, 100)
         player_points = self.player_stable(player_points, self.all_player_points)

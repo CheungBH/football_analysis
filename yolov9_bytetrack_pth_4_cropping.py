@@ -10,7 +10,7 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from analyser.topview import TopViewGenerator
-from team_assigner import TeamAssigner
+from team_assigner_dinov2 import TeamAssigner
 
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
@@ -493,7 +493,7 @@ def imageflow_demo(predictor, args):
     )
     frame_id = 0
 
-    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature\0208_video_set_161")
+    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature_new\0208_video_set_161")
 
     points = []
 
@@ -548,8 +548,8 @@ def imageflow_demo(predictor, args):
         if args.save_asset:
             box_asset_path = os.path.join(args.video_path, 'yolo.json')
             box_assets = {}
-            if os.path.exists(box_asset_path):
-                input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            # if os.path.exists(box_asset_path):
+            #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
             box_f = open(box_asset_path, 'w')
 
     while True:
@@ -803,7 +803,7 @@ def imageflow_demo(predictor, args):
                 #                 frame_queue=frame_queue)
                 analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,ball_now=real_ball_locations,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
-                analysis_list[index].visualize(img_list[index])
+                # analysis_list[index].visualize(img_list[index])
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
                 flag_list.append(analysis_list[index].flag_list)
