@@ -31,7 +31,7 @@ class LowSpeedChecker:
                 position = position[-self.frame_duration:]
                 count = position.count([-1,-1])
                 if count <= 25:
-                    speeds = calculate_speed(position[-self.frame_duration+10:])
+                    speeds = calculate_speed(position[-self.frame_duration:])
                     #speeds = [check_speed_displacement(position[i:i+10]) for i in range(len(position) - 10)]
 
                     low_speed_count = sum(1 for speed in speeds if speed < self.speed_threshold_low)
