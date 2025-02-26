@@ -128,10 +128,10 @@ def read_txt(file_path):
     data = []
     with open(file_path, 'r') as file:
         for line in file:
-            frame_id, text = line.strip()[1:-1].split(", ")
-            frame_id = int(frame_id)
-            text = text.split(": ")[1] == "True"
-            data.append((frame_id, text))
+            line_data = line.strip()[1:-1].split(", ")
+            frame_id = int(line_data[0])
+            attributes = {kv.split(": ")[0]: kv.split(": ")[1] == "True" for kv in line_data[1:]}
+            data.append((frame_id, attributes))
     return data
 
 # 读取txt文件内容
@@ -167,19 +167,22 @@ while True:
     # 在对应帧上放置文本
     for item in data:
         if item[0] == frame_id:
-            color = (0, 0, 255) if item[1] else (0, 255, 0)
-            text = f"lowspeed: {item[1]}"
-            position = (10, 30)
-            font = cv2.FONT_HERSHEY_SIMPLEX
+            y_offset = 900
+            for key, value in item[1].items():
+                color = (0, 0, 255) if value else (0, 255, 0)
+                text = f"{key}: {value}"
+                position = (100, y_offset)
+                font = cv2.FONT_HERSHEY_SIMPLEX
 
-            # 在帧上放置文本
-            cv2.putText(frame, text, position, font, 1, color, 2, cv2.LINE_AA)
+                # 在帧上放置文本
+                cv2.putText(frame, text, position, font, 1, color, 2, cv2.LINE_AA)
 
     # 将处理后的帧写入新视频
     out.write(frame)
 
     # 增加帧索引
     frame_id += 1
+    print(frame_id)
 
 # 释放视频对象和写入对象，并关闭所有窗口
 cap.release()
