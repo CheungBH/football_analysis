@@ -28,7 +28,9 @@ class TeamAssigner:
         self.reassign = {
             1: [[3, 2]],
             3: [[3, 2]],
-            4: [[3, 2]],
+            0: [[2, 3]],
+            # 2: [[2, 3]]}
+
             2: [[4, 1], [2, 3]]}
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -215,10 +217,10 @@ class TeamAssigner:
         imgs, teams_id = [], []
         for box_idx, player_bbox in enumerate(player_bboxs):
             player_bbox = self.clip_bounding_box(player_bbox, frame.shape[:2])
-            if save:
-                os.makedirs(save, exist_ok=True)
-                cv2.imwrite(f"{save}/{frame_idx}_{box_idx}.jpg",
-                            frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])])
+            # if save:
+            #     os.makedirs(save, exist_ok=True)
+            #     cv2.imwrite(f"{save}/{frame_idx}_{box_idx}.jpg",
+            #                 frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])])
             im = frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])]
             # To PIL image
             im = PIL.Image.fromarray(im)

@@ -11,6 +11,8 @@ import argparse
 import copy
 from analyser.topview import TopViewGenerator
 from team_assigner_dinov2 import TeamAssigner
+from team_assigner import TeamAssigner as TeamAssignerKNN
+
 
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
@@ -28,6 +30,7 @@ from functools import reduce
 
 team_colors = []
 img_full_list = []
+map_cam_idx = [0,1,2,3]
 
 
 def make_parser():
@@ -445,6 +448,7 @@ def imageflow_demo(predictor, args):
 
     args.track_before_knn = True
     args.no_ball_tracker = True
+    args.save_tmp_tv = "tv"
     # args.use_json = True
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
@@ -494,6 +498,7 @@ def imageflow_demo(predictor, args):
     frame_id = 0
 
     team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature_new\0208_video_set_161")
+    team_assigner_knn = TeamAssignerKNN()
 
     points = []
 
@@ -706,6 +711,14 @@ def imageflow_demo(predictor, args):
 
                     team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
                                                                     index, team_colors=team_colors, cam_idx=index)
+                    team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
+                                                                    index, team_colors=team_colors, cam_idx=index)
+                    t_final_id = []
+                    for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
+                        if t_id_knn != 4 and t_id_dino == 4:
+                            t_final_id.append(t_id_knn)
+                        else:
+                            t_final_id.append(t_id_dino)
                     for player_target, team_id in zip(player_targets, team_ids):
                         team_boxes[team_id].append(player_target)
                     team_targets[index] = team_boxes
@@ -743,7 +756,7 @@ def imageflow_demo(predictor, args):
                         foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
                         foot_locations[index].append(foot_location)
                         real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
-                        real_foot_locations[index].append(real_foot_location)
+                        real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx]])
                         all_player_dict[index][tid].append(real_foot_location)
                         if t_idx == 0:
                             team1_dict[index][tid].append(real_foot_location)
@@ -764,8 +777,10 @@ def imageflow_demo(predictor, args):
                     # real_foot_locations = real_foot_locations[0]
                     # t_color =
                     # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
-                    for real_foot_location in real_foot_locations[index]:
-                        all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
+                    all_players += real_foot_locations[index]
+                    # for real_foot_location in real_foot_locations[index]:
+                    #     all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
+
                     #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
                     img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=team_colors[t_idx])
 
@@ -801,16 +816,21 @@ def imageflow_demo(predictor, args):
                 #                  frame_id=frame_id,
                 #                  matrix=matrix,
                 #                 frame_queue=frame_queue)
-                analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,ball_now=real_ball_locations,
-                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
+                # analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,ball_now=real_ball_locations,
+                #     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
                 # analysis_list[index].visualize(img_list[index])
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
                 flag_list.append(analysis_list[index].flag_list)
-
-
+                if args.save_tmp_tv:
+                    PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl), players=all_players, balls=all_balls, frame_idx=index, path=args.save_tmp_tv)
+                    cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
+            if args.save_tmp_tv:
+                PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, -1, args.save_tmp_tv)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
+            if args.save_tmp_tv:
+                cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
 
             merged_dict = {}
             for lst in flag_list:
@@ -867,7 +887,7 @@ def imageflow_demo(predictor, args):
             # if len(img_list) == 4:
             if args.show_video:
                 top_row = np.hstack([img_list[1], img_list[0]])
-                bottom_row = np.hstack(img_list[2:])
+                bottom_row = np.hstack((img_list[3], img_list[2]))
                 combined_frame = np.vstack([top_row, bottom_row])
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
