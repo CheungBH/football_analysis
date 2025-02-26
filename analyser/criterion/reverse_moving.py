@@ -35,10 +35,10 @@ class MovingReverseChecker:
 
             for p_id, positions in players.items():
                 if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration]!= [-1,-1]:
-                    positions = positions[-self.frame_duration:]
-                    count = positions.count([-1,-1])
-                    if count <= 25:
-                        valid_players[p_id] = players[p_id]
+                    position = positions[-self.frame_duration:]
+                    count = position.count([-1,-1])
+                    if count <= self.frame_duration*0.5:
+                        valid_players[p_id] = position
             if valid_players:
                 for v_id,v_positions in valid_players.items():
                     if is_within_radius(v_positions[-1], ball, 50): #5m

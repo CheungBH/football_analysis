@@ -27,12 +27,12 @@ class BallKeeperChangeChecker:
                     ball = ball
             for p_id, positions in players.items():
                 if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
-                    positions = positions[-self.frame_duration:]
-                    count = positions.count([-1,-1])
-                    if count <= 25:
-                        valid_players[p_id] = players[p_id]
+                    position = positions[-self.frame_duration:]
+                    count = position.count([-1,-1])
+                    if count <= self.frame_duration*0.5:
+                        valid_players[p_id] = position
             if valid_players:
-                min_key_raw, min_distance_raw = find_closest_player(valid_players, ball, 0)
+                min_key_raw, min_distance_raw = find_closest_player(valid_players, ball, -1)
                 if min_distance_raw <= self.lens:
                     self.catch_list.append(min_key_raw)
                 else:
@@ -40,7 +40,8 @@ class BallKeeperChangeChecker:
 
                 if len(self.catch_list) > self.frame_duration:
                     count=0
-                    if self.catch_list[-1] != None and self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration*self.thre:
+                    if self.catch_list[-1] != None and \
+                            self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration*self.thre:
                         self.ball_holder_list.append(self.catch_list[-1])
 
                 if len(self.ball_holder_list) >=2:

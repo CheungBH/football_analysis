@@ -27,13 +27,13 @@ class LowSpeedChecker:
         self.low_speed_players = []
         self.nomove_players = []
 
-        for p_id, position in players.items():
-            if len(position) >= self.frame_duration and position[-1] != [-1,-1]:
-                position = position[-self.frame_duration:]
+        for p_id, positions in players.items():
+            if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
+                position = positions[-self.frame_duration:]
                 count = position.count([-1,-1])
-                if count <= 25:
-                    speeds = calculate_speed(position[-self.frame_duration:])
-                    valid_players[p_id] = players[p_id]
+                if count <= self.frame_duration*0.5:
+                    speeds = calculate_speed(position)
+                    valid_players[p_id] = position
                     #speeds = [check_speed_displacement(position[i:i+10]) for i in range(len(position) - 10)]
 
                     low_speed_count = sum(1 for speed in speeds if speed < self.speed_threshold_low)

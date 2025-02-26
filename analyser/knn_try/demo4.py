@@ -87,10 +87,10 @@
 #         key = cv2.waitKey(0) & 0xFF
 #
 #         if key == ord('1'):
-#             lowspeed = False
+#             value = False
 #             color = (0, 255, 0)  # 绿色
 #         elif key == ord('2'):
-#             lowspeed = True
+#             value = True
 #             color = (0, 0, 255)  # 红色
 #         elif key == ord('3'):
 #             frame_id += 1
@@ -99,7 +99,7 @@
 #             break
 #
 #         # 设置文本内容和位置
-#         text = f"lowspeed: {lowspeed}"
+#         text = f"lowspeed: {value}" # change name if not lowspeed as ball_out_court: {value}
 #         position = (10, 30)
 #         font = cv2.FONT_HERSHEY_SIMPLEX
 #
