@@ -19,6 +19,7 @@ class MovingReverseChecker:
 
     def process(self, players,balls,frame_queue, **kwargs):
         self.team_dict = players
+        valid_players = defaultdict(list)
         self.reverse_list = []
         self.flag = False
         self.frame_duration = frame_queue
@@ -32,14 +33,20 @@ class MovingReverseChecker:
                 if is_in_rectangle(ball,court):
                     ball = ball
 
-            for p_id, position in players.items():
-                if len(position) >= self.frame_duration and position[-1] != [-1,-1] and position[-self.frame_duration]!= [-1,-1]:
-                    if is_within_radius(position[-1], ball, 100): #10m
-                        speeds = calculate_speed(position[-self.frame_duration:])
+            for p_id, positions in players.items():
+                if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration]!= [-1,-1]:
+                    positions = positions[-self.frame_duration:]
+                    count = positions.count([-1,-1])
+                    if count <= 25:
+                        valid_players[p_id] = players[p_id]
+            if valid_players:
+                for v_id,v_positions in valid_players.items():
+                    if is_within_radius(v_positions[-1], ball, 50): #5m
+                        speeds = calculate_speed(v_positions[-self.frame_duration:])
                         low_speed_count = sum(1 for speed in speeds if speed < 1)
                         if low_speed_count <=10:
-                            vector_valid = [position[-1][0]-position[-self.frame_duration][0],
-                                            position[-1][1]-position[-self.frame_duration][1]]
+                            vector_valid = [v_positions[-1][0]-v_positions[-self.frame_duration][0],
+                                            v_positions[-1][1]-v_positions[-self.frame_duration][1]]
                             human_valid[p_id] = vector_valid
             if len(human_valid) >=2:
                 for h1,v1 in human_valid.items():
@@ -59,22 +66,6 @@ class MovingReverseChecker:
                                 if (h1, h2) in self.reverse_count:
                                     self.reverse_count[(h1, h2)] = 0
 
-            # for key1, key_vector1 in key_vectors.items():
-            #     for key2, key_vector2 in key_vectors.items():
-            #         if key1 < key2:
-            #             angle = vector_angle(key_vector1, key_vector2)
-            #             if angle > 120:
-            #                 if (key1, key2) not in self.reverse_count:
-            #                     self.reverse_count[(key1, key2)] = 0
-            #                 self.reverse_count[(key1, key2)] += 1
-            #
-            #                 if self.reverse_count[(key1, key2)] >= self.frame_duration:
-            #                     self.reverse_list.append([key1, key2])
-            #                     self.flag = True
-            #                     #del(self.reverse_count[(key1, key2)])
-            #             else:
-            #                 if (key1, key2) in self.reverse_count:
-            #                     self.reverse_count[(key1, key2)] = 0
 
 
     def visualize(self, frame):

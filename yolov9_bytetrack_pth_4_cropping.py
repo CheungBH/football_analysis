@@ -537,6 +537,7 @@ def imageflow_demo(predictor, args):
     analysis = AnalysisManager(config.check_action, ((0, 0)))
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
     topview_queue = FrameQueue(frame_queue)
+    merged_list = []
 
     PlayerTopView = TopViewGenerator((50,50,1100,720))
 
@@ -835,7 +836,7 @@ def imageflow_demo(predictor, args):
 
                 analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_all,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
-                analysis_list[index].visualize(img_list[index])
+                analysis_list[index].visualize(img_list[index]) # imshowwwwwwwwwww
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
                 flag_list.append(analysis_list[index].flag_list)
@@ -851,9 +852,15 @@ def imageflow_demo(predictor, args):
                         merged_dict[key] = value
                     else:
                         merged_dict[key] = merged_dict[key] or value
-
-            merged_list = [[key, value] for key, value in merged_dict.items()]
             merged_value = sum(merged_dict.values())
+            merge_list = [[key, value] for key, value in merged_dict.items()]
+            merged_list.append(merge_list)
+            merged_list[-1].append(frame_id)
+
+            analysis_file = os.path.join(args.video_path, "analysis.txt")
+            with open(analysis_file, 'w') as f:
+                for item in merged_list:
+                    f.write(str(item) + '\n')
 
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
@@ -897,6 +904,8 @@ def imageflow_demo(predictor, args):
 
 
             # if len(img_list) == 4:
+            color = defaultdict(list)
+            text =defaultdict(list)
             if args.show_video:
                 top_row = np.hstack([img_list[1], img_list[0]])
                 bottom_row = np.hstack(img_list[2:])
@@ -904,6 +913,10 @@ def imageflow_demo(predictor, args):
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
                 ch = cv2.waitKey(1)
+                for idx,m in enumerate(merged_dict):
+                    color[idx] = (0,0,255) if merged_dict[m] else (0,255,0)
+                    text[idx] = f"{m}: {merged_dict[m]}"
+                    cv2.putText(combined_frame, text[idx],  (50, 100+50*idx), cv2.FONT_HERSHEY_SIMPLEX, 1, color[idx], 2, cv2.LINE_AA)
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
 

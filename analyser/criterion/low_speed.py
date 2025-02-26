@@ -22,6 +22,7 @@ class LowSpeedChecker:
     def process(self, players, balls,frame_queue, **kwargs):
         self.flag = False
         self.flag_low, self.flag_nomove = 0,0
+        valid_players = defaultdict(list)
         self.speeds = [defaultdict(float),defaultdict(float)]
         self.low_speed_players = []
         self.nomove_players = []
@@ -32,6 +33,7 @@ class LowSpeedChecker:
                 count = position.count([-1,-1])
                 if count <= 25:
                     speeds = calculate_speed(position[-self.frame_duration:])
+                    valid_players[p_id] = players[p_id]
                     #speeds = [check_speed_displacement(position[i:i+10]) for i in range(len(position) - 10)]
 
                     low_speed_count = sum(1 for speed in speeds if speed < self.speed_threshold_low)

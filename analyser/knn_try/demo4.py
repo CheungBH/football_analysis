@@ -51,52 +51,137 @@
 #
 #
 
-import math
+# import cv2
+# # 打开视频文件
+# cap = cv2.VideoCapture('/media/hkuit164/Backup/football_analysis/result1.mp4')
+#
+# # 检查是否成功打开视频文件
+# if not cap.isOpened():
+#     print("Error: Cannot open video file.")
+#     exit()
+#
+# # 获取视频属性
+# frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+# frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# fps = int(cap.get(cv2.CAP_PROP_FPS))
+#
+# # 创建视频写入对象
+# out = cv2.VideoWriter('output_video.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+#
+# # 初始化文本信息
+# lowspeed = False
+# color = (0, 255, 0)  # 初始化颜色为绿色
+#
+# # 打开txt文件以追加写入模式
+# with open('output.txt', 'a') as txt_file:
+#     frame_id = 0
+#     while True:
+#         ret, frame = cap.read()
+#
+#         if not ret:
+#             break
+#         # 显示当前帧
+#         cv2.imshow('Frame', frame)
+#
+#         # 获取按键输入
+#         key = cv2.waitKey(0) & 0xFF
+#
+#         if key == ord('1'):
+#             lowspeed = False
+#             color = (0, 255, 0)  # 绿色
+#         elif key == ord('2'):
+#             lowspeed = True
+#             color = (0, 0, 255)  # 红色
+#         elif key == ord('3'):
+#             frame_id += 1
+#             continue  # 跳到下一帧
+#         elif key == 27:  # 按下 ESC 键退出
+#             break
+#
+#         # 设置文本内容和位置
+#         text = f"lowspeed: {lowspeed}"
+#         position = (10, 30)
+#         font = cv2.FONT_HERSHEY_SIMPLEX
+#
+#         # 在帧上放置文本
+#         cv2.putText(frame, text, position, font, 1, color, 2, cv2.LINE_AA)
+#
+#         # 将处理后的帧写入新视频
+#         out.write(frame)
+#
+#         # 打印并保存frame_id和text
+#         print(f"Frame ID: {frame_id}, Text: {text}")
+#         txt_file.write(f"[{frame_id}, {text}]\n")
+#       # 增加frame_id
+#         frame_id += 1
+#
+# # 释放视频对象和写入对象，并关闭所有窗口
+# cap.release()
+# out.release()
+# cv2.destroyAllWindows()
 
-def calculate_speeds(coordinates):
-    # 过滤掉包含 [-1, -1] 之间的点
-    valid_coordinates = []
-    skip_next = False
-    for i in range(len(coordinates)):
-        if coordinates[i] == [-1, -1]:
-            skip_next = True
-        elif skip_next:
-            skip_next = False
-        else:
-            valid_coordinates.append(coordinates[i])
-
-    # 计算速度
-    speeds = []
-    for i in range(1, len(valid_coordinates)):
-        x1, y1 = valid_coordinates[i-1]
-        x2, y2 = valid_coordinates[i]
-        distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-        speed = distance  # 如果你有时间间隔，可以除以时间得到速度
-        speeds.append(speed)
-
-    return speeds
-
-coordinates1 = [[928.0203195233446, 299.19832258583824], [928.0444568007517, 299.5180064589547], [928.1738855150277, 300.71975708709306], [928.0736959228426, 301.2244653501388], [928.1370205526339, 302.42930408797145], [927.6972478853295, 302.27897116494853], [927.7355617850061, 303.84453094046705], [927.3834932473244, 302.87673402210345],
-                [927.5324325324189, 304.1012701441836],
-                [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1],
-                [927.9897165565454, 308.55162348153556]]
-valid_spped=[]
-valid_distance=[]
-for i in range(len(coordinates1)-1):
-    if coordinates1[i] !=[-1,-1] and coordinates1[i+1]!=[-1,-1]:
-        x1, y1 = coordinates1[i]
-        x2, y2 = coordinates1[i+1]
-        valid_spped.append([coordinates1[i],coordinates1[i+1]])
-        valid_distance.append(math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2))
 
 
+import cv2
 
+def read_txt(file_path):
+    data = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            frame_id, text = line.strip()[1:-1].split(", ")
+            frame_id = int(frame_id)
+            text = text.split(": ")[1] == "True"
+            data.append((frame_id, text))
+    return data
 
-coordinates2 = [[927.9897165565454, 308.55162348153556], [928.2502951918485, 308.9937624888397], [928.4401619636683, 309.0279664704596], [927.8804017463923, 306.51647806886353], [927.4174124926274, 304.6826927906266], [927.0136459114034, 302.9035711090442], [926.8486690688593, 302.24062467695836],
-                [926.7420035232525, 302.0049505495917], [926.6734644311285, 301.9284146801014]]
+# 读取txt文件内容
+txt_file_path = 'output.txt'
+data = read_txt(txt_file_path)
 
-speeds1 = calculate_speeds(coordinates1)
-speeds2 = calculate_speeds(coordinates2)
+# 打开视频文件
+input_video = 'output_video.mp4'
+cap = cv2.VideoCapture(input_video)
 
-print("Speeds for first segment:", speeds1)
-print("Speeds for second segment:", speeds2)
+# 检查是否成功打开视频文件
+if not cap.isOpened():
+    print("Error: Cannot open video file.")
+    exit()
+
+# 获取视频属性
+frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fps = int(cap.get(cv2.CAP_PROP_FPS))
+
+# 创建视频写入对象
+out = cv2.VideoWriter('output_video1.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+
+# 初始化帧索引
+frame_id = 0
+
+while True:
+    ret, frame = cap.read()
+
+    if not ret:
+        break
+
+    # 在对应帧上放置文本
+    for item in data:
+        if item[0] == frame_id:
+            color = (0, 0, 255) if item[1] else (0, 255, 0)
+            text = f"lowspeed: {item[1]}"
+            position = (10, 30)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+
+            # 在帧上放置文本
+            cv2.putText(frame, text, position, font, 1, color, 2, cv2.LINE_AA)
+
+    # 将处理后的帧写入新视频
+    out.write(frame)
+
+    # 增加帧索引
+    frame_id += 1
+
+# 释放视频对象和写入对象，并关闭所有窗口
+cap.release()
+out.release()
+cv2.destroyAllWindows()
