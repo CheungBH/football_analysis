@@ -22,7 +22,6 @@ class BallOutRangeChecker:
         court_line_right=720
 
         if len(ball_now)>1:
-
             if balls[-1][0] < court_line_left or balls[-1][0] > court_line_right\
                     or balls[-1][1] < court_line_top or balls[-1][1]>court_line_bottom:
                 self.flag_list.append(True)

@@ -526,6 +526,7 @@ def imageflow_demo(predictor, args):
 
     top_view_img_tpl = cv2.imread(court_image)
     all_player_dict = [defaultdict(list)for _ in range(4)]
+    filtered_dict = [defaultdict(list)for _ in range(4)]
     team1_dict = [defaultdict(list)for _ in range(4)]
     team2_dict = [defaultdict(list)for _ in range(4)]
     goalkeeper1_dict = [defaultdict(list)for _ in range(4)]
@@ -678,10 +679,14 @@ def imageflow_demo(predictor, args):
 
                 # print(outputs.shape)
                 team_boxes = [[] for _ in range(len(team_colors))]
+                team_boxes_whole = []
+                players_real_location = [defaultdict(list)for _ in range(4)]
                 ball_boxes = []
 
                 max_ball_output = None
-                team_targets = [[],[],[],[],[]]
+                all_ball_output = []
+                team_targets = [[],[],[],[]]
+                # team_targets_add = [[],[],[],[]]
 
                 if args.save_cropped_humans:
                     for idx, output in enumerate(outputs):
@@ -699,6 +704,7 @@ def imageflow_demo(predictor, args):
                                 player_boxes.append(output.tolist())
 
                         elif output[5] == 0:
+                            all_ball_output.append(output.tolist())
                             if max_ball_output is None or output[4] > max_ball_output[4]:
                                 max_ball_output = output
                     player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
@@ -708,6 +714,7 @@ def imageflow_demo(predictor, args):
                                                                     index, team_colors=team_colors, cam_idx=index)
                     for player_target, team_id in zip(player_targets, team_ids):
                         team_boxes[team_id].append(player_target)
+                        team_boxes_whole.append(player_target)
                     team_targets[index] = team_boxes
 
                 else:
@@ -743,8 +750,12 @@ def imageflow_demo(predictor, args):
                         foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
                         foot_locations[index].append(foot_location)
                         real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
+                        players_real_location[index][tid] = real_foot_location
                         real_foot_locations[index].append(real_foot_location)
                         all_player_dict[index][tid].append(real_foot_location)
+
+                    # filtered_dict[index] = {key: all_player_dict[index][key] for key in online_ids}
+
                         if t_idx == 0:
                             team1_dict[index][tid].append(real_foot_location)
                         elif t_idx == 1:
@@ -756,6 +767,7 @@ def imageflow_demo(predictor, args):
                         elif t_idx == 4:
                             #referee_dict[tid].append(real_foot_location)
                             referee_dict[index][tid].append([real_foot_location,frame_id])
+
 
                     if len(foot_locations) == 0:
                         continue
@@ -770,9 +782,14 @@ def imageflow_demo(predictor, args):
                     img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=team_colors[t_idx])
 
                 if args.no_ball_tracker:
+                    all_ball_boxes = []
                     if max_ball_output is not None:
                         ball_box = ball_boxes[0][:4]
                         ball_box = [ball_box[0], ball_box[1], ball_box[2] - ball_box[0], ball_box[3] - ball_box[1]]
+                        for single_ball_box in all_ball_output:
+                            single_ball = single_ball_box[:4]
+                            all_ball_boxes.append([single_ball[0], single_ball[1], single_ball[2] - single_ball[0],
+                                                   single_ball[3] - single_ball[1]])
                     else:
                         ball_box = []
                 else:
@@ -780,6 +797,19 @@ def imageflow_demo(predictor, args):
                     print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
                     ball_box = ball_targets[0].tlwh if ball_targets else []
 
+
+
+                real_ball_locations_all = []
+                if len(all_ball_boxes) > 0:
+                    for boxes in all_ball_boxes:
+                        ball_location = [boxes[0] + boxes[2] / 2, boxes[1] + boxes[3]/2]
+                        ball_locations = np.array([[ball_location]])
+                        real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
+                        real_ball_locations = real_ball_locations[0][0].tolist()
+                        real_ball_locations_all.append(real_ball_locations)
+                        # all_balls.append(real_ball_locations)
+                        # # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
+                        # img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
                 real_ball_locations=[]
                 if len(ball_box) > 0:
                     ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]/2]
@@ -790,6 +820,7 @@ def imageflow_demo(predictor, args):
                     all_balls.append(real_ball_locations)
                     # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                     img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
+
                 resized_frame = cv2.resize(img, (real_w//2, real_h//2))
                 img_list.append(resized_frame)
                 # analysis_list[index].process(team1_players=team1_dict[index],
@@ -801,7 +832,8 @@ def imageflow_demo(predictor, args):
                 #                  frame_id=frame_id,
                 #                  matrix=matrix,
                 #                 frame_queue=frame_queue)
-                analysis_list[index].process(players = all_player_dict[index], balls=real_ball_history,ball_now=real_ball_locations,
+
+                analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_all,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
                 analysis_list[index].visualize(img_list[index])
                 # for i in range(len(real_foot_locations[index])):
@@ -828,7 +860,7 @@ def imageflow_demo(predictor, args):
             topview_queue.push_frame(top_view_img)
             #cv2.imshow('Image', img)
 
-            if merged_value >= 1 or (frame_id + 1) % 100 == 0:
+            if merged_value == -1 or (frame_id + 1) % 9999999999 == 0:
                 print("Saving the video")
                 output_time = frame_id / fpsmin
                 # Convert to real time

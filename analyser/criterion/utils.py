@@ -1,6 +1,16 @@
 import numpy as np
 import math
 
+def calculate_speed(position):
+    valid_position=[]
+    valid_distance=[]
+    for i in range(len(position)-1):
+        if position[i] != [-1,-1] and position[i+1] != [-1,-1]:
+            x1, y1 = position[i]
+            x2, y2 = position[i+1]
+            valid_position.append([position[i],position[i+1]])
+            valid_distance.append(math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2))
+    return valid_distance
 
 
 def check_speed_distance(location_ls):
