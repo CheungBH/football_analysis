@@ -700,7 +700,8 @@ def imageflow_demo(predictor, args):
                     for output in outputs:
                         if output[5] == 1:
                             # Height > Width
-                            if output[3] - output[1] > output[2] - output[0]:
+                            height, width = output[3] - output[1], output[2] - output[0]
+                            if height > width and height / width < 3:
                                 player_boxes.append(output.tolist())
 
                         elif output[5] == 0:
@@ -885,13 +886,14 @@ def imageflow_demo(predictor, args):
 
 
             # if len(img_list) == 4:
+            top_row = np.hstack([img_list[1], img_list[0]])
+            bottom_row = np.hstack((img_list[3], img_list[2]))
+            combined_frame = np.vstack([top_row, bottom_row])
             if args.show_video:
-                top_row = np.hstack([img_list[1], img_list[0]])
-                bottom_row = np.hstack((img_list[3], img_list[2]))
-                combined_frame = np.vstack([top_row, bottom_row])
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
                 ch = cv2.waitKey(1)
+            if args.output_video_path:
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
 
