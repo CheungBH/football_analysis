@@ -9,7 +9,7 @@ import PIL
 from torch.nn import functional as F
 
 
-model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_9games_2\model_epoch_211.pth"
+model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_9games_2\best_model.pth"
 
 
 class TeamAssigner:
@@ -25,7 +25,13 @@ class TeamAssigner:
             # Normalize the image with mean and standard deviation
         ])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.reassign = {2: [[4, 1]]}
+        self.reassign = {
+            1: [[2, 3]],
+            3: [[2, 3], [4, 1]],
+            0: [[3, 2]],
+            # 2: [[2, 3]]}
+
+            2: [[4, 1], [3, 2]]}
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if model_path == 'dinov2':
@@ -204,17 +210,17 @@ class TeamAssigner:
 
         return team_id if team_id is not None else 0
 
-    def get_player_whole_team(self, frame, player_bboxs, frame_idx, cam_idx=-1, save="tmp/human"):
+    def get_player_whole_team(self, frame, player_bboxs, frame_idx, cam_idx=-1, save="tmp/human", **kwargs):
 
         if not player_bboxs:
             return []
         imgs, teams_id = [], []
         for box_idx, player_bbox in enumerate(player_bboxs):
             player_bbox = self.clip_bounding_box(player_bbox, frame.shape[:2])
-            if save:
-                os.makedirs(save, exist_ok=True)
-                cv2.imwrite(f"{save}/{frame_idx}_{box_idx}.jpg",
-                            frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])])
+            # if save:
+            #     os.makedirs(save, exist_ok=True)
+            #     cv2.imwrite(f"{save}/{frame_idx}_{box_idx}.jpg",
+            #                 frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])])
             im = frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])]
             # To PIL image
             im = PIL.Image.fromarray(im)

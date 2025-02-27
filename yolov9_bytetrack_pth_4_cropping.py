@@ -10,7 +10,9 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from analyser.topview import TopViewGenerator
-from team_assigner import TeamAssigner
+from team_assigner_dinov2 import TeamAssigner
+from team_assigner import TeamAssigner as TeamAssignerKNN
+
 
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
@@ -28,6 +30,7 @@ from functools import reduce
 
 team_colors = []
 img_full_list = []
+map_cam_idx = [0,1,2,3]
 
 
 def make_parser():
@@ -445,6 +448,7 @@ def imageflow_demo(predictor, args):
 
     args.track_before_knn = True
     args.no_ball_tracker = True
+    args.save_tmp_tv = "tv"
     # args.use_json = True
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
@@ -493,7 +497,8 @@ def imageflow_demo(predictor, args):
     )
     frame_id = 0
 
-    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature\0208_video_set_161")
+    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature_new\0208_video_set_161")
+    team_assigner_knn = TeamAssignerKNN()
 
     points = []
 
@@ -550,8 +555,8 @@ def imageflow_demo(predictor, args):
         if args.save_asset:
             box_asset_path = os.path.join(args.video_path, 'yolo.json')
             box_assets = {}
-            if os.path.exists(box_asset_path):
-                input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            # if os.path.exists(box_asset_path):
+            #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
             box_f = open(box_asset_path, 'w')
 
     while True:
@@ -701,7 +706,8 @@ def imageflow_demo(predictor, args):
                     for output in outputs:
                         if output[5] == 1:
                             # Height > Width
-                            if output[3] - output[1] > output[2] - output[0]:
+                            height, width = output[3] - output[1], output[2] - output[0]
+                            if height > width and height / width < 3:
                                 player_boxes.append(output.tolist())
 
                         elif output[5] == 0:
@@ -713,6 +719,14 @@ def imageflow_demo(predictor, args):
 
                     team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
                                                                     index, team_colors=team_colors, cam_idx=index)
+                    team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
+                                                                    index, team_colors=team_colors, cam_idx=index)
+                    t_final_id = []
+                    for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
+                        if t_id_knn != 4 and t_id_dino == 4:
+                            t_final_id.append(t_id_knn)
+                        else:
+                            t_final_id.append(t_id_dino)
                     for player_target, team_id in zip(player_targets, team_ids):
                         team_boxes[team_id].append(player_target)
                         team_boxes_whole.append(player_target)
@@ -752,7 +766,7 @@ def imageflow_demo(predictor, args):
                         foot_locations[index].append(foot_location)
                         real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
                         players_real_location[index][tid] = real_foot_location
-                        real_foot_locations[index].append(real_foot_location)
+                        real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx]])
                         all_player_dict[index][tid].append(real_foot_location)
 
                     # filtered_dict[index] = {key: all_player_dict[index][key] for key in online_ids}
@@ -777,8 +791,10 @@ def imageflow_demo(predictor, args):
                     # real_foot_locations = real_foot_locations[0]
                     # t_color =
                     # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
-                    for real_foot_location in real_foot_locations[index]:
-                        all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
+                    all_players += real_foot_locations[index]
+                    # for real_foot_location in real_foot_locations[index]:
+                    #     all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
+
                     #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
                     img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=team_colors[t_idx])
 
@@ -834,16 +850,23 @@ def imageflow_demo(predictor, args):
                 #                  matrix=matrix,
                 #                 frame_queue=frame_queue)
 
+
                 analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_all,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
                 analysis_list[index].visualize(img_list[index]) # imshowwwwwwwwwww
+
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
                 flag_list.append(analysis_list[index].flag_list)
-
-
+                if args.save_tmp_tv:
+                    PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl), players=all_players, balls=all_balls, frame_idx=index, path=args.save_tmp_tv)
+                    cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
+            if args.save_tmp_tv:
+                PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, -1, args.save_tmp_tv)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
+            if args.save_tmp_tv:
+                cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
 
             merged_dict = {}
             for lst in flag_list:
@@ -868,6 +891,7 @@ def imageflow_demo(predictor, args):
             #cv2.imshow('Image', img)
 
             if merged_value == -1 or (frame_id + 1) % 9999999999 == 0:
+
                 print("Saving the video")
                 output_time = frame_id / fpsmin
                 # Convert to real time
@@ -903,20 +927,23 @@ def imageflow_demo(predictor, args):
                             f.write(key)
 
 
-            # if len(img_list) == 4:
-            color = defaultdict(list)
-            text =defaultdict(list)
+            top_row = np.hstack([img_list[1], img_list[0]])
+            bottom_row = np.hstack((img_list[3], img_list[2]))
+            combined_frame = np.vstack([top_row, bottom_row])
             if args.show_video:
-                top_row = np.hstack([img_list[1], img_list[0]])
-                bottom_row = np.hstack(img_list[2:])
-                combined_frame = np.vstack([top_row, bottom_row])
                 cv2.imshow("Combined Frame", combined_frame)
                 cv2.imshow('Top View', top_view_img)
                 ch = cv2.waitKey(1)
-                for idx,m in enumerate(merged_dict):
-                    color[idx] = (0,0,255) if merged_dict[m] else (0,255,0)
-                    text[idx] = f"{m}: {merged_dict[m]}"
-                    cv2.putText(combined_frame, text[idx],  (50, 100+50*idx), cv2.FONT_HERSHEY_SIMPLEX, 1, color[idx], 2, cv2.LINE_AA)
+
+                color = defaultdict(list)
+                text = defaultdict(list)
+                # for idx,m in enumerate(merged_dict):
+                #     color[idx] = (0,0,255) if merged_dict[m] else (0,255,0)
+                #     text[idx] = f"{m}: {merged_dict[m]}"
+                #     cv2.putText(combined_frame, text[idx],  (50, 100+50*idx), cv2.FONT_HERSHEY_SIMPLEX, 1, color[idx], 2, cv2.LINE_AA)
+
+            if args.output_video_path:
+
                 vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
                 topview_writer.write(top_view_img)
 
