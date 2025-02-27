@@ -862,7 +862,7 @@ def imageflow_demo(predictor, args):
                     PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl), players=all_players, balls=all_balls, frame_idx=index, path=args.save_tmp_tv)
                     cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
             if args.save_tmp_tv:
-                PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, -1, args.save_tmp_tv)
+                PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
             if args.save_tmp_tv:

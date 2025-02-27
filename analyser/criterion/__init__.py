@@ -4,5 +4,5 @@ from .side_referee import SideRefereeChecker
 from .ballkeeper_change import BallKeeperChangeChecker
 from .goalkeeper_single import GoalKeeperSingleChecker
 from .ball_out_range import BallOutRangeChecker
-#from .standing import StandingChecker
+from .commit_foul import CommitFoulChecker
 from .lack_pressure import LackPressureChecker

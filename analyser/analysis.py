@@ -7,6 +7,7 @@ checkers = {"low_speed": LowSpeedChecker,
             "ballkeeper_change": BallKeeperChangeChecker,
             "goalkeeper_single": GoalKeeperSingleChecker,
             "ball_out_range": BallOutRangeChecker,
+            "commit_foul": CommitFoulChecker,
             #"standing": StandingChecker,
             "lack_pressure": LackPressureChecker,
             }
