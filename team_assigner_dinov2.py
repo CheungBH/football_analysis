@@ -9,11 +9,8 @@ import PIL
 from torch.nn import functional as F
 
 
-model_path = r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_9games_2\best_model.pth"
-
-
 class TeamAssigner:
-    def __init__(self, root_folder):
+    def __init__(self, root_folder, model_path):
         self.root_folder = root_folder
         feature_names = ["player1", "player2", "goalkeeper1", "goalkeeper2", "referee"]
         np_features = [np.load(os.path.join(root_folder, f"{name}.npy")) for name in feature_names]
@@ -26,12 +23,11 @@ class TeamAssigner:
         ])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.reassign = {
-            1: [[2, 3]],
-            3: [[2, 3], [4, 1]],
-            0: [[3, 2]],
+            1: [[3, 2]],
+            3: [[3, 2], [4, 1]],
+            0: [[2, 3]],
             # 2: [[2, 3]]}
-
-            2: [[4, 1], [3, 2]]}
+            2: [[4, 1], [2, 3]]}
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if model_path == 'dinov2':
