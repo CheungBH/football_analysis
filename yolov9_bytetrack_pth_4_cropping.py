@@ -495,6 +495,12 @@ def imageflow_demo(predictor, args):
     tv_path = os.path.join(os.path.dirname(args.output_video_path), "top_view.mp4")
     topview_writer = cv2.VideoWriter(tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (tv_w, tv_h)
     )
+
+    if args.save_tmp_tv:
+        tmp_tv_path = os.path.join(os.path.dirname(args.output_video_path), "top_view_single.mp4")
+        tmp_tv_writer = cv2.VideoWriter(tmp_tv_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (int(tv_w*2), int(tv_h*2))
+        )
+
     frame_id = 0
 
     team_assigner = TeamAssigner(root_folder=r"assets/dino/global_features", model_path="assets/dino/model.pth")
@@ -863,6 +869,7 @@ def imageflow_demo(predictor, args):
                     cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
             if args.save_tmp_tv:
                 PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
+                PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
             if args.save_tmp_tv:

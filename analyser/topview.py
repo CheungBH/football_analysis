@@ -2,6 +2,8 @@ import os
 from collections import defaultdict
 import cv2
 import random
+import numpy as np
+from networkx.algorithms.centrality import voterank
 
 
 class TopViewGenerator:
@@ -9,7 +11,7 @@ class TopViewGenerator:
         self.area_bounds = area_bounds
         self.points = []
         self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
-        self.select_top = [[2,3,4], [10000,0,575]]
+        self.select_top = [[2,3,4], [0,10000,575]]
 
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:
@@ -31,6 +33,20 @@ class TopViewGenerator:
             sample_point = random.sample(all_points, number - len(points))
             return points + sample_point
 
+    def keep_distance_points(self, points, team, dist):
+        team_points = [point for point in points if point[2] == team]
+        valid_points = []
+        y_area_bounds = [self.area_bounds[1], self.area_bounds[3]]
+        for team_point in team_points:
+            y_coord = team_point[1]
+            for y_bound in y_area_bounds:
+                if abs(y_coord - y_bound) < dist:
+                    valid_points.append(team_point)
+                    continue
+        other_points = [point for point in points if point not in valid_points]
+        return valid_points, other_points
+
+
     def player_stable(self, player_points, player_all_points):
         points_dict = defaultdict(list)
         point_all_dict = defaultdict(list)
@@ -49,6 +65,13 @@ class TopViewGenerator:
             final_points += self.constrain_number_of_points(points_dict[idx], point_all_dict[idx], idx)
         return final_points
 
+
+    def save_tmp_videos(self, folder, writer):
+        tv_imgs = [cv2.imread(os.path.join(folder, "tv_{}.jpg".format(i))) for i in range(4)]
+        top_row = np.hstack([tv_imgs[1], tv_imgs[0]])
+        bottom_row = np.hstack((tv_imgs[3], tv_imgs[2]))
+        combined_frame = np.vstack([top_row, bottom_row])
+        writer.write(combined_frame)
 
     def merge_points_in_fixed_area(self, points, window_size):
         min_x, min_y, max_x, max_y = self.area_bounds
@@ -109,14 +132,16 @@ class TopViewGenerator:
     def cal_dist(self, point1, point2):
         return abs(point1 - point2)
 
-    def select_top_points(self, points):
+    def select_top_points(self, points, teams):
         select_team = self.select_top[0]
         dist = self.select_top[1]
-        top_candidates = [point for point in points if point[2] in select_team]
-        others_candidates = [point for point in points if point[2] not in select_team]
+        top_candidates = [point for point in points if point[2] in teams]
+        others_candidates = [point for point in points if point[2] not in teams]
         # for candidate in top_candidates:
         selected_points = []
         for st, d in zip(select_team, dist):
+            if st not in teams:
+                continue
             team_candidates = [point for point in top_candidates if point[2] == st]
             closest_idx = -1
             closest_dist = float('inf')
@@ -127,7 +152,7 @@ class TopViewGenerator:
                     closest_dist = dist
 
             if closest_idx == -1:
-                return []
+                return others_candidates
             selected_points.append(team_candidates[closest_idx])
         selected_points += others_candidates
         return selected_points
@@ -136,10 +161,13 @@ class TopViewGenerator:
     def process(self, player_points, ball_points):
         self.all_player_points = player_points
         self.all_ball_points = ball_points
-        player_points = self.select_top_points(player_points)
-        player_points = self.merge_points_same_team(player_points, 25)
+        player_points = self.select_top_points(player_points, teams=[2,3])
+        player_points = self.merge_points_same_team(player_points, 10)
+        side_referee_points, player_points = self.keep_distance_points(player_points, 4, 30)
+        player_points = self.select_top_points(player_points, teams=[4])
         player_points = self.merge_points_in_fixed_area(player_points, 50)
         player_points = self.player_stable(player_points, self.all_player_points)
+        player_points += side_referee_points
         self.player_points = player_points
         ball_points = self.remove_out_ball(ball_points)
         self.ball_points = ball_points
