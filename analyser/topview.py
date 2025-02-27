@@ -8,8 +8,8 @@ class TopViewGenerator:
     def __init__(self, area_bounds):
         self.area_bounds = area_bounds
         self.points = []
-        self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:2}
-        self.select_top = [[2,3,4], [0,10000,575]]
+        self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
+        self.select_top = [[2,3,4], [10000,0,575]]
 
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:
@@ -125,6 +125,9 @@ class TopViewGenerator:
                 if dist < closest_dist:
                     closest_idx = idx
                     closest_dist = dist
+
+            if closest_idx == -1:
+                return []
             selected_points.append(team_candidates[closest_idx])
         selected_points += others_candidates
         return selected_points
@@ -134,7 +137,7 @@ class TopViewGenerator:
         self.all_player_points = player_points
         self.all_ball_points = ball_points
         player_points = self.select_top_points(player_points)
-        player_points = self.merge_points_same_team(player_points, 20)
+        player_points = self.merge_points_same_team(player_points, 25)
         player_points = self.merge_points_in_fixed_area(player_points, 50)
         player_points = self.player_stable(player_points, self.all_player_points)
         self.player_points = player_points

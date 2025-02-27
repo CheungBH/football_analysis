@@ -51,6 +51,26 @@ def process_videos(video1_path, video2_path, output_path):
 
 # Example usage
 
-process_videos(r"E:\0220\videocut_output1\video_set_1100_reverse\output_video.mp4",
-               r"E:\0220\videocut_output1\video_set_1100_reverse\top_view.mp4",
-               'output_video.mp4')
+if __name__ == '__main__':
+    import os, shutil
+    src_folder = r"E:\0220\videocut_output1"
+    out_folder = r"output_merged"
+    raw_folder = r"output_raw"
+    os.makedirs(raw_folder, exist_ok=True)
+    os.makedirs(out_folder, exist_ok=True)
+    for folder in os.listdir(src_folder):
+        video1_path = os.path.join(src_folder, folder, "output_video.mp4")
+        video2_path = os.path.join(src_folder, folder, "top_view.mp4")
+        output_path = os.path.join(out_folder, f"{folder}_merged.mp4")
+        if os.path.exists(output_path):
+            continue
+
+        process_videos(video1_path, video2_path, output_path)
+        raw_output_path = os.path.join(raw_folder, f"{folder}_raw.mp4")
+        shutil.copy(video1_path, raw_output_path)
+        raw_tv_output_path = os.path.join(raw_folder, f"{folder}_top_view.mp4")
+        shutil.copy(video2_path, raw_tv_output_path)
+
+# process_videos(r"D:\tmp\2.24_output1\video_set_1486\output_video.mp4",
+#                r"D:\tmp\2.24_output1\video_set_1486\top_view.mp4",
+#                'output_video.mp4')

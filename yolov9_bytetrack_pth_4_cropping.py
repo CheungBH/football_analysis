@@ -849,7 +849,7 @@ def imageflow_demo(predictor, args):
             topview_queue.push_frame(top_view_img)
             #cv2.imshow('Image', img)
 
-            if merged_value >= 1 or (frame_id + 1) % 100 == 0:
+            if merged_value >= 1 or (frame_id + 1) % 100000 == 0:
                 print("Saving the video")
                 output_time = frame_id / fpsmin
                 # Convert to real time
