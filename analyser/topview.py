@@ -9,6 +9,7 @@ from networkx.algorithms.centrality import voterank
 class TopViewGenerator:
     def __init__(self, area_bounds):
         self.area_bounds = area_bounds
+        self.whole_bounds = [0, 0, 1200, 800]
         self.points = []
         self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
         self.select_top = [[2,3,4], [0,10000,575]]
@@ -97,7 +98,7 @@ class TopViewGenerator:
         return merged_points
 
     def merge_points_same_team(self, points, window_size):
-        min_x, min_y, max_x, max_y = self.area_bounds
+        min_x, min_y, max_x, max_y = self.whole_bounds
         grid = defaultdict(list)
 
         # Categorize points into grid cells within the specified area
