@@ -29,10 +29,10 @@ def save_trimmed_video(clip, output_path):
 
 def crop_clips(output_directory, begin_second, duration, video_folder):
     video_paths = [
-        f"{video_folder}/output_video1.mp4",
-        f"{video_folder}/output_video2.mp4",
+        # f"{video_folder}/output_video1.mp4",
+        # f"{video_folder}/output_video2.mp4",
         f"{video_folder}/output_video3.mp4",
-        f"{video_folder}/output_video4.mp4"
+        # f"{video_folder}/output_video4.mp4"
     ]
 
     # Create a directory for the set of videos
@@ -40,10 +40,10 @@ def crop_clips(output_directory, begin_second, duration, video_folder):
 
     # Define the output paths
     output_paths = [
-        f"{output_directory}/output_video1.mp4",
-        f"{output_directory}/output_video2.mp4",
+        # f"{output_directory}/output_video1.mp4",
+        # f"{output_directory}/output_video2.mp4",
         f"{output_directory}/output_video3.mp4",
-        f"{output_directory}/output_video4.mp4"
+        # f"{output_directory}/output_video4.mp4"
     ]
 
     # Trim and save each video
@@ -57,8 +57,16 @@ def crop_clips(output_directory, begin_second, duration, video_folder):
 
 if __name__ == '__main__':
     crop_clip_list = [
-        ["/Volumes/ASSETS/tmp/2.18/video_set_161", "test", 10, 5]
+        # [r"E:\0220\videocut\video_set_1100_reverse", r"D:\tmp\3.1\demo_videos\reverse", 15, 20],
+        # [r"E:\0220\videocut\video_set_1100_reverse", r"D:\tmp\3.1\demo_videos\lack_pressure", 10, 20],
+        [r"E:\0220\videocut\video_set_1100_reverse", r"D:\tmp\3.1\demo_videos\commit_foul", 65, 25],
+        [r"D:\tmp\2.20\video_set_2990", r"D:\tmp\3.1\demo_videos\goalkeeper_GKEM", 5, 25],
+        [r"D:\tmp\2.20\video_set_2990", r"D:\tmp\3.1\demo_videos\lowSpeed1", 55, 30],
+
     ]
 
     for crop_clip in crop_clip_list:
+        # try:
         crop_clips(crop_clip[1], crop_clip[2], crop_clip[3], crop_clip[0])
+        # except:
+        #     pass
