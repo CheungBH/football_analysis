@@ -88,21 +88,8 @@ def check_ball_possession(lst,thre):
 
     return possession, possession_changed
 
-'''
-point1 = (0, 0)
-point2 = (0, 1)
-point3 = (1, 1)
 
-vector1 = calculate_vector(point1, point2)
-vector2 = calculate_vector(point2, point3)
 
-angle_between_vectors = calculate_angle_between_vectors(vector1, vector2)
-
-print("Vector between point1 and point2:", vector1)
-print("Vector between point2 and point3:", vector2)
-print("Angle between the two vectors:", angle_between_vectors, "degrees")
-
-'''
 def angle_between_vectors(v1, v2):
     """计算向量之间的夹角"""
     dot_product = np.dot(v1, v2)
@@ -172,3 +159,5 @@ def calculate_ratio(v1, v2, boundary):
     diff1 = abs(v1 - boundary)
     diff2 = abs(v2 - boundary)
     return min(diff1, diff2) / max(diff1, diff2)
+
+
