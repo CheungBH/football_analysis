@@ -18,7 +18,7 @@ class AnalysisManager:
         self.criterion = [checkers[check_item](court=court) for check_item in check_list]
         self.flag = 0
         self.team_dict = defaultdict(list)
-
+        self.ball_exit = None
         self.flag_list=[]
 
 
@@ -30,7 +30,7 @@ class AnalysisManager:
             if key not in players:
                 self.team_dict[key].append([-1, -1])
         for criterion in self.criterion:
-            criterion.process(players=self.team_dict, balls=balls,frame_queue = frame_queue,frame_id=frame_id, matrix=matrix)
+            criterion.process(players=self.team_dict,player_current = players, balls=balls,frame_queue = frame_queue,frame_id=frame_id, matrix=matrix)
 
 
     def visualize(self, frame):

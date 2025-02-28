@@ -20,9 +20,10 @@ class GoalKeeperSingleChecker:
         self.team_dict = players
         self.flag = False
         valid_players = defaultdict(list)
-        rect1 = [(50, 184), (215, 586)]
-        rect2 = [(960, 184), (1150, 500)]
+        rect1 = [(50, 320), (215, 476)]
+        rect2 = [(960, 320), (1200, 586)]
         rect1_values, rect2_values = [],[]
+        rect2_id =[]
 
         for p_id, positions in players.items():
             if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
@@ -37,6 +38,8 @@ class GoalKeeperSingleChecker:
                     rect1_values.append(v_position)
                 elif is_in_rectangle(v_position, rect2):
                     rect2_values.append(v_position)
+                    rect2_id.append(v_id)
+                    a=1
 
         if len(rect1_values) == 2:
             ratio = calculate_ratio(rect1_values[0][0], rect1_values[1][0], 50)

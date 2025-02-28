@@ -1,7 +1,7 @@
-
+import cv2
 
 class CommitFoulChecker:
-    def __init__(self):
+    def __init__(self,court, **kwargs):
         self.name = 'commit_foul'
         self.frame_duration = 10
         self.flag = False
@@ -32,9 +32,10 @@ class CommitFoulChecker:
 
         return False
 
-    def process(self, players, **kwargs):
+    def process(self, player_current, **kwargs):
         # Extract all player points
-        player_points = [(x, y) for points in players.values() for x, y in points]
+        player_points = [(x, y) for points in player_current.values() if isinstance(points, list) and len(points) == 2 for x, y in [points]]
+        #player_points = [(x, y) for points in player_current.values() if isinstance(points, (list, tuple)) for x, y in points]
 
         # Check if a foul was committed
         self.flag_list.append(self.check_points_in_window(player_points))
@@ -46,3 +47,14 @@ class CommitFoulChecker:
             else:
                 self.flag = False
 
+    def visualize(self, frame):
+        if self.flag == True:
+            cv2.putText(frame, f'Commit Foul', (100, 220),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+
+        else:
+            cv2.putText(frame, f'No Foul', (100, 220),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+    def visualize_details(self, frame):
+        self.visualize(frame)
+        pass

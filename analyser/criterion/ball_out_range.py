@@ -16,22 +16,22 @@ class BallOutRangeChecker:
     def process(self, balls,frame_queue, **kwargs):
         court = [(50, 50), (1100, 730)]
         if balls:
-            ball = balls[0]
             for ball in balls:
                 if is_in_rectangle(ball,court):
                     ball = ball
             if is_in_rectangle(ball,court):
-                self.flag_list.append(False)
+                self.flag = False
             else:
-                self.flag_list.append(True)
+                self.flag = True
         else:
-            self.flag_list.append(False)
-
-        if len(self.flag_list) >= self.frame_duration:
-                if sum(self.flag_list[-self.frame_duration:]) > (self.frame_duration * self.thre):
-                    self.flag = True
-                else:
-                    self.flag = False
+            self.flag = False
+        #
+        # if len(self.flag_list) >= self.frame_duration:
+        #     filter_flag_list = [item for item in self.flag_list[-self.frame_duration:] if item is not None]
+        #     if sum(filter_flag_list) > (self.frame_duration * self.thre):
+        #         self.flag = True
+        #     else:
+        #         self.flag = False
 
     def visualize(self, frame):
         if self.flag == True:

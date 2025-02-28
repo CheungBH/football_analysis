@@ -10,7 +10,7 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from analyser.topview import TopViewGenerator
-from team_assigner_dinov2 import TeamAssigner
+from team_assigner import TeamAssigner
 from team_assigner import TeamAssigner as TeamAssignerKNN
 
 
@@ -161,6 +161,8 @@ def make_parser():
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
     parser.add_argument("--stop_at", type=int, default=-1, help="which frame to stop")
+    parser.add_argument("--start_with", type=int, default=-1, help="which frame to start")
+
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
     parser.add_argument("--match_thresh", type=float, default=0.8, help="matching threshold for tracking")
     parser.add_argument('--min-box-area', type=float, default=10, help='filter out tiny boxes')
@@ -538,6 +540,7 @@ def imageflow_demo(predictor, args):
     goalkeeper2_dict = [defaultdict(list)for _ in range(4)]
     referee_dict = [defaultdict(list)for _ in range(4)]
     analysis_list = [AnalysisManager(config.check_action, ((0, 0))) for _ in range(4)]
+    analysis_wholegame = AnalysisManager(["ball_out_range"], ((0, 0)))
 
     analysis = AnalysisManager(config.check_action, ((0, 0)))
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
@@ -555,14 +558,17 @@ def imageflow_demo(predictor, args):
         if args.save_asset:
             box_asset_path = os.path.join(args.video_path, 'yolo.json')
             box_assets = {}
-            # if os.path.exists(box_asset_path):
-            #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            if os.path.exists(box_asset_path):
+                input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
             box_f = open(box_asset_path, 'w')
 
     while True:
 
         if frame_id == args.stop_at:
             break
+        if frame_id < args.start_with:
+            frame_id += 1
+            continue
         # try:
         img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
@@ -675,6 +681,7 @@ def imageflow_demo(predictor, args):
                     img_info["raw_img"] = frame
                     imgs_info.append(img_info)
 
+            real_ball_locations_all = []
             # yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
             for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
                 frames_queue_ls[index].push_frame(frame)
@@ -816,16 +823,17 @@ def imageflow_demo(predictor, args):
 
 
 
-                real_ball_locations_all = []
+                real_ball_locations_singe_cam = []
                 if len(all_ball_boxes) > 0:
                     for boxes in all_ball_boxes:
                         ball_location = [boxes[0] + boxes[2] / 2, boxes[1] + boxes[3]/2]
                         ball_locations = np.array([[ball_location]])
                         real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
                         real_ball_locations = real_ball_locations[0][0].tolist()
+                        real_ball_locations_singe_cam.append(real_ball_locations)
                         real_ball_locations_all.append(real_ball_locations)
                         # all_balls.append(real_ball_locations)
-                        # # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
+                        cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                         # img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
                 real_ball_locations=[]
                 if len(ball_box) > 0:
@@ -851,9 +859,12 @@ def imageflow_demo(predictor, args):
                 #                 frame_queue=frame_queue)
 
 
-                analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_all,
+                analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_singe_cam,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
-                analysis_list[index].visualize(img_list[index]) # imshowwwwwwwwwww
+                analysis_list[index].visualize(img_list[index])
+
+                # if index ==3:
+
 
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
@@ -865,6 +876,10 @@ def imageflow_demo(predictor, args):
                 PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
+            analysis_wholegame.process(balls=real_ball_locations_all, players = players_real_location[index],
+                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
+            analysis_wholegame.visualize(img_list[0])
+
             if args.save_tmp_tv:
                 cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
 
