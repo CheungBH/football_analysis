@@ -161,7 +161,7 @@ def make_parser():
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
     parser.add_argument("--stop_at", type=int, default=-1, help="which frame to stop")
-    parser.add_argument("--start_with", type=int, default=-1, help="which frame to start")
+    parser.add_argument("--start_with", type=int, default=700, help="which frame to start")
 
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
     parser.add_argument("--match_thresh", type=float, default=0.8, help="matching threshold for tracking")
@@ -566,9 +566,7 @@ def imageflow_demo(predictor, args):
 
         if frame_id == args.stop_at:
             break
-        if frame_id < args.start_with:
-            frame_id += 1
-            continue
+
         # try:
         img_list = []
         top_view_img = copy.deepcopy(top_view_img_tpl)
@@ -583,6 +581,12 @@ def imageflow_demo(predictor, args):
             ret_vals.append(ret_val)
             frames_list.append(frame)
         assets = [[] for _ in range(len(ret_vals))]
+
+        if frame_id < args.start_with and frame_id != 0:
+            frame_id += 1
+            if frame_id % 100 == 0:
+                print(frame_id)
+            continue
 
         if sum(ret_vals) == len(ret_vals):
             frames_list = [cv2.resize(frame, (real_w, real_h)) for frame in frames_list]

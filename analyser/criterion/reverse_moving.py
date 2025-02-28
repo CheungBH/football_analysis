@@ -44,10 +44,10 @@ class MovingReverseChecker:
                     if is_within_radius(v_positions[-1], ball, 50): #5m
                         speeds = calculate_speed(v_positions[-self.frame_duration:])
                         low_speed_count = sum(1 for speed in speeds if speed < 1)
-                        if low_speed_count <=10:
+                        if low_speed_count <= self.frame_duration:
                             vector_valid = [v_positions[-1][0]-v_positions[-self.frame_duration][0],
                                             v_positions[-1][1]-v_positions[-self.frame_duration][1]]
-                            human_valid[p_id] = vector_valid
+                            human_valid[v_id] = vector_valid
             if len(human_valid) >=2:
                 for h1,v1 in human_valid.items():
                     for h2,v2 in human_valid.items():
@@ -58,7 +58,7 @@ class MovingReverseChecker:
                                     self.reverse_count[(h1, h2)] = 0
                                 self.reverse_count[(h1, h2)] += 1
 
-                                if self.reverse_count[(h1, h2)] >= self.frame_duration:
+                                if self.reverse_count[(h1, h2)] >= 1:#self.frame_duration*self.thre:
                                     self.reverse_list.append([h1, h2])
                                     self.flag = True
                                     #del(self.reverse_count[(key1, key2)])
