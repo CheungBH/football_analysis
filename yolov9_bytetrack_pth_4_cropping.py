@@ -10,7 +10,7 @@ from models.common import DetectMultiBackend
 import argparse
 import copy
 from analyser.topview import TopViewGenerator
-from team_assigner import TeamAssigner
+from team_assigner_dinov2 import TeamAssigner
 from team_assigner import TeamAssigner as TeamAssignerKNN
 
 
@@ -447,6 +447,11 @@ def imageflow_demo(predictor, args):
     # for mp4 in mp4_files:
     #     video_path = os.path.join(video_folder,mp4)
     #     video_paths.append(video_path)
+    whole_analysis_criterion = ["ball_out_range", "delay_restart"]
+    all_actions = config.check_action
+    single_action = [action for action in all_actions if action not in whole_analysis_criterion]
+    whole_action = [action for action in all_actions if action in whole_analysis_criterion]
+
 
     args.track_before_knn = True
     args.no_ball_tracker = True
@@ -454,6 +459,7 @@ def imageflow_demo(predictor, args):
     # args.use_json = True
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
+
 
     if args.jersey_folder:
         output_folder = args.jersey_folder + "_output"
@@ -545,10 +551,10 @@ def imageflow_demo(predictor, args):
     goalkeeper1_dict = [defaultdict(list)for _ in range(4)]
     goalkeeper2_dict = [defaultdict(list)for _ in range(4)]
     referee_dict = [defaultdict(list)for _ in range(4)]
-    analysis_list = [AnalysisManager(config.check_action, ((0, 0))) for _ in range(4)]
-    analysis_wholegame = AnalysisManager(["ball_out_range"], ((0, 0)))
+    analysis_list = [AnalysisManager(single_action, ((0, 0))) for _ in range(4)]
+    analysis_wholegame = AnalysisManager(whole_action, ((0, 0)))
 
-    analysis = AnalysisManager(config.check_action, ((0, 0)))
+    # analysis = AnalysisManager(config.check_action, ((0, 0)))
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
     topview_queue = FrameQueue(frame_queue)
     merged_list = []
@@ -564,8 +570,8 @@ def imageflow_demo(predictor, args):
         if args.save_asset:
             box_asset_path = os.path.join(args.video_path, 'yolo.json')
             box_assets = {}
-            if os.path.exists(box_asset_path):
-                input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            # if os.path.exists(box_asset_path):
+            #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
             box_f = open(box_asset_path, 'w')
 
     while True:
@@ -883,9 +889,10 @@ def imageflow_demo(predictor, args):
                 PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
+            cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, players = players_real_location[index],
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
-            analysis_wholegame.visualize(img_list[0])
+            # analysis_wholegame.visualize(img_list[0])
 
             if args.save_tmp_tv:
                 cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
@@ -942,11 +949,11 @@ def imageflow_demo(predictor, args):
                     tv_out.write(f)
                 tv_out.release()
 
-                reason_file = os.path.join(out_subfolder, "reason.txt")
-                with open(reason_file, 'w') as f:
-                    for key,value in merged_dict.items():
-                        if value >=1:
-                            f.write(key)
+                # reason_file = os.path.join(out_subfolder, "reason.txt")
+                # with open(reason_file, 'w') as f:
+                #     for key,value in merged_dict.items():
+                #         if value >=1:
+                #             f.write(key)
 
 
             top_row = np.hstack([img_list[1], img_list[0]])
