@@ -7,7 +7,7 @@ class CommitFoulChecker:
         self.flag = False
         self.flag_list = []
         self.thre = 0.8
-        self.window_size = 100
+        self.window_size = 250
         self.step_size = 50
         self.points_trigger = 15
 
@@ -49,12 +49,13 @@ class CommitFoulChecker:
 
     def visualize(self, frame):
         if self.flag == True:
-            cv2.putText(frame, f'Commit Foul', (100, 220),
+            cv2.putText(frame, f'Commit Foul', (100, 250),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
         else:
-            cv2.putText(frame, f'No Foul', (100, 220),
+            cv2.putText(frame, f'No Foul', (100, 250),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+
     def visualize_details(self, frame):
         self.visualize(frame)
         pass
