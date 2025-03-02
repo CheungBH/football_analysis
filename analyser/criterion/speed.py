@@ -1,6 +1,6 @@
 import cv2
 from collections import defaultdict
-from .utils import check_speed_displacement,calculate_speed
+from .utils import check_speed_displacement ,calculate_speed,is_in_rectangle, is_within_radius
 
 
 class SpeedChecker:
@@ -22,6 +22,13 @@ class SpeedChecker:
         self.detail_word = "low speed"
 
     def process(self, players, balls,frame_queue, **kwargs):
+        court = [(50, 50), (1100, 730)]
+
+        if balls:
+            for ball in balls:
+                if is_in_rectangle(ball, court):
+                    ball = ball
+
         self.flag = False
         self.flag_low = 0
         valid_players = defaultdict(list)
@@ -31,6 +38,8 @@ class SpeedChecker:
 
         for p_id, positions in players.items():
             if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
+                if not is_within_radius(positions[-1], ball, 20):
+                    continue
                 position = positions[-self.frame_duration:]
                 count = position.count([-1,-1])
                 if count <= self.frame_duration*0.5:
