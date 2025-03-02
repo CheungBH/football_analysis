@@ -30,6 +30,7 @@ class SpeedChecker:
                     ball = ball
         else:
             self.flag = False
+            return
 
         self.flag = False
         self.flag_low = 0
