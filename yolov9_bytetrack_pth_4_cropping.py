@@ -953,11 +953,10 @@ def imageflow_demo(predictor, args):
                     tv_out.write(f)
                 tv_out.release()
 
-                # reason_file = os.path.join(out_subfolder, "reason.txt")
-                # with open(reason_file, 'w') as f:
-                #     for key,value in merged_dict.items():
-                #         if value >=1:
-                #             f.write(key)
+                reason_file = os.path.join(out_subfolder, "reason.txt")
+                with open(reason_file, 'w') as f:
+                    for reason in reasons:
+                        f.write(reason + '\n')
 
 
             top_row = np.hstack([img_list[1], img_list[0]])
