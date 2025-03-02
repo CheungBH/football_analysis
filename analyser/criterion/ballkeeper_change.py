@@ -15,8 +15,13 @@ class BallKeeperChangeChecker:
         self.lens = 30# distance
         self.ball_holder = None
         self.ball_holder_list =[]
+        self.ball_change_time = 0
 
-    def process(self, players,balls,frame_queue, **kwargs):
+    '''
+    def process(self, players, balls, frame_queue, **kwargs):
+    '''
+
+    def process(self, players,balls, frame_queue, **kwargs):
         court = [(50, 50), (1100, 730)]
         valid_players = defaultdict(list)
         self.flag = False
@@ -47,6 +52,7 @@ class BallKeeperChangeChecker:
                 if len(self.ball_holder_list) >=2:
                     if self.ball_holder_list[-1] != self.ball_holder_list[-2]: #and self.ball_holder_list[-2]!=self.ball_holder_list[-3] and self.ball_holder_list[-1] != self.ball_holder_list[-3]:
                         self.flag = True
+                        self.ball_change_time += 1
                         #print(str(self.ball_holder_list[-2]) +"pass the ball to" + str(self.last_holder[-1]))
                 print(self.catch_list)
                 print(self.ball_holder_list)
@@ -61,6 +67,8 @@ class BallKeeperChangeChecker:
             #     self.last_holder = self.ball_holder
 
     def visualize(self, frame):
+        cv2.putText(frame, "Ball change time: {}".format(self.ball_change_time), (100, 220),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         if self.flag == True:
             cv2.putText(frame, f'Ball change from {self.ball_holder_list[-2]} to {self.ball_holder_list[-1]}',
                 (100, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)

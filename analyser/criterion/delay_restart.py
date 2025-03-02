@@ -23,15 +23,15 @@ class DelayRestartChecker:
                 if is_in_rectangle(ball, self.court):
                     ball = ball
             if is_in_rectangle(ball, self.court):
-                self.flag_list.append(False)
-            else:
                 self.flag_list.append(True)
+            else:
+                self.flag_list.append(False)
         else:
             self.flag_list.append(False)
 
 
         if len(self.flag_list) >= self.whole_duration:
-            if sum(self.flag_list[-self.whole_duration:]) >= self.whole_duration*self.thre:
+            if sum(self.flag_list[-self.whole_duration:]) <= self.whole_duration*(1-self.thre):
                 self.flag = True
             else:
                 self.flag = False
@@ -42,7 +42,7 @@ class DelayRestartChecker:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
         else:
-            cv2.putText(frame, f'Delay restart', (100, 300),
+            cv2.putText(frame, f'No Delay restart', (100, 300),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
     def visualize_details(self, frame):

@@ -6,3 +6,5 @@ from .goalkeeper_single import GoalKeeperSingleChecker
 from .ball_out_range import BallOutRangeChecker
 from .commit_foul import CommitFoulChecker
 from .lack_pressure import LackPressureChecker
+from .delay_restart import DelayRestartChecker
+from .goalkeeper_poor_positioning import GoalKeeperPoorPositioningChecker

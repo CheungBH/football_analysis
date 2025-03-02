@@ -53,7 +53,7 @@ def process_videos(video1_path, video2_path, output_path):
 
 if __name__ == '__main__':
     import os, shutil
-    src_folder = r"E:\0220\videocut_output1"
+    src_folder = r"D:\tmp\3.1\demo_videos_2_output"
     out_folder = r"output_merged"
     raw_folder = r"output_raw"
     os.makedirs(raw_folder, exist_ok=True)

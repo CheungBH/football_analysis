@@ -12,7 +12,7 @@ class TopViewGenerator:
         self.whole_bounds = [0, 0, 1200, 800]
         self.points = []
         self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
-        self.select_top = [[2,3,4], [0,10000,575]]
+        self.select_top = [[2,3,4], [100000,0,575]]
 
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:

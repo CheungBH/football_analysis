@@ -161,3 +161,30 @@ def calculate_ratio(v1, v2, boundary):
     return min(diff1, diff2) / max(diff1, diff2)
 
 
+def is_point_in_triangle(pt, v1, v2, v3):
+    """
+    Check if point pt is inside the triangle defined by points v1, v2, v3.
+
+    :param pt: A tuple (x, y) representing the point to check.
+    :param v1: A tuple (x, y) representing the first vertex of the triangle.
+    :param v2: A tuple (x, y) representing the second vertex of the triangle.
+    :param v3: A tuple (x, y) representing the third vertex of the triangle.
+    :return: True if the point is inside the triangle, False otherwise.
+    """
+
+    # Unpack the points
+    x, y = pt
+    x1, y1 = v1
+    x2, y2 = v2
+    x3, y3 = v3
+
+    # Calculate area of the triangle
+    area_abc = abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0)
+
+    # Calculate area of the triangles formed with the point
+    area_abp = abs((x1 * (y2 - y) + x2 * (y - y1) + x * (y1 - y2)) / 2.0)
+    area_acp = abs((x1 * (y - y3) + x * (y3 - y1) + x3 * (y1 - y)) / 2.0)
+    area_bcp = abs((x * (y2 - y3) + x2 * (y3 - y) + x3 * (y - y2)) / 2.0)
+
+    # Check if the sum of the areas of the three smaller triangles equals the area of the triangle
+    return area_abc == (area_abp + area_acp + area_bcp)

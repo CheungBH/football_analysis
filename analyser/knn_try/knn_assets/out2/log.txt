@@ -1,0 +1,6 @@
+Processing Game: game1
+Game: game1, Team: player1, Total: 43, Correct: 26, Accuracy: 0.6046511627906976
+Game: game1, Team: player2, Total: 40, Correct: 26, Accuracy: 0.65
+Game: game1, Team: goalkeeper1, Total: 19, Correct: 19, Accuracy: 1.0
+Game: game1, Team: goalkeeper2, Total: 21, Correct: 21, Accuracy: 1.0
+Game: game1, Team: referee, Total: 24, Correct: 24, Accuracy: 1.0

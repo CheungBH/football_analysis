@@ -892,7 +892,7 @@ def imageflow_demo(predictor, args):
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, players = players_real_location[index],
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
-            # analysis_wholegame.visualize(img_list[0])
+            analysis_wholegame.visualize(img_list[1])
 
             if args.save_tmp_tv:
                 cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
@@ -960,7 +960,7 @@ def imageflow_demo(predictor, args):
             bottom_row = np.hstack((img_list[3], img_list[2]))
             combined_frame = np.vstack([top_row, bottom_row])
             if args.show_video:
-                cv2.imshow("Combined Frame", combined_frame)
+                cv2.imshow("Combined Frame", cv2.resize(combined_frame, (int(real_w*0.8), int(0.8*real_h))))
                 cv2.imshow('Top View', top_view_img)
                 ch = cv2.waitKey(1)
 

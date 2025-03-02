@@ -20,11 +20,18 @@ class BallOutRangeChecker:
                 if is_in_rectangle(ball,court):
                     ball = ball
             if is_in_rectangle(ball,court):
-                self.flag = False
+                flag = True
             else:
-                self.flag = True
+                flag = False
         else:
-            self.flag = False
+            flag = False
+
+        self.flag_list.append(flag)
+        if len(self.flag_list) >= self.frame_duration:
+            if sum(self.flag_list[-self.frame_duration:]) <= self.frame_duration*(1-self.thre):
+                self.flag = True
+            else:
+                self.flag = False
         #
         # if len(self.flag_list) >= self.frame_duration:
         #     filter_flag_list = [item for item in self.flag_list[-self.frame_duration:] if item is not None]

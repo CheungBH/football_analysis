@@ -1,8 +1,11 @@
 from collections import defaultdict
 from .criterion import *
+
 # low_speed -- ball_out_range -- goalkeeper_single -- reverse
 checkers = {"low_speed": LowSpeedChecker,
             "reverse_moving": MovingReverseChecker,
+            "delay_restart": DelayRestartChecker,
+            "poor_positioning": GoalKeeperPoorPositioningChecker,
             #"side_referee": SideRefereeChecker,
             "ballkeeper_change": BallKeeperChangeChecker,
             "goalkeeper_single": GoalKeeperSingleChecker,
