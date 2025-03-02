@@ -9,3 +9,4 @@ from .lack_pressure import LackPressureChecker
 from .delay_restart import DelayRestartChecker
 from .goalkeeper_poor_positioning import GoalKeeperPoorPositioningChecker
 from .standing import StandingChecker
+from .poor_position import PoorPositionChecker

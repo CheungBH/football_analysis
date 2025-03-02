@@ -161,30 +161,65 @@ def calculate_ratio(v1, v2, boundary):
     return min(diff1, diff2) / max(diff1, diff2)
 
 
-def is_point_in_triangle(pt, v1, v2, v3):
-    """
-    Check if point pt is inside the triangle defined by points v1, v2, v3.
+def is_point_in_triangle(a, b, c, d):
+    # 计算向量
+    def vector(p, q):
+        return q[0] - p[0], q[1] - p[1]
 
-    :param pt: A tuple (x, y) representing the point to check.
-    :param v1: A tuple (x, y) representing the first vertex of the triangle.
-    :param v2: A tuple (x, y) representing the second vertex of the triangle.
-    :param v3: A tuple (x, y) representing the third vertex of the triangle.
-    :return: True if the point is inside the triangle, False otherwise.
-    """
+    # 计算叉积
+    def cross_product(u, v):
+        return u[0] * v[1] - u[1] * v[0]
 
-    # Unpack the points
-    x, y = pt
-    x1, y1 = v1
-    x2, y2 = v2
-    x3, y3 = v3
+    # 向量ba, ca, da
+    ba = vector(b, a)
+    bc = vector(b, c)
+    bd = vector(b, d)
+    ca = vector(c, a)
+    cb = vector(c, b)
+    cd = vector(c, d)
+    da = vector(d, a)
+    db = vector(d, b)
+    dc = vector(d, c)
 
-    # Calculate area of the triangle
-    area_abc = abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0)
+    # 计算叉积
+    cross1 = cross_product(bc, ba)
+    cross2 = cross_product(cd, ca)
+    cross3 = cross_product(db, da)
 
-    # Calculate area of the triangles formed with the point
-    area_abp = abs((x1 * (y2 - y) + x2 * (y - y1) + x * (y1 - y2)) / 2.0)
-    area_acp = abs((x1 * (y - y3) + x * (y3 - y1) + x3 * (y1 - y)) / 2.0)
-    area_bcp = abs((x * (y2 - y3) + x2 * (y3 - y) + x3 * (y - y2)) / 2.0)
+    # 检查点a是否在三角形bcd内
+    if (cross1 >= 0 and cross2 >= 0 and cross3 >= 0) or (cross1 <= 0 and cross2 <= 0 and cross3 <= 0):
+        return True
+    else:
+        return False
 
-    # Check if the sum of the areas of the three smaller triangles equals the area of the triangle
-    return area_abc == (area_abp + area_acp + area_bcp)
+def is_point_in_triangle(a, b, c, d):
+    # 计算向量
+    def vector(p, q):
+        return q[0] - p[0], q[1] - p[1]
+
+    # 计算叉积
+    def cross_product(u, v):
+        return u[0] * v[1] - u[1] * v[0]
+
+    # 向量ba, ca, da
+    ba = vector(b, a)
+    bc = vector(b, c)
+    bd = vector(b, d)
+    ca = vector(c, a)
+    cb = vector(c, b)
+    cd = vector(c, d)
+    da = vector(d, a)
+    db = vector(d, b)
+    dc = vector(d, c)
+
+    # 计算叉积
+    cross1 = cross_product(bc, ba)
+    cross2 = cross_product(cd, ca)
+    cross3 = cross_product(db, da)
+
+    # 检查点a是否在三角形bcd内
+    if (cross1 >= 0 and cross2 >= 0 and cross3 >= 0) or (cross1 <= 0 and cross2 <= 0 and cross3 <= 0):
+        return True
+    else:
+        return False
+

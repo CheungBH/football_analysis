@@ -13,6 +13,7 @@ checkers = {"low_speed": LowSpeedChecker,
             "ball_out_range": BallOutRangeChecker,
             "commit_foul": CommitFoulChecker,
             "lack_pressure": LackPressureChecker,
+            "poor_position": PoorPositionChecker,
             }
 
 class AnalysisManager:
