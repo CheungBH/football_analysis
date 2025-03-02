@@ -13,8 +13,8 @@ class FlagManager:
     def update(self, whole, individuals):
         self.frame_cnt += 1
         self.flag_names = []
-        # if self.frame_cnt < self.min_activate_flag:
-        #     return
+        if self.frame_cnt < self.min_activate_flag:
+            return
         # self.action_times[action] += 1
         for (action, flag) in whole.items():
             if flag:
