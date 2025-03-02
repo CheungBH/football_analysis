@@ -10,6 +10,7 @@ checkers = {"low_speed": LowSpeedChecker,
             "commit_foul": CommitFoulChecker,
             #"standing": StandingChecker,
             "lack_pressure": LackPressureChecker,
+            "poor_position": PoorPositionChecker,
             }
 
 class AnalysisManager:

@@ -161,7 +161,7 @@ def make_parser():
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
     parser.add_argument("--stop_at", type=int, default=-1, help="which frame to stop")
-    parser.add_argument("--start_with", type=int, default=700, help="which frame to start")
+    parser.add_argument("--start_with", type=int, default=-1, help="which frame to start")
 
     parser.add_argument("--track_buffer", type=int, default=30, help="the frames for keep lost tracks")
     parser.add_argument("--match_thresh", type=float, default=0.8, help="matching threshold for tracking")

@@ -161,3 +161,65 @@ def calculate_ratio(v1, v2, boundary):
     return min(diff1, diff2) / max(diff1, diff2)
 
 
+def is_point_in_triangle(a, b, c, d):
+    # 计算向量
+    def vector(p, q):
+        return q[0] - p[0], q[1] - p[1]
+
+    # 计算叉积
+    def cross_product(u, v):
+        return u[0] * v[1] - u[1] * v[0]
+
+    # 向量ba, ca, da
+    ba = vector(b, a)
+    bc = vector(b, c)
+    bd = vector(b, d)
+    ca = vector(c, a)
+    cb = vector(c, b)
+    cd = vector(c, d)
+    da = vector(d, a)
+    db = vector(d, b)
+    dc = vector(d, c)
+
+    # 计算叉积
+    cross1 = cross_product(bc, ba)
+    cross2 = cross_product(cd, ca)
+    cross3 = cross_product(db, da)
+
+    # 检查点a是否在三角形bcd内
+    if (cross1 >= 0 and cross2 >= 0 and cross3 >= 0) or (cross1 <= 0 and cross2 <= 0 and cross3 <= 0):
+        return True
+    else:
+        return False
+
+def is_point_in_triangle(a, b, c, d):
+    # 计算向量
+    def vector(p, q):
+        return q[0] - p[0], q[1] - p[1]
+
+    # 计算叉积
+    def cross_product(u, v):
+        return u[0] * v[1] - u[1] * v[0]
+
+    # 向量ba, ca, da
+    ba = vector(b, a)
+    bc = vector(b, c)
+    bd = vector(b, d)
+    ca = vector(c, a)
+    cb = vector(c, b)
+    cd = vector(c, d)
+    da = vector(d, a)
+    db = vector(d, b)
+    dc = vector(d, c)
+
+    # 计算叉积
+    cross1 = cross_product(bc, ba)
+    cross2 = cross_product(cd, ca)
+    cross3 = cross_product(db, da)
+
+    # 检查点a是否在三角形bcd内
+    if (cross1 >= 0 and cross2 >= 0 and cross3 >= 0) or (cross1 <= 0 and cross2 <= 0 and cross3 <= 0):
+        return True
+    else:
+        return False
+
