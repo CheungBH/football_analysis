@@ -12,7 +12,7 @@ import copy
 from analyser.topview import TopViewGenerator
 from team_assigner_dinov2 import TeamAssigner
 from team_assigner import TeamAssigner as TeamAssignerKNN
-
+from analyser.flag_manager import FlagManager
 
 from analyser.analysis import AnalysisManager
 from analyser.preprocess import sync_frame
@@ -560,6 +560,7 @@ def imageflow_demo(predictor, args):
     merged_list = []
 
     PlayerTopView = TopViewGenerator((50,50,1100,720))
+    flag_manager = FlagManager(config.check_action, frame_duration=fpsmin*60)
 
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
@@ -880,7 +881,7 @@ def imageflow_demo(predictor, args):
 
                 # for i in range(len(real_foot_locations[index])):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
-                flag_list.append(analysis_list[index].flag_list)
+                flag_list.append(analysis_list[index].flag_dict)
                 if args.save_tmp_tv:
                     PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl), players=all_players, balls=all_balls, frame_idx=index, path=args.save_tmp_tv)
                     cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
@@ -897,29 +898,32 @@ def imageflow_demo(predictor, args):
             if args.save_tmp_tv:
                 cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
 
-            merged_dict = {}
-            for lst in flag_list:
-                for key, value in lst:
-                    if key not in merged_dict:
-                        merged_dict[key] = value
-                    else:
-                        merged_dict[key] = merged_dict[key] or value
-            merged_value = sum(merged_dict.values())
-            merge_list = [[key, value] for key, value in merged_dict.items()]
-            merged_list.append(merge_list)
-            merged_list[-1].append(frame_id)
-
-            analysis_file = os.path.join(args.video_path, "analysis.txt")
-            with open(analysis_file, 'w') as f:
-                for item in merged_list:
-                    f.write(str(item) + '\n')
+            # merged_dict = {}
+            # for lst in flag_list:
+            #     for key, value in lst:
+            #         if key not in merged_dict:
+            #             merged_dict[key] = value
+            #         else:
+            #             merged_dict[key] = merged_dict[key] or value
+            # merged_value = sum(merged_dict.values())
+            # merge_list = [[key, value] for key, value in merged_dict.items()]
+            # merged_list.append(merge_list)
+            # merged_list[-1].append(frame_id)
+            #
+            # analysis_file = os.path.join(args.video_path, "analysis.txt")
+            # with open(analysis_file, 'w') as f:
+            #     for item in merged_list:
+            #         f.write(str(item) + '\n')
 
             # top_view.process()
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
             topview_queue.push_frame(top_view_img)
             #cv2.imshow('Image', img)
 
-            if merged_value == -1 or (frame_id + 1) % 9999999999 == 0:
+            flag_manager.update(analysis_wholegame.flag_dict, flag_list)
+            reasons = flag_manager.get_flag()
+
+            if len(reasons) > 0 or (frame_id + 1) % 9999999999 == 0:
 
                 print("Saving the video")
                 output_time = frame_id / fpsmin
