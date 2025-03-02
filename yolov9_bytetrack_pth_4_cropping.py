@@ -560,7 +560,7 @@ def imageflow_demo(predictor, args):
     merged_list = []
 
     PlayerTopView = TopViewGenerator((50,50,1100,720))
-    flag_manager = FlagManager(config.check_action, frame_duration=fpsmin*60)
+    flag_manager = FlagManager(config.check_action, frame_duration=fpsmin*60, min_activate_flag=fpsmin*5)
 
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
