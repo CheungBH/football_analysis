@@ -2,19 +2,21 @@ from collections import defaultdict
 from .criterion import *
 
 # low_speed -- ball_out_range -- goalkeeper_single -- reverse
-checkers = {"low_speed": LowSpeedChecker,
-            "reverse_moving": MovingReverseChecker,
-            "delay_restart": DelayRestartChecker,
-            "poor_positioning": GoalKeeperPoorPositioningChecker,
-            "not_moving": StandingChecker,
-            #"side_referee": SideRefereeChecker,
-            "ballkeeper_change": BallKeeperChangeChecker,
-            "goalkeeper_single": GoalKeeperSingleChecker,
-            "ball_out_range": BallOutRangeChecker,
-            "commit_foul": CommitFoulChecker,
-            "lack_pressure": LackPressureChecker,
-            "poor_position": PoorPositionChecker,
-            }
+checkers = {
+    "low_speed": LowSpeedChecker,
+    "reverse_moving": MovingReverseChecker,
+    "delay_restart": DelayRestartChecker,
+    "poor_positioning": PoorPositionChecker,
+    "not_moving": StandingChecker,
+    "low_speed_with_ball": LowSpeedWithBallChecker,
+    #"side_referee": SideRefereeChecker,
+    "ballkeeper_change": BallKeeperChangeChecker,
+    "goalkeeper_single": GoalKeeperSingleChecker,
+    "ball_out_range": BallOutRangeChecker,
+    "commit_foul": CommitFoulChecker,
+    "lack_pressure": LackPressureChecker,
+    "poor_position": PoorPositionChecker,
+}
 
 class AnalysisManager:
 
