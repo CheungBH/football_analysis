@@ -17,9 +17,9 @@ class SpeedChecker:
         self.low_speed_players = []
         self.nomove_players = []
         self.team_dict = {}
-        self.green_word = "Normal speed"
-        self.red_word = "Low speed"
-        self.detail_word = "low speed"
+        self.green_word = "With ball: Normal speed"
+        self.red_word = "With ball: Low speed"
+        self.detail_word = "With ball: low speed"
 
     def process(self, players, balls,frame_queue, **kwargs):
         court = [(50, 50), (1100, 730)]
