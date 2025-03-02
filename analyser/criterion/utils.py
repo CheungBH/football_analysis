@@ -153,8 +153,6 @@ def is_within_radius(a, b, radius=20):
     distance = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
     return distance <= radius
 
-
-
 def calculate_ratio(v1, v2, boundary):
     diff1 = abs(v1 - boundary)
     diff2 = abs(v2 - boundary)

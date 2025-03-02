@@ -11,12 +11,13 @@ class LackPressureChecker:
         self.flag = False
         self.frame_duration = 10
         self.lack_pressure_list = []
-        self.thre = 0.8
+        self.thre = 0.5
         self.lens_h2b = 30# distance
-        self.lens_h2h = 30
+        self.lens_h2h = 100
         self.ball_holder = None
         self.ball_holder_list =[]
         self.catch_list=[]
+        self.close_distance =[]
 
     def process(self, players,balls,frame_queue, **kwargs):
         court = [(50, 50), (1100, 730)]
@@ -47,9 +48,12 @@ class LackPressureChecker:
                         holder = valid_players[min_key_raw][-1]
                         valid2_players = valid_players.pop(min_key_raw)
                         min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, holder, -1)
-                        if min_distance_raw2 >= self.lens_h2h:
+                        if not self.close_distance or (min_distance_raw2 >= self.close_distance[-1]
+                                                       and min_distance_raw2 >= self.lens_h2h):
                             self.lack_pressure_list.append(True)
-                            self.ball_holder_list.append(min_key_raw2)
+                            self.ball_holder_list.append(min_key_raw)
+                            self.close_distance.append(min_distance_raw2)
+
                     else:
                         self.lack_pressure_list.append(False)
 
