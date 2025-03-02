@@ -1,6 +1,6 @@
 import cv2
 from collections import defaultdict
-from .utils import check_speed_displacement,calculate_speed
+from .utils import check_speed_displacement ,calculate_speed,is_in_rectangle, is_within_radius
 
 
 class SpeedChecker:
@@ -17,11 +17,21 @@ class SpeedChecker:
         self.low_speed_players = []
         self.nomove_players = []
         self.team_dict = {}
-        self.green_word = "Normal speed"
-        self.red_word = "Low speed"
-        self.detail_word = "low speed"
+        self.green_word = "With ball: Normal speed"
+        self.red_word = "With ball: Low speed"
+        self.detail_word = "With ball: low speed"
 
     def process(self, players, balls,frame_queue, **kwargs):
+        court = [(50, 50), (1100, 730)]
+
+        if balls:
+            for ball in balls:
+                if is_in_rectangle(ball, court):
+                    ball = ball
+        else:
+            self.flag = False
+            return
+
         self.flag = False
         self.flag_low = 0
         valid_players = defaultdict(list)
@@ -31,6 +41,8 @@ class SpeedChecker:
 
         for p_id, positions in players.items():
             if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
+                if not is_within_radius(positions[-1], ball, 20):
+                    continue
                 position = positions[-self.frame_duration:]
                 count = position.count([-1,-1])
                 if count <= self.frame_duration*0.5:
@@ -48,9 +60,9 @@ class SpeedChecker:
 
     def visualize(self, frame):
         if self.flag == False:
-            cv2.putText(frame, self.green_word, (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, self.green_word, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
         else:
-            cv2.putText(frame, self.red_word, (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, self.red_word, (100, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         # elif self.flag == 2:
         #     cv2.putText(frame, "No moving", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
