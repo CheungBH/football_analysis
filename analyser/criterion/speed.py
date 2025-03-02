@@ -28,6 +28,8 @@ class SpeedChecker:
             for ball in balls:
                 if is_in_rectangle(ball, court):
                     ball = ball
+        else:
+            self.flag = False
 
         self.flag = False
         self.flag_low = 0
