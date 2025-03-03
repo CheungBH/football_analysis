@@ -67,12 +67,14 @@ class TopViewGenerator:
         return final_points
 
 
-    def save_tmp_videos(self, folder, writer):
+    def save_tmp_videos(self, folder, writer, size):
         tv_imgs = [cv2.imread(os.path.join(folder, "tv_{}.jpg".format(i))) for i in range(4)]
         top_row = np.hstack([tv_imgs[1], tv_imgs[0]])
         bottom_row = np.hstack((tv_imgs[3], tv_imgs[2]))
         combined_frame = np.vstack([top_row, bottom_row])
+        combined_frame = cv2.resize(combined_frame, size)
         writer.write(combined_frame)
+        return combined_frame
 
     def merge_points_in_fixed_area(self, points, window_size):
         min_x, min_y, max_x, max_y = self.area_bounds

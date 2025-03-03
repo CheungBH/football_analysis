@@ -887,11 +887,14 @@ def imageflow_demo(predictor, args):
                 #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
                 flag_list.append(analysis_list[index].flag_dict)
                 if args.save_tmp_tv:
-                    PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl), players=all_players, balls=all_balls, frame_idx=index, path=args.save_tmp_tv)
+                    PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl),
+                                                   players=real_foot_locations[index],
+                                                   balls=real_ball_locations_singe_cam, frame_idx=index, path=args.save_tmp_tv)
                     cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
             if args.save_tmp_tv:
                 PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
-                PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer)
+                single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(tv_w, tv_h))
+                cv2.imshow("Single Top View", single_tv_frame)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
