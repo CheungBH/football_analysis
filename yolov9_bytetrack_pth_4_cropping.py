@@ -718,12 +718,12 @@ def imageflow_demo(predictor, args):
                 team_targets = [[],[],[],[]]
                 # team_targets_add = [[],[],[],[]]
 
-                if args.save_cropped_humans:
-                    for idx, output in enumerate(outputs):
-                        if output[5] == 1:
-                            box = output[:4]
-                            cropped_img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
-                            cv2.imwrite(f"{args.save_cropped_humans}/human_{frame_id}_{index}_{idx}.jpg", cropped_img)
+                # if args.save_cropped_humans:
+                #     for idx, output in enumerate(outputs):
+                #         if output[5] == 1:
+                #             box = output[:4]
+                #             cropped_img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+                #             cv2.imwrite(f"{args.save_cropped_humans}/human_{frame_id}_{index}_{idx}.jpg", cropped_img)
 
                 if args.track_before_knn:
                     player_boxes = []
@@ -742,15 +742,16 @@ def imageflow_demo(predictor, args):
                                    [img_info['height'], img_info['width']])
 
                     team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
-                                                                    index, team_colors=team_colors, cam_idx=index)
+                                                                    index, team_colors=team_colors, cam_idx=index,
+                                                                    save=args.save_cropped_humans)
                     team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
                                                                     index, team_colors=team_colors, cam_idx=index)
                     t_final_id = []
                     for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
-                        if t_id_knn != 4 and t_id_dino == 4:
-                            t_final_id.append(t_id_knn)
-                        else:
-                            t_final_id.append(t_id_dino)
+                        # if t_id_knn != 4 and t_id_dino == 4:
+                        #     t_final_id.append(t_id_knn)
+                        # else:
+                        t_final_id.append(t_id_dino)
                     for player_target, team_id in zip(player_targets, team_ids):
                         team_boxes[team_id].append(player_target)
                         team_boxes_whole.append(player_target)
@@ -815,7 +816,8 @@ def imageflow_demo(predictor, args):
                     # real_foot_locations = real_foot_locations[0]
                     # t_color =
                     # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
-                    all_players += real_foot_locations[index]
+                    if index != 0:
+                        all_players += real_foot_locations[index]
                     # for real_foot_location in real_foot_locations[index]:
                     #     all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
 
@@ -893,7 +895,7 @@ def imageflow_demo(predictor, args):
                     cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
             if args.save_tmp_tv:
                 PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
-                single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(tv_w, tv_h))
+                single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(int(tv_w*2), int(tv_h*2)))
                 cv2.imshow("Single Top View", single_tv_frame)
             PlayerTopView.process(all_players, all_balls)
             PlayerTopView.visualize(top_view_img)
@@ -998,6 +1000,8 @@ def imageflow_demo(predictor, args):
         frame_id += 1
 
     print("Video process finished.")
+    if args.save_tmp_tv:
+        tmp_tv_writer.release()
     if args.save_asset:
         if not args.use_saved_box:
             json.dump(box_assets, box_f, indent=4)

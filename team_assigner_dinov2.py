@@ -217,8 +217,9 @@ class TeamAssigner:
             player_bbox = self.clip_bounding_box(player_bbox, frame.shape[:2])
             im = frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])]
             # BGR to RGB
-            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
             player_frames.append(im)
+            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
             # To PIL image
             im = PIL.Image.fromarray(im)
             img = self.transform(im).unsqueeze(0)
