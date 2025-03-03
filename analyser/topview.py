@@ -3,7 +3,7 @@ from collections import defaultdict
 import cv2
 import random
 import numpy as np
-from networkx.algorithms.centrality import voterank
+# from networkx.algorithms.centrality import voterank
 
 
 class TopViewGenerator:
@@ -12,7 +12,7 @@ class TopViewGenerator:
         self.whole_bounds = [0, 0, 1200, 800]
         self.points = []
         self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
-        self.select_top = [[2,3,4], [100000,0,575]]
+        self.select_top = [[2,3,4], [0,10000,575]]
 
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:
@@ -93,10 +93,12 @@ class TopViewGenerator:
         # Compute centroids for each grid cell
         merged_points = []
         for (grid_x, grid_y), cell_points in grid.items():
+            t_all = set(p[2] for p in cell_points)
             if cell_points:
                 avg_x = sum(p[0] for p in cell_points) / len(cell_points)
                 avg_y = sum(p[1] for p in cell_points) / len(cell_points)
-                t = cell_points[0][2]
+                # t = cell_points[0][2]
+                t = 4 if 4 in t_all else  cell_points[0][2]
                 color = cell_points[0][3]
                 merged_points.append((avg_x, avg_y, t, color))
 
@@ -168,7 +170,7 @@ class TopViewGenerator:
         self.all_player_points = player_points
         self.all_ball_points = ball_points
         player_points = self.select_top_points(player_points, teams=[2,3])
-        player_points = self.merge_points_same_team(player_points, 10)
+        player_points = self.merge_points_same_team(player_points, 15)
         side_referee_points, player_points = self.keep_distance_points(player_points, 4, 30)
         player_points = self.select_top_points(player_points, teams=[4])
         player_points = self.merge_points_in_fixed_area(player_points, 50)
