@@ -57,17 +57,17 @@ class LowSpeedChecker:
             if self.flag_low > 0:
                 self.flag = True
 
-    def visualize(self, frame):
+    def visualize(self, frame, idx):
         if self.flag == False:
-            cv2.putText(frame, "Normal speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(frame, "Normal speed", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
         elif self.flag == True:
-            cv2.putText(frame, "Low Speed", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, "Low Speed", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         # elif self.flag == 2:
         #     cv2.putText(frame, "No moving", (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
-    def visualize_details(self, frame):
-        self.visualize(frame)
+    def visualize_details(self, frame, idx):
+        self.visualize(frame, idx)
         for idx,p_id in enumerate(self.low_speed_players):
             cv2.putText(frame, "ID {} is low speed".format(p_id), (300, 100 + idx * 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
