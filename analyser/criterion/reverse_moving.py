@@ -35,8 +35,6 @@ class MovingReverseChecker:
                     ball = ball
                     self.ball_list.append(ball)
                     #ball_count = sum(1 for ball in self.ball_list[-self.frame_duration:] if ball != [-1,-1])
-
-
             for p_id, positions in players.items():
                 if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration]!= [-1,-1]:
                     position = positions[-self.frame_duration:]
@@ -47,8 +45,8 @@ class MovingReverseChecker:
                 for v_id,v_positions in valid_players.items():
                     if is_within_radius(v_positions[-1], ball, 150) and not is_within_radius(v_positions[-1], ball, 50): #220,250 for 24
                         speeds = calculate_speed(v_positions[-self.frame_duration:])
-                        low_speed_count = sum(1 for speed in speeds if speed < 2) # spped thre
-                        if low_speed_count <= self.frame_duration*self.thre:
+                        low_speed_count = sum(1 for speed in speeds if speed < 3) # spped thre
+                        if low_speed_count <= self.frame_duration*0.2:
                             vector_valid = [v_positions[-1][0]-v_positions[-self.frame_duration][0],
                                             v_positions[-1][1]-v_positions[-self.frame_duration][1]]
                             human_valid[v_id] = vector_valid

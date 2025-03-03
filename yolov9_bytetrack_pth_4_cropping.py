@@ -790,7 +790,7 @@ def imageflow_demo(predictor, args):
                         foot_locations[index].append(foot_location)
                         real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
                         players_real_location[index][tid] = real_foot_location
-                        real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx]])
+                        real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx],tid])
                         all_player_dict[index][tid].append(real_foot_location)
 
                     # filtered_dict[index] = {key: all_player_dict[index][key] for key in online_ids}

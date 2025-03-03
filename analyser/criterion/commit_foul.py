@@ -9,7 +9,7 @@ class CommitFoulChecker:
         self.thre = 0.8
         self.window_size = 250
         self.step_size = 50
-        self.points_trigger = 8
+        self.points_trigger = 15
 
     def check_points_in_window(self, points):
 

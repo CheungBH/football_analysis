@@ -42,7 +42,7 @@ class PoorPositionChecker:
                         rect2_values.append(v_position)
                         rect2_id.append(v_id)
 
-            if 0<len(rect1_values) < 4 and is_in_rectangle(ball,rect1_ball): # ball_position
+            if 1<len(rect1_values) < 4 and is_in_rectangle(ball,rect1_ball): # ball_position
                 goal_keeper = min(rect1_values, key=lambda point: point[0])
                 #ball = list(map(int, ball))
                 upper_door = [50,349]

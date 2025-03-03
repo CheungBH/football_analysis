@@ -5,8 +5,8 @@ from .utils import check_speed_displacement ,calculate_speed,is_in_rectangle, is
 
 class SpeedChecker:
     def __init__(self, **kwargs):
-        self.name = 'low_speed'
-        self.speed_threshold = 0.7
+        self.name = 'low_speed_with_ball'
+        self.speed_threshold = 1.45
         # self.speed_threshold_nomove = 0.3
         self.frame_duration = 50
         self.thre = 0.8
@@ -41,7 +41,7 @@ class SpeedChecker:
 
         for p_id, positions in players.items():
             if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
-                if not is_within_radius(positions[-1], ball, 20):
+                if not is_within_radius(positions[-1], ball, 100):
                     continue
                 position = positions[-self.frame_duration:]
                 count = position.count([-1,-1])

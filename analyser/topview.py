@@ -17,8 +17,11 @@ class TopViewGenerator:
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:
             cv2.circle(top_view_img, (int(player[0]), int(player[1])), 20, tuple(player[3]), -1)
+            cv2.putText(top_view_img, str(player[-1]),(int(player[0]), int(player[1])),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
         for ball in balls:
             cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 20, (0, 255, 0), -1)
+            cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 50, (0, 0, 255), 2)
+            cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 100, (0, 0, 255), 2)
         os.makedirs(path, exist_ok=True)
         cv2.imwrite(os.path.join(path, f'tv_{frame_idx}.jpg'), top_view_img)
 
@@ -104,7 +107,7 @@ class TopViewGenerator:
         grid = defaultdict(list)
 
         # Categorize points into grid cells within the specified area
-        for x, y, team, color in points:
+        for x, y, team, color,id in points:
             if min_x <= x <= max_x and min_y <= y <= max_y:
                 grid_x = (x - min_x) // window_size  # Shift to start from min_x
                 grid_y = (y - min_y) // window_size  # Shift to start from min_y
