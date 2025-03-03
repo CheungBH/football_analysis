@@ -95,19 +95,20 @@ class MovingReverseChecker:
 
 
 
-    def visualize(self, frame):
+    def visualize(self, frame, idx):
         if self.flag== True:
-            cv2.putText(frame, "Someone reverse", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255),
+            cv2.putText(frame, "Someone reverse", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255),
                             2, cv2.LINE_AA)
             for idx,reverse in enumerate(self.reverse_list):
                 cv2.putText(frame, "ID {} is reverse".format(self.reverse_list[-1]),
                             (500, 100 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
         else:
-            cv2.putText(frame, "No reverse", (100, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0),
+            cv2.putText(frame, "No reverse", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0),
                             2, cv2.LINE_AA)
 
-    def visualize_details(self, frame):
-        self.visualize(frame)
+
+    def visualize_details(self, frame, idx):
+        self.visualize(frame, idx)
         pass
         '''
         for t_idx, (color, team_dict) in enumerate(zip(self.colors, [self.team1_dict, self.team2_dict])):

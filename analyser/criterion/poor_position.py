@@ -66,16 +66,16 @@ class PoorPositionChecker:
             self.flag_list.append(False)
 
 
-    def visualize(self, frame):
+    def visualize(self, frame, idx):
         if self.flag== True:
-            cv2.putText(frame, "Poor Position", (100, 340), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255),
+            cv2.putText(frame, "Poor Position", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255),
                             2, cv2.LINE_AA)
         else:
-            cv2.putText(frame, "Normal Position", (100, 340), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0),
+            cv2.putText(frame, "Normal Position", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0),
                             2, cv2.LINE_AA)
 
 
-    def visualize_details(self, frame):
-        self.visualize(frame)
+    def visualize_details(self, frame, idx):
+        self.visualize(frame, idx)
         pass
 

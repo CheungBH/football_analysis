@@ -66,8 +66,8 @@ class BallKeeperChangeChecker:
             #     print(str(self.last_holder) +"pass the ball to" + str(self.last_holder))
             #     self.last_holder = self.ball_holder
 
-    def visualize(self, frame):
-        cv2.putText(frame, "Ball change time: {}".format(self.ball_change_time), (100, 220),
+    def visualize(self,frame, idx):
+        cv2.putText(frame, "Ball change time: {}".format(self.ball_change_time), (100, 100+(idx*40)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         if self.flag == True:
             cv2.putText(frame, f'Ball change from {self.ball_holder_list[-2]} to {self.ball_holder_list[-1]}',
@@ -76,7 +76,7 @@ class BallKeeperChangeChecker:
             cv2.putText(frame, f'Ball no change', (100, 260),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
-    def visualize_details(self, frame):
-        self.visualize(frame)
+    def visualize_details(self, frame, idx):
+        self.visualize(frame, idx)
         pass
 

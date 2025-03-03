@@ -20,8 +20,9 @@ checkers = {
 
 class AnalysisManager:
 
-    def __init__(self, check_list, court):
-        self.criterion = [checkers[check_item](court=court) for check_item in check_list]
+    def __init__(self, check_list, court, display_x=100):
+        # self.display_x = display_x
+        self.criterion = [checkers[check_item](court=court, display_x=display_x) for check_item in check_list]
         self.flag = 0
         self.team_dict = defaultdict(list)
         self.ball_exit = None
@@ -39,8 +40,8 @@ class AnalysisManager:
 
 
     def visualize(self, frame):
-        for criterion in self.criterion:
-            criterion.visualize_details(frame)
+        for c_idx, criterion in enumerate(self.criterion):
+            criterion.visualize_details(frame, c_idx)
             self.flag_dict[criterion.name] = criterion.flag
             # self.flag_list.append([criterion.name,criterion.flag])
         for idx,flag in enumerate(self.flag_dict):

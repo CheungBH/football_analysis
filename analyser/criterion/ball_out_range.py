@@ -3,9 +3,9 @@ from .utils import is_in_rectangle
 
 class BallOutRangeChecker:
 
-    def __init__(self, court, **kwargs):
+    def __init__(self, court, display_x=100, **kwargs):
         self.name = 'ball_out_range'
-
+        self.display_x = display_x
         self.field = court
         self.ball_coords = []
         self.flag = False
@@ -40,17 +40,17 @@ class BallOutRangeChecker:
         #     else:
         #         self.flag = False
 
-    def visualize(self, frame):
+    def visualize(self, frame, idx):
         if self.flag == True:
-            cv2.putText(frame, f'Ball out of court', (100, 140),
+            cv2.putText(frame, f'Ball out of court', (self.display_x, 100+(idx*40)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
         else:
-            cv2.putText(frame, f'Ball in court', (100, 140),
+            cv2.putText(frame, f'Ball in court', (self.display_x, 100+(idx*40)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
-    def visualize_details(self, frame):
-        self.visualize(frame)
+    def visualize_details(self, frame, idx):
+        self.visualize(frame, idx)
         pass
 
 

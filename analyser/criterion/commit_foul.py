@@ -47,15 +47,15 @@ class CommitFoulChecker:
             else:
                 self.flag = False
 
-    def visualize(self, frame):
+    def visualize(self, frame, idx):
         if self.flag == True:
-            cv2.putText(frame, f'Commit Foul', (100, 250),
+            cv2.putText(frame, f'Commit Foul', (100, 100+(idx*40)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
         else:
-            cv2.putText(frame, f'No Foul', (100, 250),
+            cv2.putText(frame, f'No Foul', (100, 100+(idx*40)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
-    def visualize_details(self, frame):
-        self.visualize(frame)
+    def visualize_details(self, frame, idx):
+        self.visualize(frame, idx)
         pass

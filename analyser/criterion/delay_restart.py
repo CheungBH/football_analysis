@@ -3,9 +3,9 @@ from .utils import is_in_rectangle
 
 class DelayRestartChecker:
 
-    def __init__(self, court, fps=10, **kwargs):
+    def __init__(self, court, fps=10, display_x=100, **kwargs):
         self.name = 'delay_restart'
-
+        self.display_x = display_x
         self.field = court
         self.ball_coords = []
         self.flag = False
@@ -36,17 +36,17 @@ class DelayRestartChecker:
             else:
                 self.flag = False
 
-    def visualize(self, frame):
+    def visualize(self, frame, idx):
         if self.flag == True:
-            cv2.putText(frame, f'Delay restart', (100, 300),
+            cv2.putText(frame, f'Delay restart', (self.display_x, 100+(idx*40)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
         else:
-            cv2.putText(frame, f'No Delay restart', (100, 300),
+            cv2.putText(frame, f'No Delay restart', (self.display_x, 100+(idx*40)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
 
-    def visualize_details(self, frame):
-        self.visualize(frame)
+    def visualize_details(self, frame, idx):
+        self.visualize(frame, idx)
         pass
 
 
