@@ -552,7 +552,7 @@ def imageflow_demo(predictor, args):
     goalkeeper2_dict = [defaultdict(list)for _ in range(4)]
     referee_dict = [defaultdict(list)for _ in range(4)]
     analysis_list = [AnalysisManager(single_action, ((0, 0))) for _ in range(4)]
-    analysis_wholegame = AnalysisManager(whole_action, ((0, 0)), display_x=300)
+    analysis_wholegame = AnalysisManager(whole_action, ((0, 0)), display_x=500)
 
     # analysis = AnalysisManager(config.check_action, ((0, 0)))
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]

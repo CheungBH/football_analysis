@@ -6,16 +6,15 @@ checkers = {
     "low_speed": LowSpeedChecker,
     "reverse_moving": MovingReverseChecker,
     "delay_restart": DelayRestartChecker,
-    "poor_positioning": PoorPositionChecker,
-    "not_moving": StandingChecker,
+    "not_moving_with_ball": StandingChecker,
     "low_speed_with_ball": LowSpeedWithBallChecker,
     #"side_referee": SideRefereeChecker,
-    "ballkeeper_change": BallKeeperChangeChecker,
     "goalkeeper_single": GoalKeeperSingleChecker,
     "ball_out_range": BallOutRangeChecker,
     "commit_foul": CommitFoulChecker,
     "lack_pressure": LackPressureChecker,
     "poor_position": PoorPositionChecker,
+    "ballkeeper_change": BallKeeperChangeChecker,
 }
 
 class AnalysisManager:
