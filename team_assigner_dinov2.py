@@ -12,8 +12,8 @@ from torch.nn import functional as F
 class TeamAssigner:
     def __init__(self, root_folder, model_path):
         self.root_folder = root_folder
-        feature_names = ["player1", "player2", "goalkeeper1", "goalkeeper2", "referee"]
-        np_features = [np.load(os.path.join(root_folder, f"{name}.npy")) for name in feature_names]
+        self.feature_names = ["player1", "player2", "goalkeeper1", "goalkeeper2", "referee"]
+        np_features = [np.load(os.path.join(root_folder, f"{name}.npy")) for name in self.feature_names]
         self.features = [torch.from_numpy(np_feature) for np_feature in np_features]
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -22,12 +22,13 @@ class TeamAssigner:
             # Normalize the image with mean and standard deviation
         ])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.reassign = {
-            1: [[3, 2]],
-            3: [[3, 2], [4, 1]],
-            0: [[2, 3]],
-            # 2: [[2, 3]]}
-            2: [[4, 1], [2, 3]]}
+        # self.reassign = {
+        #     1: [[3, 2]],
+        #     3: [[3, 2], [4, 1]],
+        #     0: [[2, 3]],
+        #     # 2: [[2, 3]]}
+        #     2: [[4, 1], [2, 3]]}
+        self.reassign = {}
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if model_path == 'dinov2':
@@ -211,13 +212,13 @@ class TeamAssigner:
         if not player_bboxs:
             return []
         imgs, teams_id = [], []
+        player_frames = []
         for box_idx, player_bbox in enumerate(player_bboxs):
             player_bbox = self.clip_bounding_box(player_bbox, frame.shape[:2])
-            # if save:
-            #     os.makedirs(save, exist_ok=True)
-            #     cv2.imwrite(f"{save}/{frame_idx}_{box_idx}.jpg",
-            #                 frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])])
             im = frame[int(player_bbox[1]):int(player_bbox[3]), int(player_bbox[0]):int(player_bbox[2])]
+            # BGR to RGB
+            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+            player_frames.append(im)
             # To PIL image
             im = PIL.Image.fromarray(im)
             img = self.transform(im).unsqueeze(0)
@@ -241,6 +242,13 @@ class TeamAssigner:
                         team_id = j
                 # team_id = self.reassign[cam_idx][team_id] if cam_idx in self.reassign[cam_idx][0] else team_id
             teams_id.append(team_id)
+        if save:
+            os.makedirs(save, exist_ok=True)
+            for p_id, (team_id, player_frame) in enumerate(zip(teams_id, player_frames)):
+                out_dir = os.path.join(save, self.feature_names[team_id])
+                os.makedirs(out_dir, exist_ok=True)
+                out_path = os.path.join(out_dir, f"{frame_idx}_{cam_idx}_{p_id}.jpg")
+                cv2.imwrite(out_path, player_frame)
         return teams_id
 
 
