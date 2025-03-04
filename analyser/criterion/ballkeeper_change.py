@@ -11,9 +11,9 @@ class BallKeeperChangeChecker:
         self.frame_duration = 10
         self.catch_list = []
         self.last_holder= None
-        self.thre = 0.8
+        self.thre = 0.7
         self.lens_h2h = 30# distance
-        self.lens_h2b = 40
+        self.lens_h2b = 45
         self.ball_holder = None
         self.ball_holder_list =[]
         self.ball_change_time = 0
@@ -51,17 +51,18 @@ class BallKeeperChangeChecker:
                     self.catch_list.append(None)
 
                 if len(self.catch_list) > self.frame_duration:
-                    count=0
-                    if self.catch_list[-1] != None and \
-                            self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration*self.thre:
-                        self.ball_holder_list.append(self.catch_list[-1])
+                    if self.catch_list[-1] is not None:
+                        if not self.ball_holder_list or (self.ball_holder_list[-1] != self.catch_list[-1]):
+                            if self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration * self.thre:
+                                self.ball_holder_list.append(self.catch_list[-1])
 
-                if len(self.ball_holder_list) >=2 and self.catch_list[-1] is not None:
-                    if self.ball_holder_list[-1] != self.ball_holder_list[-2]:
-                        self.flag = True
-                        self.ball_change_time += 1
-                        #print(str(self.ball_holder_list[-2]) +"pass the ball to" + str(self.last_holder[-1]))
-                #print(self.catch_list)
+                    # if self.catch_list[-1] != None and self.ball_holder_list[-1] != self.catch_list[-1] and \
+                    #      self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration*self.thre:
+                    #     self.ball_holder_list.append(self.catch_list[-1])
+
+                if len(self.ball_holder_list) >=2:
+                    self.flag = True
+                    self.ball_change_time += 1
                 print(self.ball_holder_list)
         else:
             self.catch_list.append(None)
@@ -78,6 +79,7 @@ class BallKeeperChangeChecker:
         if self.flag == True:
             cv2.putText(frame, f'Ball keeper change',
                 (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            self.ball_holder_list.pop(0)
         else:
             cv2.putText(frame, f'Ball no change', (100, 100+(idx*40)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
