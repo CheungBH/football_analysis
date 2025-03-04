@@ -528,7 +528,7 @@ def imageflow_demo(predictor, args):
 
     frame_id = 0
 
-    team_assigner = TeamAssigner(root_folder=r"assets/dino/global_feature", model_path=r"assets/dino/model.pth")
+    team_assigner = TeamAssigner(root_folder=r"assets/dino/global_features", model_path=r"assets/dino/model.pth")
     team_assigner_knn = TeamAssignerKNN()
 
     points = []
