@@ -1,5 +1,19 @@
 
 
+action_to_int = {
+    "ball_out_range": 8,
+    "reverse_moving": 1,
+    "low_speed_with_ball": 2,
+    "not_moving_with_ball": 3,
+    "lack_pressure": 4,
+    "ballkeeper_change": 5,
+    "delay_restart": 9,
+    "poor_position": 10,
+    "commit_foul": 11,
+    "goalkeeper_single": 12,
+}
+
+
 class FlagManager:
     def __init__(self, actions, frame_duration=600, min_activate_flag=50):
         self.min_activate_flag = 50
@@ -47,5 +61,5 @@ class FlagManager:
         flags = []
         for action in self.flag_names:
             if self.action_accumulate_times[action] == 0:
-                flags.append(action)
+                flags.append(action_to_int[action])
         return flags
