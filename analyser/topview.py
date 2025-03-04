@@ -1,3 +1,4 @@
+import copy
 import os
 from collections import defaultdict
 import cv2
@@ -83,11 +84,11 @@ class TopViewGenerator:
         grid = defaultdict(list)
 
         # Categorize points into grid cells within the specified area
-        for x, y, team, color in points:
+        for x, y, team, color, idx in points:
             if min_x <= x <= max_x and min_y <= y <= max_y:
                 grid_x = (x - min_x) // window_size  # Shift to start from min_x
                 grid_y = (y - min_y) // window_size  # Shift to start from min_y
-                grid[(grid_x, grid_y)].append((x, y, team, color))
+                grid[(grid_x, grid_y)].append((x, y, team, color, idx))
 
         # Compute centroids for each grid cell
         merged_points = []
@@ -99,7 +100,8 @@ class TopViewGenerator:
                 # t = cell_points[0][2]
                 t = 4 if 4 in t_all else  cell_points[0][2]
                 color = cell_points[0][3]
-                merged_points.append((avg_x, avg_y, t, color))
+                idx = cell_points[0][4]
+                merged_points.append((avg_x, avg_y, t, color, idx))
 
         return merged_points
 
@@ -108,11 +110,11 @@ class TopViewGenerator:
         grid = defaultdict(list)
 
         # Categorize points into grid cells within the specified area
-        for x, y, team, color,id in points:
+        for x, y, team, color,idx in points:
             if min_x <= x <= max_x and min_y <= y <= max_y:
                 grid_x = (x - min_x) // window_size  # Shift to start from min_x
                 grid_y = (y - min_y) // window_size  # Shift to start from min_y
-                grid[(grid_x, grid_y)].append((x, y, team, color))
+                grid[(grid_x, grid_y)].append((x, y, team, color, idx))
 
         # Compute centroids for each grid cell
         merged_points = []
@@ -123,7 +125,8 @@ class TopViewGenerator:
                 avg_y = sum(p[1] for p in cell_points) / len(cell_points)
                 t = cell_points[0][2]
                 color = cell_points[0][3]
-                merged_points.append((avg_x, avg_y, t, color))
+                idx = cell_points[0][4]
+                merged_points.append((avg_x, avg_y, t, color, idx))
             else:
                 # If there are multiple teams in the same grid cell, ignore the cell
                 for cell_point in cell_points:
@@ -165,19 +168,42 @@ class TopViewGenerator:
         return selected_points
 
 
-    def process(self, player_points, ball_points):
+    def process(self, player_points, ball_points, top_view_img, save_tmp=""):
         self.all_player_points = player_points
         self.all_ball_points = ball_points
-        player_points = self.select_top_points(player_points, teams=[2,3])
+
+        if save_tmp:
+            save_tmp = os.path.join(save_tmp, "merge_steps")
+            os.makedirs(save_tmp, exist_ok=True)
+            self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "1_all_points", save_tmp)
+
+        player_points = self.select_top_points(player_points, teams=[2, 3])
+        if save_tmp:
+            self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "2_removed_repeat_goalkeeper", save_tmp)
         player_points = self.merge_points_same_team(player_points, 15)
+        merged_points = player_points
+
+        if save_tmp:
+            self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "3_merged_same_team_in_small_area", save_tmp)
+
         side_referee_points, player_points = self.keep_distance_points(player_points, 4, 30)
         player_points = self.select_top_points(player_points, teams=[4])
+        if save_tmp:
+            self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "4_Processed_referee", save_tmp)
         player_points = self.merge_points_in_fixed_area(player_points, 50)
-        player_points = self.player_stable(player_points, self.all_player_points)
+        if save_tmp:
+            self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "5_merged_points_in_bigger_area", save_tmp)
+        player_points = self.player_stable(player_points, merged_points)
+        if save_tmp:
+            self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "6_stable_points", save_tmp)
         player_points += side_referee_points
         self.player_points = player_points
+        if save_tmp:
+            self.save_topview_img(copy.deepcopy(top_view_img), self.player_points, ball_points, "7_final_without_ball", save_tmp)
         ball_points = self.remove_out_ball(ball_points)
         self.ball_points = ball_points
+        if save_tmp:
+            self.save_topview_img(copy.deepcopy(top_view_img), self.player_points, self.ball_points, "FINAL", save_tmp)
 
     def visualize(self, top_view_img):
         for player in self.player_points:

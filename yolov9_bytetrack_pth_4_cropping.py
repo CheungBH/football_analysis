@@ -951,7 +951,7 @@ def imageflow_demo(predictor, args):
                 PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
                 single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(int(tv_w*2), int(tv_h*2)))
                 cv2.imshow("Single Top View", single_tv_frame)
-            PlayerTopView.process(all_players, all_balls)
+            PlayerTopView.process(all_players, all_balls, copy.deepcopy(top_view_img_tpl), args.save_tmp_tv)
             PlayerTopView.visualize(top_view_img)
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, players = players_real_location[index],
