@@ -504,7 +504,10 @@ def imageflow_demo(predictor, args):
     tv_h, tv_w = config.topview_height, config.topview_width
     real_h, real_w = config.real_video_height, config.real_video_width
     out_base_folder = os.path.dirname(args.output_video_path)
-    os.makedirs(out_base_folder, exist_ok=True)
+    try:
+        os.makedirs(out_base_folder, exist_ok=True)
+    except:
+        pass
 
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w, real_h)
