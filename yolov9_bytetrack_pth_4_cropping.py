@@ -127,8 +127,8 @@ def make_parser():
     )
     parser.add_argument(
         "--start_frames",
-        default=['0','0','0','0'],
-        # default=['52', '0', '24', '40'],
+        # default=['0','0','0','0'],
+        default=['52', '0', '24', '36'],
         nargs='+',
         help='mask'
     )
@@ -165,6 +165,11 @@ def make_parser():
         "--use_saved_box",
         action="store_true",
         help="Load box json for fast inference",
+    )
+    parser.add_argument(
+        "--use_saved_team",
+        action="store_true",
+        help="Load team json for fast inference",
     )
     # tracking args
     parser.add_argument("--track_thresh", type=float, default=0.2, help="tracking confidence threshold")
@@ -592,6 +597,19 @@ def imageflow_demo(predictor, args):
             #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
             box_f = open(box_asset_path, 'w')
 
+    if args.use_saved_team:
+        team_asset_path = os.path.join(args.video_path, 'team.json')
+        assert os.path.exists(team_asset_path), "The box asset file does not exist."
+        with open(team_asset_path, 'r') as f:
+            team_assets = json.load(f)
+    else:
+        if args.save_asset:
+            team_asset_path = os.path.join(args.video_path, 'team.json')
+            team_assets = {}
+            # if os.path.exists(box_asset_path):
+            #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            team_f = open(team_asset_path, 'w')
+
     while True:
 
         if frame_id == args.stop_at:
@@ -716,6 +734,9 @@ def imageflow_demo(predictor, args):
                     imgs_info.append(img_info)
 
             real_ball_locations_all = []
+            if args.save_asset:
+                team_assets[frame_id] = {}
+
             # yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
             for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
                 frames_queue_ls[index].push_frame(frame)
@@ -759,11 +780,17 @@ def imageflow_demo(predictor, args):
                     player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
                                    [img_info['height'], img_info['width']])
 
-                    team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
-                                                                    index, team_colors=team_colors, cam_idx=index,
-                                                                    save=args.save_cropped_humans)
-                    team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
-                                                                    index, team_colors=team_colors, cam_idx=index)
+                    if args.use_saved_team:
+                        team_ids = team_assets[str(frame_id)][str(index)]
+                        # team_ids_knn = team_assets[str(frame_id)][str(index)]
+                    else:
+                        team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
+                                                                        index, team_colors=team_colors, cam_idx=index,
+                                                                        save=args.save_cropped_humans)
+                        team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
+                                                                        index, team_colors=team_colors, cam_idx=index)
+                        if args.save_asset:
+                            team_assets[frame_id][index] = team_ids
                     t_final_id = [[],[],[],[],[]]
                     # for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
                     #     # if t_id_knn != 4 and t_id_dino == 4:
@@ -1033,6 +1060,8 @@ def imageflow_demo(predictor, args):
     if args.save_asset:
         if not args.use_saved_box:
             json.dump(box_assets, box_f, indent=4)
+        if not args.use_saved_team:
+            json.dump(team_assets, team_f, indent=4)
         try:
             with open(asset_path, 'w') as f:
                 json.dump(assets, f, indent=4)
