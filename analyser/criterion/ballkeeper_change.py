@@ -1,5 +1,6 @@
 from collections import defaultdict
 import math
+from collections import Counter
 import cv2
 from .utils import check_ball_possession,find_closest_player,is_in_rectangle
 class BallKeeperChangeChecker:
@@ -12,19 +13,21 @@ class BallKeeperChangeChecker:
         self.catch_list = []
         self.last_holder= None
         self.thre = 0.7
-        self.lens_h2h = 30# distance
+        self.lens_h2h = 10# distance
         self.lens_h2b = 45
         self.ball_holder = None
         self.ball_holder_list =[]
+        self.ball_holder_color_list=[]
         self.ball_change_time = 0
 
     '''
     def process(self, players, balls, frame_queue, **kwargs):
     '''
 
-    def process(self, players,balls, frame_queue, **kwargs):
+    def process(self, players,balls, color, **kwargs):
         court = [(50, 50), (1100, 730)]
         valid_players = defaultdict(list)
+        valid_colrs = defaultdict(list)
         self.flag = False
         if balls:
             ball = balls[0]
@@ -37,6 +40,7 @@ class BallKeeperChangeChecker:
                     count = position.count([-1,-1])
                     if count <= self.frame_duration*0.5:
                         valid_players[p_id] = position
+                        valid_colrs[p_id] = color
             if valid_players:
                 min_key_raw, min_distance_raw = find_closest_player(valid_players, ball, -1)
                 catch_position = valid_players[min_key_raw][-1]
@@ -55,15 +59,20 @@ class BallKeeperChangeChecker:
                         if not self.ball_holder_list or (self.ball_holder_list[-1] != self.catch_list[-1]):
                             if self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration * self.thre:
                                 self.ball_holder_list.append(self.catch_list[-1])
+                                filter_color_list = [x for x in color[min_key_raw] if x != -1]
+                                counter = Counter(filter_color_list)
+                                team_color = counter.most_common(1)[0][0] if counter else 0
+                                self.ball_holder_color_list.append(team_color)
 
                     # if self.catch_list[-1] != None and self.ball_holder_list[-1] != self.catch_list[-1] and \
                     #      self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration*self.thre:
                     #     self.ball_holder_list.append(self.catch_list[-1])
 
                 if len(self.ball_holder_list) >=2:
-                    self.flag = True
-                    self.ball_change_time += 1
-                #print(self.ball_holder_list)
+                    if self.ball_holder_color_list[-1] != self.ball_holder_color_list[-2]:
+                        self.flag = True
+                        self.ball_change_time += 1
+                print(self.ball_holder_list)
         else:
             self.catch_list.append(None)
             # if self.last_holder == None and self.ball_holder != None:
@@ -80,6 +89,7 @@ class BallKeeperChangeChecker:
             cv2.putText(frame, f'Ball keeper change',
                 (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             self.ball_holder_list.pop(0)
+            self.ball_holder_color_list.pop(0)
         else:
             cv2.putText(frame, f'Ball no change', (100, 100+(idx*40)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
@@ -87,8 +97,8 @@ class BallKeeperChangeChecker:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
 
     def visualize_details(self, frame, idx):
-        self.visualize(frame, idx)
-        # if self.flag == True:
-        #     cv2.putText(frame, f'Ball change from {self.ball_holder_list[-2]} to {self.ball_holder_list[-1]}',
-        #                 (100, 100 + (idx * 40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        if self.flag == True:
+            cv2.putText(frame, f'Ball change from {self.ball_holder_list[-2]} to {self.ball_holder_list[-1]}',
+                        (100, 100 + (idx * 40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
+        self.visualize(frame, idx)

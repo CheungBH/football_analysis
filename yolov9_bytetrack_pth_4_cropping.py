@@ -728,6 +728,7 @@ def imageflow_demo(predictor, args):
                 team_boxes = [[] for _ in range(len(team_colors))]
                 team_boxes_whole = []
                 players_real_location = [defaultdict(list)for _ in range(4)]
+                players_color = [defaultdict(list)for _ in range(4)]
                 ball_boxes = []
 
                 max_ball_output = None
@@ -763,15 +764,16 @@ def imageflow_demo(predictor, args):
                                                                     save=args.save_cropped_humans)
                     team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
                                                                     index, team_colors=team_colors, cam_idx=index)
-                    t_final_id = []
-                    for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
-                        # if t_id_knn != 4 and t_id_dino == 4:
-                        #     t_final_id.append(t_id_knn)
-                        # else:
-                        t_final_id.append(t_id_dino)
+                    t_final_id = [[],[],[],[],[]]
+                    # for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
+                    #     # if t_id_knn != 4 and t_id_dino == 4:
+                    #     #     t_final_id.append(t_id_knn)
+                    #     # else:
+                    #     t_final_id.append(t_id_dino)
                     for player_target, team_id in zip(player_targets, team_ids):
                         team_boxes[team_id].append(player_target)
                         team_boxes_whole.append(player_target)
+                        t_final_id[team_id].append(team_id)
                     team_targets[index] = team_boxes
 
                 else:
@@ -798,6 +800,7 @@ def imageflow_demo(predictor, args):
                     online_tlwhs = []
                     online_ids = []
                     online_scores = []
+                    online_color = []
                     for t in team_target:
                         tlwh = t.tlwh
                         tid = t.track_id
@@ -812,6 +815,7 @@ def imageflow_demo(predictor, args):
                         else:
                             continue
                         players_real_location[index][tid] = real_foot_location
+                        players_color[index][tid] = t_idx
                         real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx],tid])
                         all_player_dict[index][tid].append(real_foot_location)
 
@@ -901,7 +905,7 @@ def imageflow_demo(predictor, args):
 
 
                 analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_singe_cam,
-                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
+                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors=players_color[index])
                 analysis_list[index].visualize(img_list[index])
                 single_vid_writers[index].write(img_list[index])
 
@@ -924,7 +928,7 @@ def imageflow_demo(predictor, args):
             PlayerTopView.visualize(top_view_img)
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, players = players_real_location[index],
-                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
+                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors = players_color[index])
             for i in range(4):
                 analysis_wholegame.visualize(img_list[i])
 

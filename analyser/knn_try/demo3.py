@@ -204,3 +204,23 @@ if __name__ == "__main__":
     jpg_dir = "/media/hkuit164/Backup/yolov9/datasets/all_YOLO_new/images1/train"
     compare_and_delete(txt_dir, jpg_dir)
 '''
+from collections import Counter
+
+def most_frequent_excluding_negative_one(lst):
+    # 过滤掉 -1
+    filtered_list = [x for x in lst if x != -1]
+
+    # 计算每个元素的出现次数
+    counter = Counter(filtered_list)
+
+    # 找出出现次数最多的元素
+    if counter:
+        most_frequent = counter.most_common(1)[0][0]
+        return most_frequent
+    else:
+        return None  # 如果列表为空，返回 None
+
+# 示例用法
+lst = [-1, -1, -1, 1, 1, 0, 2]
+result = most_frequent_excluding_negative_one(lst)
+print(result)  # 输出: 1
