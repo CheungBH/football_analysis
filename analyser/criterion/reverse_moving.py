@@ -55,7 +55,7 @@ class MovingReverseChecker:
                 #ball_vecs = [[self.ball_list[i+1][0] - self.ball_list[i][0], self.ball_list[i+1][1] - self.ball_list[i][1]] for i in range(len(self.ball_list) - 1)]
                 for h,huamen_vec in human_valid.items():
                     angle = vector_angle(huamen_vec, ball_vec)
-                    if angle > 45:
+                    if angle > 54:
                         if h not in self.reverse_count:
                             self.reverse_count[h] = 0
                         self.reverse_count[h] += 1
