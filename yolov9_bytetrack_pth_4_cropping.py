@@ -528,8 +528,7 @@ def imageflow_demo(predictor, args):
 
     frame_id = 0
 
-    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature\0208_game",
-                                 model_path=r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_all_for_train_ft\best_model.pth")
+    team_assigner = TeamAssigner(root_folder=r"assets/dino/global_feature", model_path=r"assets/dino/model.pth")
     team_assigner_knn = TeamAssignerKNN()
 
     points = []
