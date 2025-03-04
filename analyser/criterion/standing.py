@@ -1,6 +1,5 @@
 from .speed import SpeedChecker
 
-
 class StandingChecker(SpeedChecker):
     def __init__(self, **kwargs):
         super(StandingChecker, self).__init__()

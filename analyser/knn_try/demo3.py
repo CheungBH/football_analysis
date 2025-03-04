@@ -127,7 +127,7 @@ if __name__ == "__main__":
 '''
 
 
-
+'''
 import cv2
 import os
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     process_files(img_dir, txt_dir)
 
 
-'''import os
+import os
 
 def compare_and_delete(txt_dir, jpg_dir):
     # 获取txt文件的基本文件名（不带扩展名）

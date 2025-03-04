@@ -12,7 +12,8 @@ class BallKeeperChangeChecker:
         self.catch_list = []
         self.last_holder= None
         self.thre = 0.8
-        self.lens = 30# distance
+        self.lens_h2h = 30# distance
+        self.lens_h2b = 40
         self.ball_holder = None
         self.ball_holder_list =[]
         self.ball_change_time = 0
@@ -38,8 +39,14 @@ class BallKeeperChangeChecker:
                         valid_players[p_id] = position
             if valid_players:
                 min_key_raw, min_distance_raw = find_closest_player(valid_players, ball, -1)
-                if min_distance_raw <= self.lens:
-                    self.catch_list.append(min_key_raw)
+                catch_position = valid_players[min_key_raw][-1]
+                if min_distance_raw <= self.lens_h2b:
+                    valid_else = valid_players.pop(min_key_raw)
+                    min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, catch_position, -1)
+                    if min_distance_raw2 >= self.lens_h2h:
+                        self.catch_list.append(min_key_raw)
+                    else:
+                        self.catch_list.append(None)
                 else:
                     self.catch_list.append(None)
 
@@ -49,12 +56,12 @@ class BallKeeperChangeChecker:
                             self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration*self.thre:
                         self.ball_holder_list.append(self.catch_list[-1])
 
-                if len(self.ball_holder_list) >=2:
-                    if self.ball_holder_list[-1] != self.ball_holder_list[-2]: #and self.ball_holder_list[-2]!=self.ball_holder_list[-3] and self.ball_holder_list[-1] != self.ball_holder_list[-3]:
+                if len(self.ball_holder_list) >=2 and self.catch_list[-1] is not None:
+                    if self.ball_holder_list[-1] != self.ball_holder_list[-2]:
                         self.flag = True
                         self.ball_change_time += 1
                         #print(str(self.ball_holder_list[-2]) +"pass the ball to" + str(self.last_holder[-1]))
-                print(self.catch_list)
+                #print(self.catch_list)
                 print(self.ball_holder_list)
         else:
             self.catch_list.append(None)

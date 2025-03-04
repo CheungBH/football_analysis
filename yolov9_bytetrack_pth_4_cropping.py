@@ -26,11 +26,18 @@ from tracker import BYTETracker
 import config.config as config
 import math
 from functools import reduce
+from analyser.criterion.utils import is_in_rectangle
 
 
 team_colors = []
 img_full_list = []
 map_cam_idx = [0,1,2,3]
+chosed_field=[[[335,188],[1150,770]],
+              [[0,188],[810,770]],
+              [[335,0],[1150,586]],
+              [[0,0],[810,586]]
+]
+
 
 
 def make_parser():
@@ -790,6 +797,11 @@ def imageflow_demo(predictor, args):
                         foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
                         foot_locations[index].append(foot_location)
                         real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
+                        if is_in_rectangle(real_foot_location,chosed_field[index]):
+                            pass
+                        else:
+                            print(1)
+                            continue
                         players_real_location[index][tid] = real_foot_location
                         real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx],tid])
                         all_player_dict[index][tid].append(real_foot_location)

@@ -11,14 +11,15 @@ class LackPressureChecker:
         self.flag = False
         self.frame_duration = 10
         self.lack_pressure_list = []
-        self.thre = 0.5
+        self.thre = 0.7
         self.lens_h2b = 30# distance
         self.lens_h2h = 100
         self.ball_holder = None
         self.ball_holder_list =[]
+        self.lack_pressure_dict = defaultdict(list)
         self.catch_list=[]
-        self.close_distance =[]
-
+        self.close_distance = 0
+        self.lack_human = None
     def process(self, players,balls,frame_queue, **kwargs):
         court = [(50, 50), (1100, 730)]
         valid_players = defaultdict(list)
@@ -48,26 +49,33 @@ class LackPressureChecker:
                         holder = valid_players[min_key_raw][-1]
                         valid2_players = valid_players.pop(min_key_raw)
                         min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, holder, -1)
-                        if not self.close_distance or (min_distance_raw2 >= self.close_distance[-1]
-                                                       and min_distance_raw2 >= self.lens_h2h):
-                            self.lack_pressure_list.append(True)
-                            self.ball_holder_list.append(min_key_raw)
-                            self.close_distance.append(min_distance_raw2)
-
+                        if min_distance_raw2 >= self.close_distance and min_distance_raw2 >= self.lens_h2h:
+                            # self.lack_pressure_list.append(True)
+                            # self.ball_holder_list.append(min_key_raw)
+                            for key,value in self.lack_pressure_dict.items():
+                                if key != min_key_raw:
+                                    self.lack_pressure_dict[key].append(False)
+                            self.lack_pressure_dict[min_key_raw].append(True)
+                            self.close_distance = min_distance_raw2
+                        else:
+                            for k,v in self.lack_pressure_dict.items():
+                                self.lack_pressure_dict[k].append(False)
                     else:
-                        self.lack_pressure_list.append(False)
+                        for k,v in self.lack_pressure_dict.items():
+                            self.lack_pressure_dict[k].append(False)
 
-
-                if len(self.lack_pressure_list) >= self.frame_duration and \
-                        sum(self.lack_pressure_list[-self.frame_duration:]) >= self.frame_duration*self.thre:
+            for key,value in self.lack_pressure_dict.items():
+                if len(value) >= self.frame_duration and sum(value[-self.frame_duration:])>= self.frame_duration*self.thre:
                     self.flag=True
+                    self.lack_human = key
         else:
-            self.lack_pressure_list.append(False)
+            for k,v in self.lack_pressure_dict.items():
+                self.lack_pressure_dict[k].append(False)
 
 
     def visualize(self, frame, idx):
         if self.flag == True:
-            cv2.putText(frame, f'{self.ball_holder_list[-1]} lack of pressure',
+            cv2.putText(frame, f'{self.lack_human} lack of pressure',
                 (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         else:
             cv2.putText(frame, f'No lack of pressure', (100, 100+(idx*40)),

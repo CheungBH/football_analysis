@@ -22,7 +22,7 @@ class PoorPositionChecker:
             rect1 = [(50, 320), (210, 586)]
             rect2 = [(960, 320), (1200, 586)]
             rect1_ball = [(50, 50), (210, 720)]
-            rect2_ball =  [(960,50), (1200, 720)]
+            rect2_ball = [(960,50), (1200, 720)]
             rect1_values, rect2_values = [],[]
             rect1_id,rect2_id =[],[]
 
@@ -44,13 +44,11 @@ class PoorPositionChecker:
 
             if 1<len(rect1_values) < 4 and is_in_rectangle(ball,rect1_ball): # ball_position
                 goal_keeper = min(rect1_values, key=lambda point: point[0])
-                #ball = list(map(int, ball))
                 upper_door = [50,349]
                 lower_door = [50,421]
                 self.flag_list.append(not is_point_in_triangle(goal_keeper,ball,upper_door,lower_door))
             elif 1<len(rect2_values) < 4 and is_in_rectangle(ball,rect2_ball):
                 goal_keeper = max(rect2_values, key=lambda point: point[0])
-                ball = list(map(int, ball))
                 upper_door = [1100,349]
                 lower_door = [1100,421]
                 self.flag_list.append(not is_point_in_triangle(goal_keeper,ball,upper_door,lower_door))
