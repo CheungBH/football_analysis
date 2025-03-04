@@ -810,7 +810,6 @@ def imageflow_demo(predictor, args):
                         if is_in_rectangle(real_foot_location,chosed_field[index]):
                             pass
                         else:
-                            print(1)
                             continue
                         players_real_location[index][tid] = real_foot_location
                         real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx],tid])

@@ -63,7 +63,7 @@ class BallKeeperChangeChecker:
                 if len(self.ball_holder_list) >=2:
                     self.flag = True
                     self.ball_change_time += 1
-                print(self.ball_holder_list)
+                #print(self.ball_holder_list)
         else:
             self.catch_list.append(None)
             # if self.last_holder == None and self.ball_holder != None:

@@ -26,7 +26,6 @@ class MovingReverseChecker:
         #self.frame_duration = frame_queue
         human_valid = defaultdict(list)
         court = [(50, 50), (1100, 730)]
-        key_vectors = {}
 
         if balls:
             ball = balls[0]
@@ -43,7 +42,7 @@ class MovingReverseChecker:
                         valid_players[p_id] = position
             if valid_players:
                 for v_id,v_positions in valid_players.items():
-                    if is_within_radius(v_positions[-1], ball, 150) and not is_within_radius(v_positions[-1], ball, 50): #220,250 for 24
+                    if is_within_radius(v_positions[-1], ball, 150): #and not is_within_radius(v_positions[-1], ball, 50): #220,250 for 24
                         speeds = calculate_speed(v_positions[-self.frame_duration:])
                         low_speed_count = sum(1 for speed in speeds if speed < 3) # spped thre
                         if low_speed_count <= self.frame_duration*0.2:
@@ -56,7 +55,7 @@ class MovingReverseChecker:
                 #ball_vecs = [[self.ball_list[i+1][0] - self.ball_list[i][0], self.ball_list[i+1][1] - self.ball_list[i][1]] for i in range(len(self.ball_list) - 1)]
                 for h,huamen_vec in human_valid.items():
                     angle = vector_angle(huamen_vec, ball_vec)
-                    if angle > 120:
+                    if angle > 45:
                         if h not in self.reverse_count:
                             self.reverse_count[h] = 0
                         self.reverse_count[h] += 1
@@ -69,27 +68,6 @@ class MovingReverseChecker:
         else:
             ball_last =self.ball_list[-1] if self.ball_list else [-1,-1]
             self.ball_list.append(ball_last)
-            if len(self.ball_list)>= self.frame_duration:
-                if self.ball_list[-self.frame_duration] == self.ball_list[-1]:
-                    self.ball_list=[]
-
-            # if len(human_valid) >=2: # human ball vector
-            #     for h1,v1 in human_valid.items():
-            #         for h2,v2 in human_valid.items():
-            #             if h1<h2:
-            #                 angle = vector_angle(v1, v2)
-            #                 if angle > 120:
-            #                     if (h1, h2) not in self.reverse_count:
-            #                         self.reverse_count[(h1, h2)] = 0
-            #                     self.reverse_count[(h1, h2)] += 1
-            #
-            #                     if self.reverse_count[(h1, h2)] >= 1:#self.frame_duration*self.thre:
-            #                         self.reverse_list.append([h1, h2])
-            #                         self.flag = True
-            #                         #del(self.reverse_count[(key1, key2)])
-            #                 else:
-            #                     if (h1, h2) in self.reverse_count:
-            #                         self.reverse_count[(h1, h2)] = 0
 
 
 
