@@ -128,6 +128,7 @@ def make_parser():
     parser.add_argument(
         "--start_frames",
         default=['0','0','0','0'],
+        # default=['52', '0', '24', '40'],
         nargs='+',
         help='mask'
     )
@@ -166,7 +167,7 @@ def make_parser():
         help="Load box json for fast inference",
     )
     # tracking args
-    parser.add_argument("--track_thresh", type=float, default=0.5, help="tracking confidence threshold")
+    parser.add_argument("--track_thresh", type=float, default=0.2, help="tracking confidence threshold")
     parser.add_argument("--stop_at", type=int, default=-1, help="which frame to stop")
     parser.add_argument("--start_with", type=int, default=-1, help="which frame to start")
 
@@ -502,9 +503,15 @@ def imageflow_demo(predictor, args):
     #     args.save_asset = False
     tv_h, tv_w = config.topview_height, config.topview_width
     real_h, real_w = config.real_video_height, config.real_video_width
+    out_base_folder = os.path.dirname(args.output_video_path)
+    os.makedirs(out_base_folder, exist_ok=True)
+
     vid_writer = cv2.VideoWriter(
         args.output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w, real_h)
     )
+    single_vid_writers = [cv2.VideoWriter(
+        args.output_video_path.replace(".mp4", "_{}.mp4".format(i)), cv2.VideoWriter_fourcc(*"mp4v"), fpsmin, (real_w//2, real_h//2)
+    ) for i in range(4)]
     print("Save video to: ", args.output_video_path)
     print(os.path.exists(args.output_video_path))
     tv_path = os.path.join(os.path.dirname(args.output_video_path), "top_view.mp4")
@@ -518,7 +525,8 @@ def imageflow_demo(predictor, args):
 
     frame_id = 0
 
-    team_assigner = TeamAssigner(root_folder=r"assets/dino/global_features", model_path="assets/dino/model.pth")
+    team_assigner = TeamAssigner(root_folder=r"C:\Users\User\Desktop\hku\ContrastiveLearning\feature\0208_game",
+                                 model_path=r"C:\Users\User\Desktop\hku\ContrastiveLearning\checkpoint\jersey_all_for_train_ft\best_model.pth")
     team_assigner_knn = TeamAssignerKNN()
 
     points = []
@@ -836,6 +844,7 @@ def imageflow_demo(predictor, args):
                     #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
                     img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=team_colors[t_idx])
 
+
                 if args.no_ball_tracker:
                     all_ball_boxes = []
                     if max_ball_output is not None:
@@ -893,6 +902,7 @@ def imageflow_demo(predictor, args):
                 analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_singe_cam,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
                 analysis_list[index].visualize(img_list[index])
+                single_vid_writers[index].write(img_list[index])
 
                 # if index ==3:
 
@@ -914,7 +924,8 @@ def imageflow_demo(predictor, args):
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, players = players_real_location[index],
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue)
-            analysis_wholegame.visualize(img_list[1])
+            for i in range(4):
+                analysis_wholegame.visualize(img_list[i])
 
             if args.save_tmp_tv:
                 cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
