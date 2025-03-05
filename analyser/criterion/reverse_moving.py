@@ -1,5 +1,6 @@
 import cv2
 from collections import defaultdict
+import math
 from .utils import calculate_vector, calculate_angle_between_vectors,find_closest_player,compare_motion_direction,vector_angle,check_speed_distance,is_in_rectangle,calculate_speed,is_within_radius
 
 
@@ -44,18 +45,23 @@ class MovingReverseChecker:
                 for v_id,v_positions in valid_players.items():
                     if is_within_radius(v_positions[-1], ball, 150): #and not is_within_radius(v_positions[-1], ball, 50): #220,250 for 24
                         speeds = calculate_speed(v_positions[-self.frame_duration:])
-                        low_speed_count = sum(1 for speed in speeds if speed < 4.4) # spped thre
+                        low_speed_count = sum(1 for speed in speeds if speed < 4) # spped thre
                         if low_speed_count <= self.frame_duration*0.2:
                             vector_valid = [v_positions[-1][0]-v_positions[-self.frame_duration][0],
                                             v_positions[-1][1]-v_positions[-self.frame_duration][1]]
                             human_valid[v_id] = vector_valid
-            if len(self.ball_list) > self.frame_duration and human_valid:
+            if len(self.ball_list) >=2:
+                ball_move = math.sqrt((self.ball_list[-1][0] - self.ball_list[-2][0])**2 +
+                                  (self.ball_list[-2][1] - self.ball_list[-2][1])**2)
+            else:
+                ball_move = 0
+            if len(self.ball_list) > self.frame_duration and human_valid and ball_move > 4.3:
                 ball_vec = [self.ball_list[-1][0] - self.ball_list[-self.frame_duration][0],
                             self.ball_list[-1][1] - self.ball_list[-self.frame_duration][1]]
                 #ball_vecs = [[self.ball_list[i+1][0] - self.ball_list[i][0], self.ball_list[i+1][1] - self.ball_list[i][1]] for i in range(len(self.ball_list) - 1)]
                 for h,huamen_vec in human_valid.items():
                     angle = vector_angle(huamen_vec, ball_vec)
-                    if angle > 54:
+                    if angle > 50:
                         if h not in self.reverse_count:
                             self.reverse_count[h] = 0
                         self.reverse_count[h] += 1
