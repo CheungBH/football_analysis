@@ -46,11 +46,14 @@ class BallKeeperChangeChecker:
                 catch_position = valid_players[min_key_raw][-1]
                 if min_distance_raw <= self.lens_h2b:
                     valid_else = valid_players.pop(min_key_raw)
-                    min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, catch_position, -1)
-                    if min_distance_raw2 >= self.lens_h2h:
-                        self.catch_list.append(min_key_raw)
+                    if valid_players:
+                        min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, catch_position, -1)
+                        if min_distance_raw2 >= self.lens_h2h:
+                            self.catch_list.append(min_key_raw)
+                        else:
+                            self.catch_list.append(None)
                     else:
-                        self.catch_list.append(None)
+                        self.catch_list.append(min_key_raw)
                 else:
                     self.catch_list.append(None)
 
