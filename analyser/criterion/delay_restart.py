@@ -14,7 +14,7 @@ class DelayRestartChecker:
         self.counting_time = 10
         self.fps = fps
         self.whole_duration = self.counting_time * self.fps
-        self.court = [(100, 100), (1000, 650)]
+        self.court = [(100, 180), (1000, 650)]
 
 
     def process(self, balls, frame_queue, **kwargs):

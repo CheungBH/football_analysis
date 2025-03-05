@@ -9,6 +9,7 @@ class BallOutRangeChecker:
         self.field = court
         self.ball_coords = []
         self.flag = False
+        self.flag_last = False
         self.flag_list=[]
         self.thre = 0.8
         self.frame_duration = 10
@@ -21,10 +22,12 @@ class BallOutRangeChecker:
                     ball = ball
             if is_in_rectangle(ball,court):
                 flag = True
+                self.flag_last = flag
             else:
                 flag = False
+                self.flag_last = flag
         else:
-            flag = False
+            flag = self.flag_last
 
         self.flag_list.append(flag)
         if len(self.flag_list) >= self.frame_duration:
