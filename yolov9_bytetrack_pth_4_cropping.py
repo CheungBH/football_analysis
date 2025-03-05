@@ -491,12 +491,13 @@ def imageflow_demo(predictor, args):
             start_frames.append(start_frame)
     print(start_frames)
     caps = [cv2.VideoCapture(path) for path in video_paths]
-    width_list,height_list,fps_list = [],[],[]
+    width_list,height_list,fps_list, total_frame_list = [],[],[],[]
     for cap, start_frame in zip(caps, start_frames):
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(start_frame))
         width_list.append(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height_list.append(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps_list.append(round(cap.get(cv2.CAP_PROP_FPS)))
+        total_frame_list.append(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     if args.save_cropped_humans:
         os.makedirs(args.save_cropped_humans, exist_ok=True)
@@ -504,6 +505,7 @@ def imageflow_demo(predictor, args):
     # fps = caps[0].get(cv2.CAP_PROP_FPS)
     fpsmin = reduce(math.gcd,fps_list)
     frame_queue = fpsmin * 5
+    totol_frame_to_process = int(total_frame_list[1]/(fps_list[1]/fpsmin))
     # if args.use_json:
     #     args.save_asset = False
     tv_h, tv_w = config.topview_height, config.topview_width
@@ -1044,7 +1046,7 @@ def imageflow_demo(predictor, args):
                 topview_writer.write(top_view_img)
 
 
-            print("Finish processing frame: ", frame_id)
+            print("Finish processing frame: {}/{}".format(frame_id, totol_frame_to_process))
             if frame_id % 100 == 0:
                 print(f"Frame {frame_id} processed.")
         else:
