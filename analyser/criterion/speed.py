@@ -21,8 +21,10 @@ class SpeedChecker:
         self.red_word = "Low speed"
         self.detail_word = "low speed"
 
+
     def process(self, players, balls,frame_queue, **kwargs):
         court = [(50, 50), (1100, 730)]
+        invalid_area =[(500, 60), (750, 230)]
 
         if balls:
             for ball in balls:
@@ -41,7 +43,7 @@ class SpeedChecker:
 
         for p_id, positions in players.items():
             if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
-                if not is_within_radius(positions[-1], ball, 100):
+                if not is_within_radius(positions[-1], ball, 100) and is_in_rectangle(ball,invalid_area):
                     continue
                 position = positions[-self.frame_duration:]
                 count = position.count([-1,-1])

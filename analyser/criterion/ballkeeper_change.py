@@ -26,6 +26,7 @@ class BallKeeperChangeChecker:
 
     def process(self, players,balls, color, **kwargs):
         court = [(50, 50), (1100, 730)]
+        invalid_area =[(500, 60), (750, 230)]
         valid_players = defaultdict(list)
         valid_colrs = defaultdict(list)
         self.flag = False
@@ -35,7 +36,8 @@ class BallKeeperChangeChecker:
                 if is_in_rectangle(ball,court):
                     ball = ball
             for p_id, positions in players.items():
-                if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
+                if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] \
+                        and not is_in_rectangle(positions[-1],invalid_area) and positions[-self.frame_duration] != [-1,-1]:
                     position = positions[-self.frame_duration:]
                     count = position.count([-1,-1])
                     if count <= self.frame_duration*0.5:
@@ -75,6 +77,9 @@ class BallKeeperChangeChecker:
                     if self.ball_holder_color_list[-1] != self.ball_holder_color_list[-2]:
                         self.flag = True
                         self.ball_change_time += 1
+                    else:
+                        self.ball_holder_list.pop(0)
+                        self.ball_holder_color_list.pop(0)
                 print(self.ball_holder_list)
         else:
             self.catch_list.append(None)

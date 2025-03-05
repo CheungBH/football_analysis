@@ -27,6 +27,7 @@ class LowSpeedChecker:
         #         if is_in_rectangle(ball, court):
         #             ball = ball
 
+
         self.flag = False
         self.flag_low, self.flag_nomove = 0,0
         valid_players = defaultdict(list)
