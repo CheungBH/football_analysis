@@ -27,15 +27,18 @@ class AnalysisManager:
         self.ball_exit = None
         self.flag_dict = {}
         self.player_color_dict = defaultdict(list)
+        self.player_img_box = defaultdict(list)
 
-    def process(self, players, balls,frame_id,matrix,frame_queue,colors):
+    def process(self, players, player_img_box,balls,frame_id, matrix,frame_queue,colors):
         self.flag_dict = {}
         for idx, (p_id, location) in enumerate(players.items()):
             self.team_dict[p_id].append(location)
             self.player_color_dict[p_id].append(colors[p_id])
+            self.player_img_box[p_id].append(player_img_box[p_id])
         for key in self.team_dict:
             if key not in players:
                 self.team_dict[key].append([-1, -1])
+                self.player_img_box[key].append([-1, -1, -1, -1])
                 self.player_color_dict[key].append(-1)
         for criterion in self.criterion:
             criterion.process(players=self.team_dict,player_current = players, balls=balls,frame_queue = frame_queue,

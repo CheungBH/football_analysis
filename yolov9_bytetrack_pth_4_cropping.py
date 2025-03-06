@@ -32,9 +32,9 @@ from analyser.criterion.utils import is_in_rectangle
 team_colors = []
 img_full_list = []
 map_cam_idx = [0,1,2,3]
-chosed_field=[[[335,188],[1150,770]],
+chosed_field=[[[575,188],[1150,770]],
               [[0,188],[810,770]],
-              [[335,0],[1150,586]],
+              [[575,0],[1150,586]],
               [[0,0],[810,586]]
 ]
 
@@ -582,7 +582,7 @@ def imageflow_demo(predictor, args):
     merged_list = []
 
     PlayerTopView = TopViewGenerator((50,50,1100,720))
-    flag_manager = FlagManager(config.check_action, frame_duration=fpsmin*60, min_activate_flag=fpsmin*5)
+    flag_manager = FlagManager(config.check_action, frame_duration=fpsmin*60, min_activate_flag=fpsmin*3)
 
     if args.use_saved_box:
         box_asset_path = os.path.join(args.video_path, 'yolo.json')
@@ -749,6 +749,7 @@ def imageflow_demo(predictor, args):
                 team_boxes = [[] for _ in range(len(team_colors))]
                 team_boxes_whole = []
                 players_real_location = [defaultdict(list)for _ in range(4)]
+                player_img_box = [defaultdict(list)for _ in range(4)]
                 players_color = [defaultdict(list)for _ in range(4)]
                 ball_boxes = []
 
@@ -841,6 +842,7 @@ def imageflow_demo(predictor, args):
                             pass
                         else:
                             continue
+                        player_img_box[index][tid] = t.tlbr
                         players_real_location[index][tid] = real_foot_location
                         players_color[index][tid] = t_idx
                         real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx],tid])
@@ -931,7 +933,7 @@ def imageflow_demo(predictor, args):
                 #                 frame_queue=frame_queue)
 
 
-                analysis_list[index].process(players = players_real_location[index], balls=real_ball_locations_singe_cam,
+                analysis_list[index].process(players = players_real_location[index], player_img_box= player_img_box[index],balls=real_ball_locations_singe_cam,
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors=players_color[index])
                 analysis_list[index].visualize(img_list[index])
                 single_vid_writers[index].write(img_list[index])
@@ -954,7 +956,7 @@ def imageflow_demo(predictor, args):
             PlayerTopView.process(all_players, all_balls, copy.deepcopy(top_view_img_tpl), args.save_tmp_tv)
             PlayerTopView.visualize(top_view_img)
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
-            analysis_wholegame.process(balls=real_ball_locations_all, players = players_real_location[index],
+            analysis_wholegame.process(balls=real_ball_locations_all, player_img_box= player_img_box[index], players = players_real_location[index],
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors = players_color[index])
             for i in range(4):
                 analysis_wholegame.visualize(img_list[i])
@@ -980,8 +982,8 @@ def imageflow_demo(predictor, args):
             #         f.write(str(item) + '\n')
 
             # top_view.process()
+            topview_queue.push_frame(copy.deepcopy(top_view_img))
             top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
-            topview_queue.push_frame(top_view_img)
             #cv2.imshow('Image', img)
 
             flag_manager.update(analysis_wholegame.flag_dict, flag_list)
@@ -1004,7 +1006,16 @@ def imageflow_demo(predictor, args):
                     out_h, out_w = frames_list[index].shape[:2]
                     out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fpsmin, (out_w, out_h))
                     out_frames = frames_queue_ls[index].get_frames()
-                    for f in out_frames:
+
+                    for f_id, f in enumerate(out_frames):
+                        red_p_id, red_frame_id = 8, -1
+                        if frame_id == red_frame_id:
+                            img_boxes = analysis_list[index].player_img_box
+                            if red_p_id in img_boxes:
+                                red_boxes = img_boxes[red_p_id][-len(out_frames):]
+                                cv2.rectangle(f, (int(red_boxes[f_id][0]), int(red_boxes[f_id][1])),
+                                              (int(red_boxes[f_id][2]), int(red_boxes[f_id][3])), color=(0, 0, 255), thickness=2)
+
                         out.write(f)
                     out.release()
 
@@ -1013,14 +1024,21 @@ def imageflow_demo(predictor, args):
                 tv_out = cv2.VideoWriter(os.path.join(out_subfolder, "top_view.mp4"), cv2.VideoWriter_fourcc(*'mp4v'),
                                          fpsmin, (out_w, out_h))
                 out_frames = topview_queue.get_frames()
-                for f in out_frames:
-                    tv_out.write(f)
+                for f_idx, f in enumerate(out_frames):
+                    red_p_id, red_frame_id = 8, -1
+                    if frame_id == red_frame_id:
+                        all_points = analysis_list[0].team_dict
+                        if red_p_id in all_points:
+                            red_circle = all_points[red_p_id][-len(out_frames):]
+                            cv2.circle(f, (int(red_circle[f_idx][0]), int(red_circle[f_idx][1])), 20, (0, 255, 0), -1)
+
+                    tv_out.write( cv2.resize(f, (tv_w, tv_h)))
                 tv_out.release()
 
                 reason_file = os.path.join(out_subfolder, "reason.txt")
                 with open(reason_file, 'w') as f:
                     for reason in reasons:
-                        f.write(reason + '\n')
+                        f.write(str(reason) + '\n')
 
 
             top_row = np.hstack([img_list[1], img_list[0]])
