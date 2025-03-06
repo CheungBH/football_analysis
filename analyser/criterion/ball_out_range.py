@@ -9,7 +9,7 @@ class BallOutRangeChecker:
         self.field = court
         self.ball_coords = []
         self.flag = False
-        self.flag_last = False
+        self.flag_last = True
         self.flag_list=[]
         self.thre = 0.2
         self.frame_duration = 10
