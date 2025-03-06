@@ -16,7 +16,7 @@ action_to_int = {
 
 
 class FlagManager:
-    def __init__(self, actions, frame_duration=600, min_activate_flag=50, multiple_time=2, delay_duration=10):
+    def __init__(self, actions, frame_duration=600, min_activate_flag=50, multiple_time=3, delay_duration=10):
         self.min_activate_flag = min_activate_flag
         self.frame_duration = frame_duration
         self.multiple_time = multiple_time

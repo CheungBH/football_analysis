@@ -201,7 +201,8 @@ class TopViewGenerator:
         if save_tmp:
             self.save_topview_img(copy.deepcopy(top_view_img), self.player_points, ball_points, "7_final_without_ball", save_tmp)
         ball_points = self.remove_out_ball(ball_points)
-        ball_points = self.merge_points_in_fixed_area(ball_points, 30)
+        ball_points = ball_points[0:1]
+        # ball_points = self.merge_points_in_fixed_area(ball_points, 30)
         self.ball_points = ball_points
         if save_tmp:
             self.save_topview_img(copy.deepcopy(top_view_img), self.player_points, self.ball_points, "FINAL", save_tmp)
