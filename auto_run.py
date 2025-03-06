@@ -1,11 +1,12 @@
 import os
 
-video_folder = r"C:\Users\Public\zcj\football_analysis\video_yolo\ToWeb"
+
+video_folder = r"D:\tmp\ToWeb"
 # videos_path = [os.path.join(video_folder, video) for video in os.listdir(video_folder)]
-output_folder_root = r"C:\Users\Public\zcj\football_analysis\video_yolo\ToWeb_output"
+output_folder_root = r"D:\tmp\3.6\ToWeb_output"
 os.makedirs(output_folder_root, exist_ok=True)
-model_path = r"C:\Users\Public\zcj\football_analysis\weights\best.pt"
-court_img = r"C:\Users\Public\zcj\football_analysis\court_mongkok.png"
+model_path = r"D:\tmp\3.5\best.pt"
+court_img = r"D:\tmp\2.18\video_set_1474\court.jpg"
 
 use_save_box = True
 use_save_team = True
@@ -30,4 +31,4 @@ for video in os.listdir(video_folder):
     save_cropped_path = os.path.join(output_folder, "save_cropped")
     cmd = cmd_tpl.format(save_cropped_path, video_path, output_dir, model_path, court_img, output_video, stop_at)
     print(cmd)
-    os.system(cmd)
+    # os.system(cmd)

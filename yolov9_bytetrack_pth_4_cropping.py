@@ -909,7 +909,7 @@ def imageflow_demo(predictor, args):
                         real_ball_locations_singe_cam.append(real_ball_locations)
                         real_ball_locations_all.append(real_ball_locations)
                         # all_balls.append(real_ball_locations)
-                        cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
+                        # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
                         # img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
                 real_ball_locations=[]
                 if len(ball_box) > 0:
@@ -956,6 +956,7 @@ def imageflow_demo(predictor, args):
                 single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(int(tv_w*2), int(tv_h*2)))
                 cv2.imshow("Single Top View", single_tv_frame)
             PlayerTopView.process(all_players, all_balls, copy.deepcopy(top_view_img_tpl), args.save_tmp_tv)
+            cv2.imwrite(f"tv_whole.jpg", top_view_img)
             PlayerTopView.visualize(top_view_img)
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, player_img_box= player_img_box[index], players = players_real_location[index],
@@ -1010,13 +1011,14 @@ def imageflow_demo(predictor, args):
                     out_frames = frames_queue_ls[index].get_frames()
 
                     for f_id, f in enumerate(out_frames):
-                        red_p_id, red_frame_id = 8, -1
+                        red_p_ids, red_frame_id = [28, 114], 108
                         if frame_id == red_frame_id:
                             img_boxes = analysis_list[index].player_img_box
-                            if red_p_id in img_boxes:
-                                red_boxes = img_boxes[red_p_id][-len(out_frames):]
-                                cv2.rectangle(f, (int(red_boxes[f_id][0]), int(red_boxes[f_id][1])),
-                                              (int(red_boxes[f_id][2]), int(red_boxes[f_id][3])), color=(0, 0, 255), thickness=2)
+                            for red_p_id in red_p_ids:
+                                if red_p_id in img_boxes:
+                                    red_boxes = img_boxes[red_p_id][-len(out_frames):]
+                                    cv2.rectangle(f, (int(red_boxes[f_id][0]), int(red_boxes[f_id][1])),
+                                                  (int(red_boxes[f_id][2]), int(red_boxes[f_id][3])), color=(0, 0, 255), thickness=2)
 
                         out.write(f)
                     out.release()
@@ -1027,12 +1029,13 @@ def imageflow_demo(predictor, args):
                                          fpsmin, (out_w, out_h))
                 out_frames = topview_queue.get_frames()
                 for f_idx, f in enumerate(out_frames):
-                    red_p_id, red_frame_id = 8, -1
+                    red_p_ids, red_frame_id = [28, 114], 107
                     if frame_id == red_frame_id:
                         all_points = analysis_list[0].team_dict
-                        if red_p_id in all_points:
-                            red_circle = all_points[red_p_id][-len(out_frames):]
-                            cv2.circle(f, (int(red_circle[f_idx][0]), int(red_circle[f_idx][1])), 20, (0, 255, 0), -1)
+                        for red_p_id in red_p_ids:
+                            if red_p_id in all_points:
+                                red_circle = all_points[red_p_id][-len(out_frames):]
+                                cv2.circle(f, (int(red_circle[f_idx][0]), int(red_circle[f_idx][1])), 20, (0, 255, 0), -1)
 
                     tv_out.write( cv2.resize(f, (tv_w, tv_h)))
                 tv_out.release()
