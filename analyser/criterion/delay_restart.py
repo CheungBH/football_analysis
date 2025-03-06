@@ -13,8 +13,9 @@ class DelayRestartChecker:
         self.thre = 0.8
         self.counting_time = 10
         self.fps = fps
+        self.last_ball = False
         self.whole_duration = self.counting_time * self.fps
-        self.court = [(100, 180), (1000, 650)]
+        self.court = [(100, 100), (1000, 650)]
 
 
     def process(self, balls, frame_queue, **kwargs):
@@ -28,7 +29,6 @@ class DelayRestartChecker:
                 self.flag_list.append(False)
         else:
             self.flag_list.append(False)
-
 
         if len(self.flag_list) >= self.whole_duration:
             if sum(self.flag_list[-self.whole_duration:]) <= self.whole_duration*(1-self.thre):
