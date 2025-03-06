@@ -11,7 +11,7 @@ class BallOutRangeChecker:
         self.flag = False
         self.flag_last = False
         self.flag_list=[]
-        self.thre = 0.8
+        self.thre = 0.2
         self.frame_duration = 10
 
     def process(self, balls,frame_queue, **kwargs):

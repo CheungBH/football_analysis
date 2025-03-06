@@ -1,14 +1,14 @@
 import os
 
-video_folder = r"D:\tmp\3.1\demo_videos"
+video_folder = r"C:\Users\Public\zcj\football_analysis\video_yolo\ToWeb"
 # videos_path = [os.path.join(video_folder, video) for video in os.listdir(video_folder)]
-output_folder_root = r"D:\tmp\3.5\demo_videos_output"
+output_folder_root = r"C:\Users\Public\zcj\football_analysis\video_yolo\ToWeb_output"
 os.makedirs(output_folder_root, exist_ok=True)
-model_path = r"D:\tmp\3.5\best.pt"
-court_img = r"E:\0220\videocut\court.jpg"
+model_path = r"C:\Users\Public\zcj\football_analysis\weights\best.pt"
+court_img = r"C:\Users\Public\zcj\football_analysis\court_mongkok.png"
 
-use_save_box = False
-use_save_team = False
+use_save_box = True
+use_save_team = True
 stop_at = -1 # -1 means no limit
 
 cmd_tpl = ("python yolov9_bytetrack_pth_4_cropping.py --save_cropped_humans {} --video_path {} --use_json "

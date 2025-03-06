@@ -14,6 +14,7 @@ class LackPressureChecker:
         self.thre = 0.7
         self.lens_h2b = 30# distance
         self.lens_h2h = 150
+        self.lens_h2h_min = 50
         self.ball_holder = None
         self.ball_holder_list =[]
         self.lack_pressure_dict = defaultdict(list)
@@ -49,7 +50,7 @@ class LackPressureChecker:
                         holder = valid_players[min_key_raw][-1]
                         valid2_players = valid_players.pop(min_key_raw)
                         min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, holder, -1)
-                        if min_distance_raw2 >= self.close_distance or min_distance_raw2 >= self.lens_h2h:
+                        if min_distance_raw2 >= self.close_distance and min_distance_raw2 >= self.lens_h2h_min or min_distance_raw2 >= self.lens_h2h:
                             # self.lack_pressure_list.append(True)
                             # self.ball_holder_list.append(min_key_raw)
                             for key,value in self.lack_pressure_dict.items():
