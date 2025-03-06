@@ -28,7 +28,7 @@ class BallKeeperChangeChecker:
         court = [(50, 50), (1100, 730)]
         invalid_area =[(500, 60), (750, 230)]
         valid_players = defaultdict(list)
-        valid_colrs = defaultdict(list)
+        valid_colors = defaultdict(list)
         self.flag = False
         if balls:
             ball = balls[0]
@@ -42,7 +42,7 @@ class BallKeeperChangeChecker:
                     count = position.count([-1,-1])
                     if count <= self.frame_duration*0.5:
                         valid_players[p_id] = position
-                        valid_colrs[p_id] = color
+                        valid_colors[p_id] = color
             if valid_players:
                 min_key_raw, min_distance_raw = find_closest_player(valid_players, ball, -1)
                 catch_position = valid_players[min_key_raw][-1]

@@ -15,7 +15,7 @@ class BallOutRangeChecker:
         self.frame_duration = 10
 
     def process(self, balls,frame_queue, **kwargs):
-        court = [(50, 50), (1100, 730)]
+        court = [(50, 80), (1100, 730)]
         if balls:
             for ball in balls:
                 if is_in_rectangle(ball,court):
