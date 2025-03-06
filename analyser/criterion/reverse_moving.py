@@ -55,7 +55,7 @@ class MovingReverseChecker:
                                   (self.ball_list[-2][1] - self.ball_list[-2][1])**2)
             else:
                 ball_move = 0
-            if len(self.ball_list) > self.frame_duration and human_valid and ball_move > 4.3:
+            if len(self.ball_list) > self.frame_duration and human_valid and ball_move > 4:
                 ball_vec = [self.ball_list[-1][0] - self.ball_list[-self.frame_duration][0],
                             self.ball_list[-1][1] - self.ball_list[-self.frame_duration][1]]
                 #ball_vecs = [[self.ball_list[i+1][0] - self.ball_list[i][0], self.ball_list[i+1][1] - self.ball_list[i][1]] for i in range(len(self.ball_list) - 1)]

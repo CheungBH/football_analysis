@@ -12,8 +12,8 @@ class TopViewGenerator:
         self.area_bounds = area_bounds
         self.whole_bounds = [0, 0, 1200, 800]
         self.points = []
-        self.num_dict = {0:11, 1:11, 2:1, 3:1, 4:1}
-        self.select_top = [[2,3,4], [0,10000,575]]
+        self.num_dict = {0:10, 1:10, 2:1, 3:1, 4:1}
+        self.select_top = [[2,3,4], [10000,0,575]]
 
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:
@@ -180,7 +180,7 @@ class TopViewGenerator:
         player_points = self.select_top_points(player_points, teams=[2, 3])
         if save_tmp:
             self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "2_removed_repeat_goalkeeper", save_tmp)
-        player_points = self.merge_points_same_team(player_points, 15)
+        player_points = self.merge_points_same_team(player_points, 20)
         merged_points = player_points
 
         if save_tmp:
@@ -201,6 +201,8 @@ class TopViewGenerator:
         if save_tmp:
             self.save_topview_img(copy.deepcopy(top_view_img), self.player_points, ball_points, "7_final_without_ball", save_tmp)
         ball_points = self.remove_out_ball(ball_points)
+        ball_points = ball_points[0:1]
+        # ball_points = self.merge_points_in_fixed_area(ball_points, 30)
         self.ball_points = ball_points
         if save_tmp:
             self.save_topview_img(copy.deepcopy(top_view_img), self.player_points, self.ball_points, "FINAL", save_tmp)

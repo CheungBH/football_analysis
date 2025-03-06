@@ -9,10 +9,12 @@ class DelayRestartChecker:
         self.field = court
         self.ball_coords = []
         self.flag = False
+        self.last_flag = False
         self.flag_list=[]
         self.thre = 0.8
         self.counting_time = 10
         self.fps = fps
+        self.last_ball = False
         self.whole_duration = self.counting_time * self.fps
         self.court = [(100, 180), (1000, 650)]
 
@@ -24,11 +26,12 @@ class DelayRestartChecker:
                     ball = ball
             if is_in_rectangle(ball, self.court):
                 self.flag_list.append(True)
+                self.last_flag = True
             else:
                 self.flag_list.append(False)
+                self.last_flag = False
         else:
-            self.flag_list.append(False)
-
+            self.flag_list.append(self.last_flag)
 
         if len(self.flag_list) >= self.whole_duration:
             if sum(self.flag_list[-self.whole_duration:]) <= self.whole_duration*(1-self.thre):

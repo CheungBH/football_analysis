@@ -9,13 +9,13 @@ class BallOutRangeChecker:
         self.field = court
         self.ball_coords = []
         self.flag = False
-        self.flag_last = False
+        self.flag_last = True
         self.flag_list=[]
-        self.thre = 0.8
+        self.thre = 0.2
         self.frame_duration = 10
 
     def process(self, balls,frame_queue, **kwargs):
-        court = [(50, 50), (1100, 730)]
+        court = [(18, 50), (1100, 730)]
         if balls:
             for ball in balls:
                 if is_in_rectangle(ball,court):

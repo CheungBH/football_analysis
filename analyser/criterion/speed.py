@@ -1,5 +1,5 @@
 import cv2
-from collections import defaultdict
+from collections import defaultdict,Counter
 from .utils import check_speed_displacement ,calculate_speed,is_in_rectangle, is_within_radius
 
 
@@ -22,9 +22,9 @@ class SpeedChecker:
         self.detail_word = "low speed"
 
 
-    def process(self, players, balls,frame_queue, **kwargs):
+    def process(self, players, balls,frame_queue,color, **kwargs):
         court = [(50, 50), (1100, 730)]
-        invalid_area =[(500, 60), (750, 230)]
+        invalid_area =[(500, 80), (755, 230)]
 
         if balls:
             for ball in balls:
@@ -43,21 +43,24 @@ class SpeedChecker:
 
         for p_id, positions in players.items():
             if len(positions) >= self.frame_duration and positions[-1] != [-1,-1] and positions[-self.frame_duration] != [-1,-1]:
-                if not is_within_radius(positions[-1], ball, 100) and is_in_rectangle(ball,invalid_area):
+                if not is_within_radius(positions[-1], ball, 100) or is_in_rectangle(ball,invalid_area):
                     continue
                 position = positions[-self.frame_duration:]
                 count = position.count([-1,-1])
                 if count <= self.frame_duration*0.5:
                     speeds = calculate_speed(position)
                     valid_players[p_id] = position
+                    filter_color_list = [x for x in color[p_id] if x != -1]
+                    counter = Counter(filter_color_list)
+                    team_color = counter.most_common(1)[0][0] if counter else 0
                     #speeds = [check_speed_displacement(position[i:i+10]) for i in range(len(position) - 10)]
 
                     low_speed_count = sum(1 for speed in speeds if speed < self.speed_threshold)
-                    if low_speed_count >= len(speeds) * self.thre:
+                    if low_speed_count >= len(speeds) * self.thre and team_color in (0,1):
                         self.target_players.append(p_id)
                         self.flag_low += 1
 
-            if self.flag_low > 0:
+            if self.flag_low > 1:
                 self.flag = True
 
     def visualize(self, frame, idx):

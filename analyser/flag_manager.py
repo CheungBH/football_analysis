@@ -4,7 +4,7 @@ action_to_int = {
     "ball_out_range": 8,
     "reverse_moving": 1,
     "low_speed_with_ball": 2,
-    "low_speed": 2,
+    "ball_change_multiple_time": 6,
     "not_moving_with_ball": 3,
     "lack_pressure": 4,
     "ballkeeper_change": 5,
@@ -16,14 +16,18 @@ action_to_int = {
 
 
 class FlagManager:
-    def __init__(self, actions, frame_duration=600, min_activate_flag=50):
-        self.min_activate_flag = 50
+    def __init__(self, actions, frame_duration=600, min_activate_flag=30, multiple_time=3, delay_duration=10):
+        self.min_activate_flag = min_activate_flag
         self.frame_duration = frame_duration
+        self.multiple_time = multiple_time
         self.actions = actions
-        self.action_accumulate_times = {action: -1 for action in actions}
+        self.delay_duration = delay_duration
+        self.action_accumulate_times = {action: -delay_duration for action in actions}
         # self.current_flag = {action: False for action in actions}
         self.frame_cnt = 0
         self.flag_names = []
+        self.ball_keeper_change_time = 0
+
 
     def update(self, whole, individuals):
         self.frame_cnt += 1
@@ -40,6 +44,8 @@ class FlagManager:
             flag = self.merge_individual_flags(individuals, action)
             if flag:
                 self.flag_names.append(action)
+                if action == "ballkeeper_change" and flag:
+                    self.ball_keeper_change_time += 1
         self.update_counter()
 
     def merge_individual_flags(self, individuals, action):
@@ -54,7 +60,7 @@ class FlagManager:
     def update_counter(self):
         for action in self.flag_names:
             if self.action_accumulate_times[action] >= self.frame_duration:
-                self.action_accumulate_times[action] = -1
+                self.action_accumulate_times[action] = -self.delay_duration
             else:
                 self.action_accumulate_times[action] += 1
 
@@ -62,5 +68,8 @@ class FlagManager:
         flags = []
         for action in self.flag_names:
             if self.action_accumulate_times[action] == 0:
-                flags.append(str(action_to_int[action]))
+                flags.append(action_to_int[action])
+        if self.ball_keeper_change_time == self.multiple_time:
+            flags.append(action_to_int["ballkeeper_change"])
+        self.ball_keeper_change_time = 10000
         return flags
