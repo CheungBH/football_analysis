@@ -3,35 +3,33 @@ from .utils import is_in_rectangle
 
 class DelayRestartChecker:
 
-    def __init__(self, court, fps=10, display_x=100, video_path="", **kwargs):
+    def __init__(self, court, fps=10, display_x=100, **kwargs):
         self.name = 'delay_restart'
         self.display_x = display_x
         self.field = court
         self.ball_coords = []
         self.flag = False
-        self.last_flag = False
         self.flag_list=[]
         self.thre = 0.8
         self.counting_time = 10
         self.fps = fps
         self.last_ball = False
         self.whole_duration = self.counting_time * self.fps
-        self.court = [(100, 180), (1000, 650)]
-
+        # self.court = [(50, 50), (1000, 650)]
+        self.court1 = [(50, 50), (575, 650)]
+        self.court2 = [(575, 180), (1000, 650)]
 
     def process(self, balls, frame_queue, **kwargs):
         if balls:
             for ball in balls:
-                if is_in_rectangle(ball, self.court):
+                if is_in_rectangle(ball, self.court1) or is_in_rectangle(ball, self.court2):
                     ball = ball
-            if is_in_rectangle(ball, self.court):
+            if is_in_rectangle(ball, self.court1) or is_in_rectangle(ball, self.court2):
                 self.flag_list.append(True)
-                self.last_flag = True
             else:
                 self.flag_list.append(False)
-                self.last_flag = False
         else:
-            self.flag_list.append(self.last_flag)
+            self.flag_list.append(False)
 
         if len(self.flag_list) >= self.whole_duration:
             if sum(self.flag_list[-self.whole_duration:]) <= self.whole_duration*(1-self.thre):
