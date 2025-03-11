@@ -16,10 +16,7 @@ class DelayRestartChecker:
         self.fps = fps
         self.last_ball = False
         self.whole_duration = self.counting_time * self.fps
-        if "10" in video_path and "1100" not in video_path:
-            self.court = [(100, 100), (1000, 720)]
-        else:
-            self.court = [(100, 180), (1000, 650)]
+        self.court = [(100, 180), (1000, 650)]
 
 
     def process(self, balls, frame_queue, **kwargs):
