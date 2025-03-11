@@ -11,6 +11,7 @@ class SpeedChecker:
         self.frame_duration = 50
         self.thre = 0.8
         self.flag_low = 0
+        self.average_speed = []
         self.flag = False
         self.curve_duration = 10
         self.flag_list=[[], []]
@@ -39,6 +40,7 @@ class SpeedChecker:
         valid_players = defaultdict(list)
         self.speeds = [defaultdict(float),defaultdict(float)]
         self.target_players = []
+        average_speed_single = []
         # self.nomove_players = []
 
         for p_id, positions in players.items():
@@ -49,6 +51,7 @@ class SpeedChecker:
                 count = position.count([-1,-1])
                 if count <= self.frame_duration*0.5:
                     speeds = calculate_speed(position)
+                    average_speed_single.append(sum(speeds)/len(speeds))
                     valid_players[p_id] = position
                     filter_color_list = [x for x in color[p_id] if x != -1]
                     counter = Counter(filter_color_list)
@@ -59,9 +62,10 @@ class SpeedChecker:
                     if low_speed_count >= len(speeds) * self.thre and team_color in (0,1):
                         self.target_players.append(p_id)
                         self.flag_low += 1
-
-            if self.flag_low > 1:
-                self.flag = True
+        if average_speed_single:
+            self.average_speed.append(sum(average_speed_single)/len(average_speed_single))
+        if self.flag_low > 1:
+            self.flag = True
 
     def visualize(self, frame, idx):
         if self.flag == False:

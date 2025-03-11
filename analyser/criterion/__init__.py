@@ -11,3 +11,4 @@ from .delay_restart import DelayRestartChecker
 from .standing import StandingChecker
 from .poor_position import PoorPositionChecker
 from .speed import SpeedChecker as LowSpeedWithBallChecker
+from .outpace import OutpaceChecker
