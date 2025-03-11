@@ -49,17 +49,21 @@ class LackPressureChecker:
                             self.catch_list[-self.frame_duration:].count(self.catch_list[-1]) >= self.frame_duration*self.thre:
                         holder = valid_players[min_key_raw][-1]
                         valid2_players = valid_players.pop(min_key_raw)
-                        min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, holder, -1)
-                        if min_distance_raw2 >= self.close_distance and min_distance_raw2 >= self.lens_h2h_min or min_distance_raw2 >= self.lens_h2h:
-                            # self.lack_pressure_list.append(True)
-                            # self.ball_holder_list.append(min_key_raw)
-                            for key,value in self.lack_pressure_dict.items():
-                                if key != min_key_raw:
-                                    self.lack_pressure_dict[key].append(False)
-                            self.lack_pressure_dict[min_key_raw].append(True)
-                            self.close_distance = min_distance_raw2
+                        if valid_players:
+                            min_key_raw2, min_distance_raw2 = find_closest_player(valid_players, holder, -1)
+                            if min_distance_raw2 >= self.close_distance and min_distance_raw2 >= self.lens_h2h_min or min_distance_raw2 >= self.lens_h2h:
+                                # self.lack_pressure_list.append(True)
+                                # self.ball_holder_list.append(min_key_raw)
+                                for key,value in self.lack_pressure_dict.items():
+                                    if key != min_key_raw:
+                                        self.lack_pressure_dict[key].append(False)
+                                self.lack_pressure_dict[min_key_raw].append(True)
+                                self.close_distance = min_distance_raw2
+                            else:
+                                for k,v in self.lack_pressure_dict.items():
+                                    self.lack_pressure_dict[k].append(False)
                         else:
-                            for k,v in self.lack_pressure_dict.items():
+                            for k, v in self.lack_pressure_dict.items():
                                 self.lack_pressure_dict[k].append(False)
                     else:
                         for k,v in self.lack_pressure_dict.items():

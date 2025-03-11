@@ -1082,6 +1082,8 @@ def imageflow_demo(predictor, args):
     heatmap_path = os.path.join(os.path.dirname(args.output_video_path), "heatmap")
     os.makedirs(heatmap_path, exist_ok=True)
     PlayerTopView.get_hm(heatmap_path)
+    # average_speed = sum(analysis_list[i].average_speed for i in range(0,4) )/4
+    # print(average_speed)
     if args.save_tmp_tv:
         tmp_tv_writer.release()
     if args.save_asset:

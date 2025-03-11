@@ -29,6 +29,7 @@ class AnalysisManager:
         self.flag_dict = {}
         self.player_color_dict = defaultdict(list)
         self.player_img_box = defaultdict(list)
+        self.average_speed = 0
 
     def process(self, players, player_img_box,balls,frame_id, matrix,frame_queue,colors):
         self.flag_dict = {}
@@ -52,11 +53,12 @@ class AnalysisManager:
             self.flag_dict[criterion.name] = criterion.flag
             # self.flag_list.append([criterion.name,criterion.flag])
         criterion_dict = {type(checker).__name__: checker for checker in self.criterion}
+        if 'low_speed_with_ball' in self.flag_dict:
+            speed_checker = criterion_dict.get('SpeedChecker')
+            if speed_checker.average_speed:
+                self.average_speed = sum(speed_checker.average_speed)/len(speed_checker.average_speed)
+                print('Average speed is ' + str(speed_checker.average_speed[-1]))
         for idx,flag in enumerate(self.flag_dict):
             if self.flag_dict[flag] == 1:
                 print(flag +' is activated')
-                if 'low_speed_with_ball' in self.flag_dict:
-                    speed_checker = criterion_dict.get('SpeedChecker')
-                    if speed_checker.average_speed:
-                        print('Average speed is ' + str(speed_checker.average_speed[-1]))
         self.flag= sum(self.criterion[i].flag for i in range(len(self.criterion)))
