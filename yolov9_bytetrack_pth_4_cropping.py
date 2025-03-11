@@ -1079,6 +1079,9 @@ def imageflow_demo(predictor, args):
         frame_id += 1
 
     print("Video process finished.")
+    heatmap_path = os.path.join(os.path.dirname(args.output_video_path), "heatmap")
+    os.makedirs(heatmap_path, exist_ok=True)
+    PlayerTopView.get_hm(heatmap_path)
     if args.save_tmp_tv:
         tmp_tv_writer.release()
     if args.save_asset:

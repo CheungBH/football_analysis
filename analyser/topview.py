@@ -3,9 +3,75 @@ import os
 from collections import defaultdict
 import cv2
 import random
-import numpy as np
 # from networkx.algorithms.centrality import voterank
+import matplotlib.pyplot as plt
+import numpy as np
 
+
+def compute_frequency_matrix(M, N, points, m, n):
+    """
+    Computes a frequency matrix by dividing a rectangle of size MxN into an mxn grid
+    and counting the number of points in each grid cell.
+
+    Parameters:
+    - M (int): Height of the rectangle.
+    - N (int): Width of the rectangle.
+    - points (list of tuples): List of points (x, y) where x is the horizontal coordinate
+                               and y is the vertical coordinate.
+    - m (int): Number of rows in the grid.
+    - n (int): Number of columns in the grid.
+
+    Returns:
+    - list of lists: Frequency matrix of size m x n.
+    """
+    # Initialize the frequency matrix with zeros
+    frequency_matrix = [[0 for _ in range(n)] for _ in range(m)]
+
+    # Compute the size of each grid cell
+    cell_height = M / m
+    cell_width = N / n
+
+    # Iterate over all points and count them in the corresponding grid cell
+    for x, y in points:
+        # Check if the point is within the bounds of the rectangle
+        if 0 <= x < N and 0 <= y < M:
+            # Determine the grid cell indices
+            col = int(x // cell_width)
+            row = int(y // cell_height)
+
+            # Ensure the indices are within bounds (due to floating-point precision issues)
+            if 0 <= row < m and 0 <= col < n:
+                frequency_matrix[row][col] += 1
+
+    return frequency_matrix
+
+
+def plot_heatmap(frequency_matrix, title="Heatmap", cmap="viridis",output="heatmap.png"):
+    """
+    Plots a heatmap using the given frequency matrix.
+
+    Parameters:
+    - frequency_matrix (list of lists): The frequency matrix to visualize.
+    - title (str): Title of the heatmap.
+    - cmap (str): Colormap to use for the heatmap.
+    """
+
+    # Create the heatmap
+    plt.figure(figsize=(8, 6))
+    plt.imshow(frequency_matrix, cmap=cmap, aspect="auto", origin="lower", interpolation="nearest")
+
+    # Add color bar
+    cbar = plt.colorbar()
+    cbar.set_label("Point Count")
+
+    # Add labels and title
+    plt.title(title)
+    plt.xlabel("Grid Columns")
+    plt.ylabel("Grid Rows")
+
+    # Show the plot
+    plt.show()
+    plt.savefig(output)
 
 class TopViewGenerator:
     def __init__(self, area_bounds):
@@ -14,6 +80,8 @@ class TopViewGenerator:
         self.points = []
         self.num_dict = {0:10, 1:10, 2:1, 3:1, 4:1}
         self.select_top = [[2,3,4], [10000,0,575]]
+        self.frequency_matrix_team0 = np.zeros((7, 11), dtype=int)
+        self.frequency_matrix_team1 =np.zeros((7, 11), dtype=int)
 
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:
@@ -200,6 +268,16 @@ class TopViewGenerator:
             self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "6_stable_points", save_tmp)
         player_points += side_referee_points
         self.player_points = player_points
+        team0_points = [(point[0], point[1]) for point in self.player_points if point[2] == 0]
+        team1_points = [(point[0], point[1]) for point in self.player_points if point[2] == 1]
+        M ,N = 700, 1100
+        m , n = 7, 11
+        self.frequency_matrix_team0 += np.array(compute_frequency_matrix(M, N, team0_points, m, n))
+        self.frequency_matrix_team1 += np.array(compute_frequency_matrix(M, N, team1_points, m, n))
+        if save_tmp:
+            plot_heatmap(self.frequency_matrix_team0, title="Team 0", output=os.path.join(save_tmp, "team0_heatmap.png"))
+            plot_heatmap(self.frequency_matrix_team1, title="Team 1", output=os.path.join(save_tmp, "team1_heatmap.png"))
+
         if save_tmp:
             self.save_topview_img(copy.deepcopy(top_view_img), self.player_points, ball_points, "7_final_without_ball", save_tmp)
         ball_points = self.remove_out_ball(ball_points)
@@ -214,3 +292,8 @@ class TopViewGenerator:
             cv2.circle(top_view_img, (int(player[0]), int(player[1])), 20, tuple(player[3]), -1)
         for ball in self.ball_points:
             cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 20, (0, 255, 0), -1)
+
+    def get_hm(self, outdir):
+        plot_heatmap(self.frequency_matrix_team0, title="Team 0", output=os.path.join(outdir, "team0_heatmap.png"))
+        plot_heatmap(self.frequency_matrix_team1, title="Team 1", output=os.path.join(outdir, "team1_heatmap.png"))
+
