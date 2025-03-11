@@ -161,9 +161,9 @@ class TopViewGenerator:
                     closest_idx = idx
                     closest_dist = dist
 
-            if closest_idx == -1:
-                return others_candidates
-            selected_points.append(team_candidates[closest_idx])
+            if closest_idx != -1:
+                selected_points.append(team_candidates[closest_idx])
+
         selected_points += others_candidates
         return selected_points
 
@@ -177,7 +177,9 @@ class TopViewGenerator:
             os.makedirs(save_tmp, exist_ok=True)
             self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "1_all_points", save_tmp)
 
-        player_points = self.select_top_points(player_points, teams=[2, 3])
+        player_points = self.select_top_points(player_points, teams=[2])
+        player_points = self.select_top_points(player_points, teams=[3])
+
         if save_tmp:
             self.save_topview_img(copy.deepcopy(top_view_img), player_points, ball_points, "2_removed_repeat_goalkeeper", save_tmp)
         player_points = self.merge_points_same_team(player_points, 20)

@@ -76,8 +76,10 @@ class LackPressureChecker:
 
     def visualize(self, frame, idx):
         if self.flag == True:
-            cv2.putText(frame, f'{self.lack_human} lack of pressure',
+            cv2.putText(frame, f'Ball holder lack of pressure',
                 (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            # cv2.putText(frame, f'{self.lack_human} lack of pressure',
+            #     (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         else:
             cv2.putText(frame, f'No lack of pressure', (100, 100+(idx*40)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)

@@ -105,8 +105,8 @@ class BallKeeperChangeChecker:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
 
     def visualize_details(self, frame, idx):
-        if self.flag == True:
-            cv2.putText(frame, f'Ball change from {self.ball_holder_list[-2]} to {self.ball_holder_list[-1]}',
-                        (100, 100 + (idx * 40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        # if self.flag == True:
+        #     cv2.putText(frame, f'Ball change from {self.ball_holder_list[-2]} to {self.ball_holder_list[-1]}',
+        #                 (100, 100 + (idx * 40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
 
         self.visualize(frame, idx)

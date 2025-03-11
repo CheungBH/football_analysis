@@ -32,7 +32,7 @@ from analyser.criterion.utils import is_in_rectangle
 team_colors = []
 img_full_list = []
 map_cam_idx = [0,1,2,3]
-chosed_field=[[[575,188],[1150,770]],
+chosed_field=[[[575,188],[1180,770]],
               [[0,188],[810,770]],
               [[575,0],[1150,586]],
               [[0,0],[810,586]]
@@ -461,6 +461,7 @@ def imageflow_demo(predictor, args):
     #     video_path = os.path.join(video_folder,mp4)
     #     video_paths.append(video_path)
     whole_analysis_criterion = ["ball_out_range", "delay_restart"]
+
     all_actions = config.check_action
     single_action = [action for action in all_actions if action not in whole_analysis_criterion]
     whole_action = [action for action in all_actions if action in whole_analysis_criterion]
@@ -576,7 +577,7 @@ def imageflow_demo(predictor, args):
     goalkeeper2_dict = [defaultdict(list)for _ in range(4)]
     referee_dict = [defaultdict(list)for _ in range(4)]
     analysis_list = [AnalysisManager(single_action, ((0, 0))) for _ in range(4)]
-    analysis_wholegame = AnalysisManager(whole_action, ((0, 0)), display_x=500)
+    analysis_wholegame = AnalysisManager(whole_action, ((0, 0)), display_x=500, video_path=args.video_path)
 
     # analysis = AnalysisManager(config.check_action, ((0, 0)))
     frames_queue_ls = [FrameQueue(frame_queue) for _ in range(len(caps))]
@@ -595,8 +596,8 @@ def imageflow_demo(predictor, args):
         if args.save_asset:
             box_asset_path = os.path.join(args.video_path, 'yolo.json')
             box_assets = {}
-            # if os.path.exists(box_asset_path):
-            #     input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
+            if os.path.exists(box_asset_path):
+                input("The box asset file already exists, do you want to overwrite it? Press Enter to continue, or Ctrl+C to exit.")
             box_f = open(box_asset_path, 'w')
 
     if args.use_saved_team:
@@ -955,9 +956,9 @@ def imageflow_demo(predictor, args):
                 PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
                 single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(int(tv_w*2), int(tv_h*2)))
                 cv2.imshow("Single Top View", single_tv_frame)
-            PlayerTopView.process(all_players, all_balls, copy.deepcopy(top_view_img_tpl), args.save_tmp_tv)
+            PlayerTopView.process(all_players, all_balls, top_view_img_tpl, args.save_tmp_tv)
             cv2.imwrite(f"tv_whole.jpg", top_view_img)
-            # PlayerTopView.visualize(top_view_img)
+            PlayerTopView.visualize(top_view_img)
             cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, player_img_box= player_img_box[index], players = players_real_location[index],
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors = players_color[index])

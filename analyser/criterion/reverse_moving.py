@@ -84,9 +84,9 @@ class MovingReverseChecker:
         if self.flag== True:
             cv2.putText(frame, "Someone reverse", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255),
                             2, cv2.LINE_AA)
-            for idx,reverse in enumerate(self.reverse_list):
-                cv2.putText(frame, "ID {} is reverse".format(self.reverse_list[-1]),
-                            (500, 100 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
+            # for idx,reverse in enumerate(self.reverse_list):
+            #     cv2.putText(frame, "ID {} is reverse".format(self.reverse_list[-1]),
+            #                 (500, 100 + idx * 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2, cv2.LINE_AA)
         else:
             cv2.putText(frame, "No reverse", (100, 100+(idx*40)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0),
                             2, cv2.LINE_AA)

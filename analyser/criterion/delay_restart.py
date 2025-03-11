@@ -3,7 +3,7 @@ from .utils import is_in_rectangle
 
 class DelayRestartChecker:
 
-    def __init__(self, court, fps=10, display_x=100, **kwargs):
+    def __init__(self, court, fps=10, display_x=100, video_path="", **kwargs):
         self.name = 'delay_restart'
         self.display_x = display_x
         self.field = court
@@ -16,7 +16,10 @@ class DelayRestartChecker:
         self.fps = fps
         self.last_ball = False
         self.whole_duration = self.counting_time * self.fps
-        self.court = [(100, 180), (1000, 650)]
+        if "10" in video_path and "1100" not in video_path:
+            self.court = [(100, 100), (1000, 720)]
+        else:
+            self.court = [(100, 180), (1000, 650)]
 
 
     def process(self, balls, frame_queue, **kwargs):

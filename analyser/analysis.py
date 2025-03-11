@@ -19,9 +19,9 @@ checkers = {
 
 class AnalysisManager:
 
-    def __init__(self, check_list, court, display_x=100):
+    def __init__(self, check_list, court, display_x=100, video_path=""):
         # self.display_x = display_x
-        self.criterion = [checkers[check_item](court=court, display_x=display_x) for check_item in check_list]
+        self.criterion = [checkers[check_item](court=court, display_x=display_x, video_path=video_path) for check_item in check_list]
         self.flag = 0
         self.team_dict = defaultdict(list)
         self.ball_exit = None

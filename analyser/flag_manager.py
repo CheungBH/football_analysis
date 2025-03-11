@@ -16,7 +16,7 @@ action_to_int = {
 
 
 class FlagManager:
-    def __init__(self, actions, frame_duration=600, min_activate_flag=30, multiple_time=3, delay_duration=10):
+    def __init__(self, actions, frame_duration=600, min_activate_flag=30, multiple_time=4, delay_duration=10):
         self.min_activate_flag = min_activate_flag
         self.frame_duration = frame_duration
         self.multiple_time = multiple_time
@@ -64,12 +64,17 @@ class FlagManager:
             else:
                 self.action_accumulate_times[action] += 1
 
+        for action in self.actions:
+            if action not in self.flag_names:
+                if self.action_accumulate_times[action] != -self.delay_duration:
+                    self.action_accumulate_times[action] += 1
+
     def get_flag(self):
         flags = []
-        for action in self.flag_names:
+        for action in self.actions:
             if self.action_accumulate_times[action] == 0:
                 flags.append(action_to_int[action])
         if self.ball_keeper_change_time == self.multiple_time:
-            flags.append(action_to_int["ballkeeper_change"])
-        self.ball_keeper_change_time = 10000
+            flags.append(action_to_int["ball_change_multiple_time"])
+            self.ball_keeper_change_time = 10000
         return flags
