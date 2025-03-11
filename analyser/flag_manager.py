@@ -12,6 +12,7 @@ action_to_int = {
     "poor_position": 10,
     "commit_foul": 11,
     "goalkeeper_single": 12,
+    "outpace":13
 }
 
 
