@@ -71,10 +71,10 @@ class OutpaceChecker:
             if self.ball_holder_list:
                 rest_speeds = []
                 holder_position = players[self.ball_holder_list[-1]][-self.frame_duration:]
-                holder_speed = calculate_speed(holder_position)
+                holder_speed = sum(calculate_speed(holder_position))/(len(holder_position)-1)
                 if holder_speed > self.outpace_thre:
                     for human,rest_position in valid_players.items():
-                        rest_speeds.append(calculate_speed(rest_position))
+                        rest_speeds.append(sum(calculate_speed(rest_position))/(len(holder_position)-1))
                     self.flag_list.append(any(rest_speed < holder_speed for rest_speed in rest_speeds))
                     if sum(self.flag_list[-self.frame_duration:]) > 8:
                         self.flag=True
