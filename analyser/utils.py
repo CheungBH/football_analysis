@@ -9,7 +9,8 @@ class FrameQueue:
     def push_frame(self, frame):
         self.queue.append(frame)
         if len(self.queue) > self.max_size:
-            self.queue.pop(0)
+            del self.queue[0]
+            # self.queue.pop(0)
 
     def get_frames(self):
         return self.queue

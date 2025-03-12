@@ -625,7 +625,8 @@ def imageflow_demo(predictor, args):
             for i,cap in enumerate(caps):
                 frame_interval = round(cap.get(cv2.CAP_PROP_FPS))/fpsmin
                 if frame_id !=0 :
-                    for i in range(int(frame_interval)):
+                    for _ in range(int(frame_interval)):
+                        # del frame
                         ret_val,frame = cap.read()
                 else:
                     ret_val, frame = cap.read()
