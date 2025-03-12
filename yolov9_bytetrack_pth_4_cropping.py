@@ -959,7 +959,7 @@ def imageflow_demo(predictor, args):
             PlayerTopView.process(all_players, all_balls, top_view_img_tpl, args.save_tmp_tv)
             cv2.imwrite(f"tv_whole.jpg", top_view_img)
             PlayerTopView.visualize(top_view_img)
-            cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
+            # cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
             analysis_wholegame.process(balls=real_ball_locations_all, player_img_box= player_img_box[index], players = players_real_location[index],
                     frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors = players_color[index])
             for i in range(4):
