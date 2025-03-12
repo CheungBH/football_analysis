@@ -469,7 +469,7 @@ def imageflow_demo(predictor, args):
 
     args.track_before_knn = True
     args.no_ball_tracker = True
-    args.save_tmp_tv = "tv"
+    args.save_tmp_tv = ""
     # args.use_json = True
     # args.show_video = False
     court_image = os.path.join(args.video_path, "court.jpg") if not args.court_image else args.court_image
@@ -873,7 +873,7 @@ def imageflow_demo(predictor, args):
                         # real_foot_locations = real_foot_locations[0]
                         # t_color =
                         # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
-                        if index != 0:
+                        if index != 2:
                             all_players += real_foot_locations[index]
                         # for real_foot_location in real_foot_locations[index]:
                         #     all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
@@ -1069,6 +1069,9 @@ def imageflow_demo(predictor, args):
 
 
                 print("Finish processing frame: {}/{}".format(frame_id, totol_frame_to_process))
+                del frame
+                del top_view_img
+
                 if frame_id % 100 == 0:
                     print(f"Frame {frame_id} processed.")
             else:
