@@ -1087,6 +1087,7 @@ def imageflow_demo(predictor, args):
     average_speed = sum(analysis_list[i].average_speed for i in range(0,4) )/4
     with open(os.path.join(os.path.dirname(args.output_video_path), "speed.txt"), 'w') as f:
         f.write(str(average_speed))
+
     if args.save_tmp_tv:
         tmp_tv_writer.release()
     if args.save_asset:
@@ -1100,6 +1101,15 @@ def imageflow_demo(predictor, args):
         except:
             pass
 
+    total_time = 1/fpsmin * frame_id
+    with open(os.path.join(os.path.dirname(args.output_video_path), "distance.txt"), 'w') as f:
+        f.write(str(average_speed*total_time)*22)
+
+    vid_writer.release()
+    topview_writer.release()
+    for writer in single_vid_writers:
+        writer.release()
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     args = make_parser().parse_args()

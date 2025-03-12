@@ -24,7 +24,7 @@ class OutpaceChecker:
         self.ball_holder_color_list = []
         self.outpace_thre = 4.0
 
-    def process(self, players,balls, color, **kwargs):
+    def process(self, players,balls, color,frame_id, **kwargs):
         court = [(50, 50), (1100, 730)]
         invalid_area =[(500, 60), (750, 230)]
         valid_players = defaultdict(list)
@@ -70,7 +70,8 @@ class OutpaceChecker:
                                 self.ball_holder_color_list.append(team_color)
             if self.ball_holder_list:
                 rest_speeds = []
-                holder_position = players[self.ball_holder_list[-1]][-self.frame_duration:]
+                # holder_position = players[self.ball_holder_list[-1]][-self.frame_duration:]
+                holder_position = players[self.ball_holder_list[-1]][-20:]
                 holder_speed = sum(calculate_speed(holder_position))/(len(holder_position)-1)
                 if holder_speed > self.outpace_thre:
                     for human,rest_position in valid_players.items():

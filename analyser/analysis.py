@@ -57,7 +57,7 @@ class AnalysisManager:
             speed_checker = criterion_dict.get('SpeedChecker')
             if speed_checker.average_speed:
                 self.average_speed = sum(speed_checker.average_speed)/len(speed_checker.average_speed)
-                print('Average speed is ' + str(speed_checker.average_speed[-1]))
+                print('Average speed is ' + str(self.average_speed))
         for idx,flag in enumerate(self.flag_dict):
             if self.flag_dict[flag] == 1:
                 print(flag +' is activated')
