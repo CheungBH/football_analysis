@@ -86,7 +86,7 @@ class TopViewGenerator:
     def save_topview_img(self, top_view_img, players, balls, frame_idx, path):
         for player in players:
             cv2.circle(top_view_img, (int(player[0]), int(player[1])), 10, tuple(player[3]), -1)
-            cv2.putText(top_view_img, str(player[-1]),(int(player[0]), int(player[1])),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
+            # cv2.putText(top_view_img, str(player[-1]),(int(player[0]), int(player[1])),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1, cv2.LINE_AA)
         for ball in balls:
             cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 10, (0, 255, 0), -1)
             cv2.circle(top_view_img, (int(ball[0]), int(ball[1])), 150, (0, 0, 255), 2)
