@@ -1107,7 +1107,7 @@ def imageflow_demo(predictor, args):
 
     total_time = 1/fpsmin * frame_id
     with open(os.path.join(os.path.dirname(args.output_video_path), "distance.txt"), 'w') as f:
-        f.write(str(average_speed*total_time)*22)
+        f.write(str(average_speed*total_time*22))
 
     vid_writer.release()
     topview_writer.release()
