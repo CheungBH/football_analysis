@@ -618,464 +618,466 @@ def imageflow_demo(predictor, args):
         if frame_id == args.stop_at:
             break
 
-        # try:
-        img_list = []
-        top_view_img = copy.deepcopy(top_view_img_tpl)
-        ret_vals,frames_list=[],[]
-        for i,cap in enumerate(caps):
-            frame_interval = round(cap.get(cv2.CAP_PROP_FPS))/fpsmin
-            if frame_id !=0 :
-                for i in range(int(frame_interval)):
-                    ret_val,frame = cap.read()
-            else:
-                ret_val, frame = cap.read()
-            ret_vals.append(ret_val)
-            frames_list.append(frame)
-        assets = [[] for _ in range(len(ret_vals))]
+        try:
+            img_list = []
+            top_view_img = copy.deepcopy(top_view_img_tpl)
+            ret_vals,frames_list=[],[]
+            for i,cap in enumerate(caps):
+                frame_interval = round(cap.get(cv2.CAP_PROP_FPS))/fpsmin
+                if frame_id !=0 :
+                    for i in range(int(frame_interval)):
+                        ret_val,frame = cap.read()
+                else:
+                    ret_val, frame = cap.read()
+                ret_vals.append(ret_val)
+                frames_list.append(frame)
+            assets = [[] for _ in range(len(ret_vals))]
 
-        if frame_id < args.start_with and frame_id != 0:
-            frame_id += 1
-            if frame_id % 100 == 0:
-                print(frame_id)
-            continue
+            if frame_id < args.start_with and frame_id != 0:
+                frame_id += 1
+                if frame_id % 100 == 0:
+                    print(frame_id)
+                continue
 
-        if sum(ret_vals) == len(ret_vals):
-            frames_list = [cv2.resize(frame, (real_w, real_h)) for frame in frames_list]
-            flag_list=[]
+            if sum(ret_vals) == len(ret_vals):
+                frames_list = [cv2.resize(frame, (real_w, real_h)) for frame in frames_list]
+                flag_list=[]
 
-            if frame_id == 0:
-                if args.use_json:
-                    # json_path = '/media/hkuit164/Backup/football_analysis/datasets/assets.json'
-                    json_path = os.path.join(args.video_path, "assets.json")
+                if frame_id == 0:
+                    if args.use_json:
+                        # json_path = '/media/hkuit164/Backup/football_analysis/datasets/assets.json'
+                        json_path = os.path.join(args.video_path, "assets.json")
 
-                    with open(json_path, 'r') as f:
-                        assets = json.load(f)
-                    matrix_list=[[] for _ in range(4)]
-                    for idx,i in enumerate(assets):
-                        court_points = np.array(i["court_point"])
-                        game_points = np.array(i["game_point"])
-                        matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
-                        matrix_list[idx].append(matrix)
+                        with open(json_path, 'r') as f:
+                            assets = json.load(f)
+                        matrix_list=[[] for _ in range(4)]
+                        for idx,i in enumerate(assets):
+                            court_points = np.array(i["court_point"])
+                            game_points = np.array(i["game_point"])
+                            matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
+                            matrix_list[idx].append(matrix)
+
+                    else:
+                        court_img = cv2.imread(court_image)
+                        matrix_list= [[] for _ in range(4)]
+                        for idx,frame in enumerate(frames_list):
+                            real_court_img = copy.deepcopy(frame)
+                            points=[]
+                            click_court(real_court_img)
+                            game_points = np.array(points)
+                            time.sleep(1)
+                            points=[]
+                            click_court(court_img)
+                            court_points = np.array(points)
+                            matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
+                            matrix_list[idx].append(matrix)
+                            if args.save_asset:
+                                asset_name = os.path.join(args.video_path, 'assets.json')
+                                asset_path = os.path.join(args.video_path,asset_name)
+                                assets[idx] = {
+                                    "view": f"view{idx}",
+                                    "court_matrix": matrix.tolist(),
+                                    "game_point": game_points.tolist(),
+                                    "court_point": court_points.tolist(),
+                                }
+                        print(matrix_list)
+                        cv2.destroyAllWindows()
+
+                    color_json_path = os.path.join(args.video_path, 'color.json')
+                    with open(color_json_path, 'r') as f:
+                        color_asset = json.load(f)
+                    team_colors = color_asset
+                    team_colors = {int(k): v for k, v in team_colors.items()}
+                    team_assigner.assign_color(team_colors)
+                    print(team_colors)
+
+                    if args.track_before_knn:
+                        tracker_list = [BYTETracker(args, frame_rate=fpsmin),
+                                    BYTETracker(args, frame_rate=fpsmin),
+                                    BYTETracker(args, frame_rate=fpsmin),
+                                    BYTETracker(args, frame_rate=fpsmin)]
+                    else:
+                        tracker_list = [[BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
+                                    [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
+                                    [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
+                                    [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))]
+                                    ]
+
+                    ball_tracker = BYTETracker(args, frame_rate=fpsmin)
+
+                cropped_frames = {}
+                for index,frame in enumerate(frames_list):
+                    cropped_frames[index] = sliding_window_crop(frame, (args.crop_size, args.crop_size), (args.window_size, args.window_size))
+
+                all_players, all_balls = [], []
+                if not args.use_saved_box:
+                    yolo_outputs, imgs_info = [], []
+                    for index in range(len(frames_list)):
+                        yolo_output, img_info = predictor.batch_inference_cropped(cropped_frames[index], frames_list[index])
+                        yolo_outputs.append(yolo_output)
+                        imgs_info.append(img_info)
+
+                    if args.save_asset:
+                        box_assets[frame_id] = {}
+                        for yolo_idx, yolo_output in enumerate(yolo_outputs):
+                            box_assets[frame_id][yolo_idx] = yolo_output.tolist()
 
                 else:
-                    court_img = cv2.imread(court_image)
-                    matrix_list= [[] for _ in range(4)]
-                    for idx,frame in enumerate(frames_list):
-                        real_court_img = copy.deepcopy(frame)
-                        points=[]
-                        click_court(real_court_img)
-                        game_points = np.array(points)
-                        time.sleep(1)
-                        points=[]
-                        click_court(court_img)
-                        court_points = np.array(points)
-                        matrix, _ = cv2.findHomography(game_points, court_points, cv2.RANSAC)
-                        matrix_list[idx].append(matrix)
-                        if args.save_asset:
-                            asset_name = os.path.join(args.video_path, 'assets.json')
-                            asset_path = os.path.join(args.video_path,asset_name)
-                            assets[idx] = {
-                                "view": f"view{idx}",
-                                "court_matrix": matrix.tolist(),
-                                "game_point": game_points.tolist(),
-                                "court_point": court_points.tolist(),
-                            }
-                    print(matrix_list)
-                    cv2.destroyAllWindows()
+                    yolo_outputs = []
+                    for index in range(len(frames_list)):
+                        yolo_output = torch.tensor(box_assets[str(frame_id)][str(index)])
+                        yolo_outputs.append(yolo_output)
+                    imgs_info = []
+                    for frame in frames_list:
+                        img_info = {}
+                        height, width = frame.shape[:2]
+                        img_info["height"] = height
+                        img_info["width"] = width
+                        img_info["raw_img"] = frame
+                        imgs_info.append(img_info)
 
-                color_json_path = os.path.join(args.video_path, 'color.json')
-                with open(color_json_path, 'r') as f:
-                    color_asset = json.load(f)
-                team_colors = color_asset
-                team_colors = {int(k): v for k, v in team_colors.items()}
-                team_assigner.assign_color(team_colors)
-                print(team_colors)
-
-                if args.track_before_knn:
-                    tracker_list = [BYTETracker(args, frame_rate=fpsmin),
-                                BYTETracker(args, frame_rate=fpsmin),
-                                BYTETracker(args, frame_rate=fpsmin),
-                                BYTETracker(args, frame_rate=fpsmin)]
-                else:
-                    tracker_list = [[BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
-                                [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
-                                [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))],
-                                [BYTETracker(args, frame_rate=fpsmin) for _ in range(len(team_colors))]
-                                ]
-
-                ball_tracker = BYTETracker(args, frame_rate=fpsmin)
-
-            cropped_frames = {}
-            for index,frame in enumerate(frames_list):
-                cropped_frames[index] = sliding_window_crop(frame, (args.crop_size, args.crop_size), (args.window_size, args.window_size))
-
-            all_players, all_balls = [], []
-            if not args.use_saved_box:
-                yolo_outputs, imgs_info = [], []
-                for index in range(len(frames_list)):
-                    yolo_output, img_info = predictor.batch_inference_cropped(cropped_frames[index], frames_list[index])
-                    yolo_outputs.append(yolo_output)
-                    imgs_info.append(img_info)
-
+                real_ball_locations_all = []
                 if args.save_asset:
-                    box_assets[frame_id] = {}
-                    for yolo_idx, yolo_output in enumerate(yolo_outputs):
-                        box_assets[frame_id][yolo_idx] = yolo_output.tolist()
+                    team_assets[frame_id] = {}
 
-            else:
-                yolo_outputs = []
-                for index in range(len(frames_list)):
-                    yolo_output = torch.tensor(box_assets[str(frame_id)][str(index)])
-                    yolo_outputs.append(yolo_output)
-                imgs_info = []
-                for frame in frames_list:
-                    img_info = {}
-                    height, width = frame.shape[:2]
-                    img_info["height"] = height
-                    img_info["width"] = width
-                    img_info["raw_img"] = frame
-                    imgs_info.append(img_info)
+                # yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
+                for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
+                    frames_queue_ls[index].push_frame(frame)
+                    real_ball_history=[]
 
-            real_ball_locations_all = []
-            if args.save_asset:
-                team_assets[frame_id] = {}
+                    matrix = matrix_list[index][0]
+                    trackers = tracker_list[index]
 
-            # yolo_outputs, imgs_info = predictor.batch_inference(frames_list)
-            for index, (frame, outputs, img_info) in enumerate(zip(frames_list, yolo_outputs, imgs_info)):
-                frames_queue_ls[index].push_frame(frame)
-                real_ball_history=[]
+                    # print(outputs.shape)
+                    team_boxes = [[] for _ in range(len(team_colors))]
+                    team_boxes_whole = []
+                    players_real_location = [defaultdict(list)for _ in range(4)]
+                    player_img_box = [defaultdict(list)for _ in range(4)]
+                    players_color = [defaultdict(list)for _ in range(4)]
+                    ball_boxes = []
 
-                matrix = matrix_list[index][0]
-                trackers = tracker_list[index]
+                    max_ball_output = None
+                    all_ball_output = []
+                    team_targets = [[],[],[],[]]
+                    # team_targets_add = [[],[],[],[]]
 
-                # print(outputs.shape)
-                team_boxes = [[] for _ in range(len(team_colors))]
-                team_boxes_whole = []
-                players_real_location = [defaultdict(list)for _ in range(4)]
-                player_img_box = [defaultdict(list)for _ in range(4)]
-                players_color = [defaultdict(list)for _ in range(4)]
-                ball_boxes = []
+                    # if args.save_cropped_humans:
+                    #     for idx, output in enumerate(outputs):
+                    #         if output[5] == 1:
+                    #             box = output[:4]
+                    #             cropped_img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
+                    #             cv2.imwrite(f"{args.save_cropped_humans}/human_{frame_id}_{index}_{idx}.jpg", cropped_img)
 
-                max_ball_output = None
-                all_ball_output = []
-                team_targets = [[],[],[],[]]
-                # team_targets_add = [[],[],[],[]]
+                    if args.track_before_knn:
+                        player_boxes = []
+                        for output in outputs:
+                            if output[5] == 1:
+                                # Height > Width
+                                height, width = output[3] - output[1], output[2] - output[0]
+                                if height > width and height / width < 3:
+                                    player_boxes.append(output.tolist())
 
-                # if args.save_cropped_humans:
-                #     for idx, output in enumerate(outputs):
-                #         if output[5] == 1:
-                #             box = output[:4]
-                #             cropped_img = frame[int(box[1]):int(box[3]), int(box[0]):int(box[2])]
-                #             cv2.imwrite(f"{args.save_cropped_humans}/human_{frame_id}_{index}_{idx}.jpg", cropped_img)
+                            elif output[5] == 0:
+                                all_ball_output.append(output.tolist())
+                                if max_ball_output is None or output[4] > max_ball_output[4]:
+                                    max_ball_output = output
+                        player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
+                                       [img_info['height'], img_info['width']])
 
-                if args.track_before_knn:
-                    player_boxes = []
-                    for output in outputs:
-                        if output[5] == 1:
-                            # Height > Width
-                            height, width = output[3] - output[1], output[2] - output[0]
-                            if height > width and height / width < 3:
-                                player_boxes.append(output.tolist())
-
-                        elif output[5] == 0:
-                            all_ball_output.append(output.tolist())
-                            if max_ball_output is None or output[4] > max_ball_output[4]:
-                                max_ball_output = output
-                    player_targets = trackers.update(np.array(player_boxes), [img_info['height'], img_info['width']],
-                                   [img_info['height'], img_info['width']])
-
-                    if args.use_saved_team:
-                        team_ids = team_assets[str(frame_id)][str(index)]
-                        # team_ids_knn = team_assets[str(frame_id)][str(index)]
-                    else:
-                        team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
-                                                                        index, team_colors=team_colors, cam_idx=index,
-                                                                        save=args.save_cropped_humans)
-                        team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
-                                                                        index, team_colors=team_colors, cam_idx=index)
-                        if args.save_asset:
-                            team_assets[frame_id][index] = team_ids
-                    t_final_id = [[],[],[],[],[]]
-                    # for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
-                    #     # if t_id_knn != 4 and t_id_dino == 4:
-                    #     #     t_final_id.append(t_id_knn)
-                    #     # else:
-                    #     t_final_id.append(t_id_dino)
-                    for player_target, team_id in zip(player_targets, team_ids):
-                        team_boxes[team_id].append(player_target)
-                        team_boxes_whole.append(player_target)
-                        t_final_id[team_id].append(team_id)
-                    team_targets[index] = team_boxes
-
-                else:
-                    for output in outputs:
-                        if output[5] == 1:
-                            team_id = team_assigner.get_player_team_test(frame, output[:4], "",team_colors)
-                            team_boxes[team_id].append(output.tolist())
-                        elif output[5] == 0:
-                            if max_ball_output is None or output[4] > max_ball_output[4]:
-                                max_ball_output = output
-
-                    for boxes, tracker in zip(team_boxes, trackers):
-                        team_target = tracker.update(np.array(boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-                        team_targets[index].append(team_target)
-
-                if max_ball_output is not None:
-                    ball_boxes.append(max_ball_output.tolist())
-
-                img = frame
-                real_foot_locations = [[] for _ in range(4)]
-                for t_idx, team_target in enumerate(team_targets[index]):
-                    foot_locations = [[] for _ in range(4)]
-
-                    online_tlwhs = []
-                    online_ids = []
-                    online_scores = []
-                    online_color = []
-                    for t in team_target:
-                        tlwh = t.tlwh
-                        tid = t.track_id
-                        online_tlwhs.append(tlwh)
-                        online_ids.append(tid)
-                        online_scores.append(t.score)
-                        foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
-                        foot_locations[index].append(foot_location)
-                        real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
-                        if is_in_rectangle(real_foot_location,chosed_field[index]):
-                            pass
+                        if args.use_saved_team:
+                            team_ids = team_assets[str(frame_id)][str(index)]
+                            # team_ids_knn = team_assets[str(frame_id)][str(index)]
                         else:
-                            continue
-                        player_img_box[index][tid] = t.tlbr
-                        players_real_location[index][tid] = real_foot_location
-                        players_color[index][tid] = t_idx
-                        real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx],tid])
-                        all_player_dict[index][tid].append(real_foot_location)
+                            team_ids =  team_assigner.get_player_whole_team(frame, [target.tlbr for target in player_targets],
+                                                                            index, team_colors=team_colors, cam_idx=index,
+                                                                            save=args.save_cropped_humans)
+                            team_ids_knn = team_assigner_knn.get_player_whole_team(frame, [target.tlbr for target in player_targets],
+                                                                            index, team_colors=team_colors, cam_idx=index)
+                            if args.save_asset:
+                                team_assets[frame_id][index] = team_ids
+                        t_final_id = [[],[],[],[],[]]
+                        # for t_id_dino, t_id_knn in zip(team_ids, team_ids_knn):
+                        #     # if t_id_knn != 4 and t_id_dino == 4:
+                        #     #     t_final_id.append(t_id_knn)
+                        #     # else:
+                        #     t_final_id.append(t_id_dino)
+                        for player_target, team_id in zip(player_targets, team_ids):
+                            team_boxes[team_id].append(player_target)
+                            team_boxes_whole.append(player_target)
+                            t_final_id[team_id].append(team_id)
+                        team_targets[index] = team_boxes
 
-                    # filtered_dict[index] = {key: all_player_dict[index][key] for key in online_ids}
-
-                        if t_idx == 0:
-                            team1_dict[index][tid].append(real_foot_location)
-                        elif t_idx == 1:
-                            team2_dict[index][tid].append(real_foot_location)
-                        elif t_idx == 2:
-                            goalkeeper1_dict[index][tid].append(real_foot_location)
-                        elif t_idx == 3:
-                            goalkeeper2_dict[index][tid].append(real_foot_location)
-                        elif t_idx == 4:
-                            #referee_dict[tid].append(real_foot_location)
-                            referee_dict[index][tid].append([real_foot_location,frame_id])
-
-
-                    if len(foot_locations) == 0:
-                        continue
-                    # foot_locations = np.array([foot_locations])
-                    # real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
-                    # real_foot_locations = real_foot_locations[0]
-                    # t_color =
-                    # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
-                    if index != 0:
-                        all_players += real_foot_locations[index]
-                    # for real_foot_location in real_foot_locations[index]:
-                    #     all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
-
-                    #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
-                    img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=team_colors[t_idx])
-
-
-                if args.no_ball_tracker:
-                    all_ball_boxes = []
-                    if max_ball_output is not None:
-                        ball_box = ball_boxes[0][:4]
-                        ball_box = [ball_box[0], ball_box[1], ball_box[2] - ball_box[0], ball_box[3] - ball_box[1]]
-                        for single_ball_box in all_ball_output:
-                            single_ball = single_ball_box[:4]
-                            all_ball_boxes.append([single_ball[0], single_ball[1], single_ball[2] - single_ball[0],
-                                                   single_ball[3] - single_ball[1]])
                     else:
-                        ball_box = []
-                else:
-                    ball_targets = ball_tracker.update(np.array(ball_boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
-                    print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
-                    ball_box = ball_targets[0].tlwh if ball_targets else []
+                        for output in outputs:
+                            if output[5] == 1:
+                                team_id = team_assigner.get_player_team_test(frame, output[:4], "",team_colors)
+                                team_boxes[team_id].append(output.tolist())
+                            elif output[5] == 0:
+                                if max_ball_output is None or output[4] > max_ball_output[4]:
+                                    max_ball_output = output
+
+                        for boxes, tracker in zip(team_boxes, trackers):
+                            team_target = tracker.update(np.array(boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
+                            team_targets[index].append(team_target)
+
+                    if max_ball_output is not None:
+                        ball_boxes.append(max_ball_output.tolist())
+
+                    img = frame
+                    real_foot_locations = [[] for _ in range(4)]
+                    for t_idx, team_target in enumerate(team_targets[index]):
+                        foot_locations = [[] for _ in range(4)]
+
+                        online_tlwhs = []
+                        online_ids = []
+                        online_scores = []
+                        online_color = []
+                        for t in team_target:
+                            tlwh = t.tlwh
+                            tid = t.track_id
+                            online_tlwhs.append(tlwh)
+                            online_ids.append(tid)
+                            online_scores.append(t.score)
+                            foot_location = [tlwh[0] + tlwh[2] / 2, tlwh[1] + tlwh[3]]
+                            foot_locations[index].append(foot_location)
+                            real_foot_location = cv2.perspectiveTransform(np.array([[foot_location]]), matrix).tolist()[0][0]
+                            if is_in_rectangle(real_foot_location,chosed_field[index]):
+                                pass
+                            else:
+                                continue
+                            player_img_box[index][tid] = t.tlbr
+                            players_real_location[index][tid] = real_foot_location
+                            players_color[index][tid] = t_idx
+                            real_foot_locations[index].append(real_foot_location + [t_idx, team_colors[t_idx],tid])
+                            all_player_dict[index][tid].append(real_foot_location)
+
+                        # filtered_dict[index] = {key: all_player_dict[index][key] for key in online_ids}
+
+                            if t_idx == 0:
+                                team1_dict[index][tid].append(real_foot_location)
+                            elif t_idx == 1:
+                                team2_dict[index][tid].append(real_foot_location)
+                            elif t_idx == 2:
+                                goalkeeper1_dict[index][tid].append(real_foot_location)
+                            elif t_idx == 3:
+                                goalkeeper2_dict[index][tid].append(real_foot_location)
+                            elif t_idx == 4:
+                                #referee_dict[tid].append(real_foot_location)
+                                referee_dict[index][tid].append([real_foot_location,frame_id])
+
+
+                        if len(foot_locations) == 0:
+                            continue
+                        # foot_locations = np.array([foot_locations])
+                        # real_foot_locations = cv2.perspectiveTransform(foot_locations, matrix)
+                        # real_foot_locations = real_foot_locations[0]
+                        # t_color =
+                        # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
+                        if index != 0:
+                            all_players += real_foot_locations[index]
+                        # for real_foot_location in real_foot_locations[index]:
+                        #     all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
+
+                        #     cv2.circle(top_view_img, (int(real_foot_location[0]), int(real_foot_location[1])), 20, tuple(t_color), -1)
+                        img = plot_tracking(img, online_tlwhs, online_ids, frame_id=frame_id + 1, fps=0,  color=team_colors[t_idx])
+
+
+                    if args.no_ball_tracker:
+                        all_ball_boxes = []
+                        if max_ball_output is not None:
+                            ball_box = ball_boxes[0][:4]
+                            ball_box = [ball_box[0], ball_box[1], ball_box[2] - ball_box[0], ball_box[3] - ball_box[1]]
+                            for single_ball_box in all_ball_output:
+                                single_ball = single_ball_box[:4]
+                                all_ball_boxes.append([single_ball[0], single_ball[1], single_ball[2] - single_ball[0],
+                                                       single_ball[3] - single_ball[1]])
+                        else:
+                            ball_box = []
+                    else:
+                        ball_targets = ball_tracker.update(np.array(ball_boxes), [img_info['height'], img_info['width']], [img_info['height'], img_info['width']])
+                        print('ball_num',len(ball_targets),'ball_detct',len(ball_boxes))
+                        ball_box = ball_targets[0].tlwh if ball_targets else []
 
 
 
-                real_ball_locations_singe_cam = []
-                if len(all_ball_boxes) > 0:
-                    for boxes in all_ball_boxes:
-                        ball_location = [boxes[0] + boxes[2] / 2, boxes[1] + boxes[3]/2]
+                    real_ball_locations_singe_cam = []
+                    if len(all_ball_boxes) > 0:
+                        for boxes in all_ball_boxes:
+                            ball_location = [boxes[0] + boxes[2] / 2, boxes[1] + boxes[3]/2]
+                            ball_locations = np.array([[ball_location]])
+                            real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
+                            real_ball_locations = real_ball_locations[0][0].tolist()
+                            real_ball_locations_singe_cam.append(real_ball_locations)
+                            real_ball_locations_all.append(real_ball_locations)
+                            # all_balls.append(real_ball_locations)
+                            # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
+                            # img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
+                    real_ball_locations=[]
+                    if len(ball_box) > 0:
+                        ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]/2]
                         ball_locations = np.array([[ball_location]])
                         real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
                         real_ball_locations = real_ball_locations[0][0].tolist()
-                        real_ball_locations_singe_cam.append(real_ball_locations)
-                        real_ball_locations_all.append(real_ball_locations)
-                        # all_balls.append(real_ball_locations)
+                        real_ball_history.append(real_ball_locations)
+                        all_balls.append(real_ball_locations)
                         # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
-                        # img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
-                real_ball_locations=[]
-                if len(ball_box) > 0:
-                    ball_location = [ball_box[0] + ball_box[2] / 2, ball_box[1] + ball_box[3]/2]
-                    ball_locations = np.array([[ball_location]])
-                    real_ball_locations = cv2.perspectiveTransform(ball_locations, matrix)
-                    real_ball_locations = real_ball_locations[0][0].tolist()
-                    real_ball_history.append(real_ball_locations)
-                    all_balls.append(real_ball_locations)
-                    # cv2.circle(top_view_img, (int(real_ball_locations[0]), int(real_ball_locations[1])), 20,(0,255,0), -1)
-                    img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
+                        img = plot_tracking(img, [ball_box], [1], frame_id=frame_id + 1, fps=0,color=(0,255,0))
 
-                resized_frame = cv2.resize(img, (real_w//2, real_h//2))
-                img_list.append(resized_frame)
-                # analysis_list[index].process(team1_players=team1_dict[index],
-                #                  team2_players=team2_dict[index],
-                #                  side_referees=referee_dict[index],
-                #                  goalkeepers1=goalkeeper1_dict[index],
-                #                  goalkeepers2=goalkeeper2_dict[index],
-                #                  balls=real_ball_history,
-                #                  frame_id=frame_id,
-                #                  matrix=matrix,
-                #                 frame_queue=frame_queue)
+                    resized_frame = cv2.resize(img, (real_w//2, real_h//2))
+                    img_list.append(resized_frame)
+                    # analysis_list[index].process(team1_players=team1_dict[index],
+                    #                  team2_players=team2_dict[index],
+                    #                  side_referees=referee_dict[index],
+                    #                  goalkeepers1=goalkeeper1_dict[index],
+                    #                  goalkeepers2=goalkeeper2_dict[index],
+                    #                  balls=real_ball_history,
+                    #                  frame_id=frame_id,
+                    #                  matrix=matrix,
+                    #                 frame_queue=frame_queue)
 
 
-                analysis_list[index].process(players = players_real_location[index], player_img_box= player_img_box[index],balls=real_ball_locations_singe_cam,
-                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors=players_color[index])
-                analysis_list[index].visualize(img_list[index])
-                single_vid_writers[index].write(img_list[index])
+                    analysis_list[index].process(players = players_real_location[index], player_img_box= player_img_box[index],balls=real_ball_locations_singe_cam,
+                        frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors=players_color[index])
+                    analysis_list[index].visualize(img_list[index])
+                    single_vid_writers[index].write(img_list[index])
 
-                # if index ==3:
+                    # if index ==3:
 
 
-                # for i in range(len(real_foot_locations[index])):
-                #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
-                flag_list.append(analysis_list[index].flag_dict)
+                    # for i in range(len(real_foot_locations[index])):
+                    #     cv2.circle(top_view_img, (int(real_foot_locations[index][i][0]), int(real_foot_locations[index][i][1])), 20, (0, 255, 0), -1)
+                    flag_list.append(analysis_list[index].flag_dict)
+                    if args.save_tmp_tv:
+                        PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl),
+                                                       players=real_foot_locations[index],
+                                                       balls=real_ball_locations_singe_cam, frame_idx=index, path=args.save_tmp_tv)
+                        cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
                 if args.save_tmp_tv:
-                    PlayerTopView.save_topview_img(top_view_img=copy.deepcopy(top_view_img_tpl),
-                                                   players=real_foot_locations[index],
-                                                   balls=real_ball_locations_singe_cam, frame_idx=index, path=args.save_tmp_tv)
-                    cv2.imwrite(f"{args.save_tmp_tv}/raw_{index}.jpg", img)
-            if args.save_tmp_tv:
-                PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
-                single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(int(tv_w*2), int(tv_h*2)))
-                cv2.imshow("Single Top View", single_tv_frame)
-            PlayerTopView.process(all_players, all_balls, top_view_img_tpl, args.save_tmp_tv)
-            cv2.imwrite(f"tv_whole.jpg", top_view_img)
-            PlayerTopView.visualize(top_view_img)
-            # cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
-            analysis_wholegame.process(balls=real_ball_locations_all, player_img_box= player_img_box[index], players = players_real_location[index],
-                    frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors = players_color[index])
-            for i in range(4):
-                analysis_wholegame.visualize(img_list[i])
+                    PlayerTopView.save_topview_img(copy.deepcopy(top_view_img_tpl), all_players, all_balls, "whole", args.save_tmp_tv)
+                    single_tv_frame = PlayerTopView.save_tmp_videos(args.save_tmp_tv, tmp_tv_writer, size=(int(tv_w*2), int(tv_h*2)))
+                    cv2.imshow("Single Top View", single_tv_frame)
+                PlayerTopView.process(all_players, all_balls, top_view_img_tpl, args.save_tmp_tv)
+                cv2.imwrite(f"tv_whole.jpg", top_view_img)
+                PlayerTopView.visualize(top_view_img)
+                # cv2.putText(top_view_img, f"Frame: {frame_id}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
+                analysis_wholegame.process(balls=real_ball_locations_all, player_img_box= player_img_box[index], players = players_real_location[index],
+                        frame_id=frame_id,matrix=matrix,frame_queue=frame_queue,colors = players_color[index])
+                for i in range(4):
+                    analysis_wholegame.visualize(img_list[i])
 
-            if args.save_tmp_tv:
-                cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
+                if args.save_tmp_tv:
+                    cv2.imwrite(f"{args.save_tmp_tv}/tv_whole.jpg", top_view_img)
 
-            # merged_dict = {}
-            # for lst in flag_list:
-            #     for key, value in lst:
-            #         if key not in merged_dict:
-            #             merged_dict[key] = value
-            #         else:
-            #             merged_dict[key] = merged_dict[key] or value
-            # merged_value = sum(merged_dict.values())
-            # merge_list = [[key, value] for key, value in merged_dict.items()]
-            # merged_list.append(merge_list)
-            # merged_list[-1].append(frame_id)
-            #
-            # analysis_file = os.path.join(args.video_path, "analysis.txt")
-            # with open(analysis_file, 'w') as f:
-            #     for item in merged_list:
-            #         f.write(str(item) + '\n')
+                # merged_dict = {}
+                # for lst in flag_list:
+                #     for key, value in lst:
+                #         if key not in merged_dict:
+                #             merged_dict[key] = value
+                #         else:
+                #             merged_dict[key] = merged_dict[key] or value
+                # merged_value = sum(merged_dict.values())
+                # merge_list = [[key, value] for key, value in merged_dict.items()]
+                # merged_list.append(merge_list)
+                # merged_list[-1].append(frame_id)
+                #
+                # analysis_file = os.path.join(args.video_path, "analysis.txt")
+                # with open(analysis_file, 'w') as f:
+                #     for item in merged_list:
+                #         f.write(str(item) + '\n')
 
-            # top_view.process()
-            topview_queue.push_frame(copy.deepcopy(top_view_img))
-            top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
-            #cv2.imshow('Image', img)
+                # top_view.process()
+                topview_queue.push_frame(copy.deepcopy(top_view_img))
+                top_view_img = cv2.resize(top_view_img, (tv_w, tv_h))
+                #cv2.imshow('Image', img)
 
-            flag_manager.update(analysis_wholegame.flag_dict, flag_list)
-            reasons = flag_manager.get_flag()
+                flag_manager.update(analysis_wholegame.flag_dict, flag_list)
+                reasons = flag_manager.get_flag()
 
-            if len(reasons) > 0 or (frame_id + 1) % 9999999999 == 0:
+                if len(reasons) > 0 or (frame_id + 1) % 9999999999 == 0:
 
-                print("Saving the video")
-                output_time = frame_id / fpsmin
-                # Convert to real time
-                hours = int(output_time // 3600)
-                minutes = int(output_time // 60)
-                seconds = int(output_time % 60)
-                output_time = f"{hours:02d}_{minutes:02d}_{seconds:02d}"
-                out_subfolder = os.path.join(args.output_dir, output_time)
-                os.makedirs(out_subfolder, exist_ok=True)
-                video_paths = [os.path.join(out_subfolder, "{}.mp4".format(idx + 1)) for idx in range(len(frames_list))]
+                    print("Saving the video")
+                    output_time = frame_id / fpsmin
+                    # Convert to real time
+                    hours = int(output_time // 3600)
+                    minutes = int(output_time // 60)
+                    seconds = int(output_time % 60)
+                    output_time = f"{hours:02d}_{minutes:02d}_{seconds:02d}"
+                    out_subfolder = os.path.join(args.output_dir, output_time)
+                    os.makedirs(out_subfolder, exist_ok=True)
+                    video_paths = [os.path.join(out_subfolder, "{}.mp4".format(idx + 1)) for idx in range(len(frames_list))]
 
-                for index in range(len(frames_list)):
-                    out_h, out_w = frames_list[index].shape[:2]
-                    out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fpsmin, (out_w, out_h))
-                    out_frames = frames_queue_ls[index].get_frames()
+                    for index in range(len(frames_list)):
+                        out_h, out_w = frames_list[index].shape[:2]
+                        out = cv2.VideoWriter(video_paths[index], cv2.VideoWriter_fourcc(*'mp4v'), fpsmin, (out_w, out_h))
+                        out_frames = frames_queue_ls[index].get_frames()
 
-                    for f_id, f in enumerate(out_frames):
-                        red_p_ids, red_frame_id = [28, 114], 108
+                        for f_id, f in enumerate(out_frames):
+                            red_p_ids, red_frame_id = [28, 114], 108
+                            if frame_id == red_frame_id:
+                                img_boxes = analysis_list[index].player_img_box
+                                for red_p_id in red_p_ids:
+                                    if red_p_id in img_boxes:
+                                        red_boxes = img_boxes[red_p_id][-len(out_frames):]
+                                        cv2.rectangle(f, (int(red_boxes[f_id][0]), int(red_boxes[f_id][1])),
+                                                      (int(red_boxes[f_id][2]), int(red_boxes[f_id][3])), color=(0, 0, 255), thickness=2)
+
+                            out.write(f)
+                        out.release()
+
+                    # Save the top view video
+                    out_h, out_w = top_view_img.shape[:2]
+                    tv_out = cv2.VideoWriter(os.path.join(out_subfolder, "top_view.mp4"), cv2.VideoWriter_fourcc(*'mp4v'),
+                                             fpsmin, (out_w, out_h))
+                    out_frames = topview_queue.get_frames()
+                    for f_idx, f in enumerate(out_frames):
+                        red_p_ids, red_frame_id = [28, 114], 107
                         if frame_id == red_frame_id:
-                            img_boxes = analysis_list[index].player_img_box
+                            all_points = analysis_list[0].team_dict
                             for red_p_id in red_p_ids:
-                                if red_p_id in img_boxes:
-                                    red_boxes = img_boxes[red_p_id][-len(out_frames):]
-                                    cv2.rectangle(f, (int(red_boxes[f_id][0]), int(red_boxes[f_id][1])),
-                                                  (int(red_boxes[f_id][2]), int(red_boxes[f_id][3])), color=(0, 0, 255), thickness=2)
+                                if red_p_id in all_points:
+                                    red_circle = all_points[red_p_id][-len(out_frames):]
+                                    cv2.circle(f, (int(red_circle[f_idx][0]), int(red_circle[f_idx][1])), 20, (0, 255, 0), -1)
 
-                        out.write(f)
-                    out.release()
+                        tv_out.write( cv2.resize(f, (tv_w, tv_h)))
+                    tv_out.release()
 
-                # Save the top view video
-                out_h, out_w = top_view_img.shape[:2]
-                tv_out = cv2.VideoWriter(os.path.join(out_subfolder, "top_view.mp4"), cv2.VideoWriter_fourcc(*'mp4v'),
-                                         fpsmin, (out_w, out_h))
-                out_frames = topview_queue.get_frames()
-                for f_idx, f in enumerate(out_frames):
-                    red_p_ids, red_frame_id = [28, 114], 107
-                    if frame_id == red_frame_id:
-                        all_points = analysis_list[0].team_dict
-                        for red_p_id in red_p_ids:
-                            if red_p_id in all_points:
-                                red_circle = all_points[red_p_id][-len(out_frames):]
-                                cv2.circle(f, (int(red_circle[f_idx][0]), int(red_circle[f_idx][1])), 20, (0, 255, 0), -1)
-
-                    tv_out.write( cv2.resize(f, (tv_w, tv_h)))
-                tv_out.release()
-
-                reason_file = os.path.join(out_subfolder, "reason.txt")
-                with open(reason_file, 'w') as f:
-                    for reason in reasons:
-                        f.write(str(reason) + '\n')
+                    reason_file = os.path.join(out_subfolder, "reason.txt")
+                    with open(reason_file, 'w') as f:
+                        for reason in reasons:
+                            f.write(str(reason) + '\n')
 
 
-            top_row = np.hstack([img_list[1], img_list[0]])
-            bottom_row = np.hstack((img_list[3], img_list[2]))
-            combined_frame = np.vstack([top_row, bottom_row])
-            if args.show_video:
-                cv2.imshow("Combined Frame", cv2.resize(combined_frame, (int(real_w*0.8), int(0.8*real_h))))
-                cv2.imshow('Top View', top_view_img)
-                ch = cv2.waitKey(1)
+                top_row = np.hstack([img_list[1], img_list[0]])
+                bottom_row = np.hstack((img_list[3], img_list[2]))
+                combined_frame = np.vstack([top_row, bottom_row])
+                if args.show_video:
+                    cv2.imshow("Combined Frame", cv2.resize(combined_frame, (int(real_w*0.8), int(0.8*real_h))))
+                    cv2.imshow('Top View', top_view_img)
+                    ch = cv2.waitKey(1)
 
-                color = defaultdict(list)
-                text = defaultdict(list)
-                # for idx,m in enumerate(merged_dict):
-                #     color[idx] = (0,0,255) if merged_dict[m] else (0,255,0)
-                #     text[idx] = f"{m}: {merged_dict[m]}"
-                #     cv2.putText(combined_frame, text[idx],  (50, 100+50*idx), cv2.FONT_HERSHEY_SIMPLEX, 1, color[idx], 2, cv2.LINE_AA)
+                    color = defaultdict(list)
+                    text = defaultdict(list)
+                    # for idx,m in enumerate(merged_dict):
+                    #     color[idx] = (0,0,255) if merged_dict[m] else (0,255,0)
+                    #     text[idx] = f"{m}: {merged_dict[m]}"
+                    #     cv2.putText(combined_frame, text[idx],  (50, 100+50*idx), cv2.FONT_HERSHEY_SIMPLEX, 1, color[idx], 2, cv2.LINE_AA)
 
-            if args.output_video_path:
+                if args.output_video_path:
 
-                vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
-                topview_writer.write(top_view_img)
+                    vid_writer.write(cv2.resize(combined_frame, (real_w, real_h)))
+                    topview_writer.write(top_view_img)
 
 
-            print("Finish processing frame: {}/{}".format(frame_id, totol_frame_to_process))
-            if frame_id % 100 == 0:
-                print(f"Frame {frame_id} processed.")
-        else:
+                print("Finish processing frame: {}/{}".format(frame_id, totol_frame_to_process))
+                if frame_id % 100 == 0:
+                    print(f"Frame {frame_id} processed.")
+            else:
+                break
+        except KeyboardInterrupt:
             break
-        # except:
-        #     print("Error processing frame: {}. Skip".format(frame_id))
-        #     continue
+        except:
+            print("Error processing frame: {}. Skip".format(frame_id))
+            continue
         frame_id += 1
 
     print("Video process finished.")
