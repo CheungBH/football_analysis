@@ -874,7 +874,7 @@ def imageflow_demo(predictor, args):
                         # real_foot_locations = real_foot_locations[0]
                         # t_color =
                         # t_color = t_color if isinstance(t_color, list) else t_color.tolist()
-                        if index != 2:
+                        if index != 0:
                             all_players += real_foot_locations[index]
                         # for real_foot_location in real_foot_locations[index]:
                         #     all_players.append(real_foot_location + [t_idx, team_colors[t_idx]])
