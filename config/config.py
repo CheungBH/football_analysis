@@ -5,8 +5,21 @@ real_video_height = 1080
 real_video_width = 1920
 
 
-check_action = ["reverse_moving","delay_restart","not_moving_with_ball","low_speed_with_ball","goalkeeper_single",
-                "ball_out_range","commit_foul","lack_pressure","poor_position","ballkeeper_change"]
+check_action = [
+    "reverse_moving",
+    "delay_restart",
+    "not_moving_with_ball",
+    "low_speed_with_ball",
+    "goalkeeper_single",
+    "ball_out_range",
+    "outpace",
+    "commit_foul",
+    "lack_pressure",
+    "poor_position",
+    "ballkeeper_change"
+]
+
+# check_action = ["outpace"]
 cam4_videos_name = \
     [
         "output_video1.mp4",
