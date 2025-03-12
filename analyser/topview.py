@@ -61,8 +61,8 @@ def plot_heatmap(frequency_matrix, title="Heatmap", cmap="viridis",output="heatm
     plt.imshow(frequency_matrix, cmap=cmap, aspect="auto", origin="lower", interpolation="nearest")
 
     # Add color bar
-    cbar = plt.colorbar()
-    cbar.set_label("Point Count")
+    # cbar = plt.colorbar()
+    # cbar.set_label("Point Count")
 
     # Add labels and title
     plt.title(title)
